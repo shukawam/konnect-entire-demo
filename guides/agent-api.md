@@ -16,10 +16,10 @@ Base URL: `http://localhost:8000/api/agent`
 
 ## エンドポイント一覧
 
-| メソッド | パス | 概要 |
-|----------|------|------|
-| POST | `/api/agent/chat` | AI チャット |
-| GET | `/api/agent/suggestions` | サジェスト取得 |
+| メソッド | パス                     | 概要           |
+| -------- | ------------------------ | -------------- |
+| POST     | `/api/agent/chat`        | AI チャット    |
+| GET      | `/api/agent/suggestions` | サジェスト取得 |
 
 ## AI チャット
 
@@ -49,10 +49,10 @@ curl -X POST http://localhost:8000/api/agent/chat \
 
 `prompt` または `messages` のいずれかが必須です。
 
-| フィールド | 型 | 必須 | 説明 |
-|------------|------|------|------|
-| `prompt` | string | * | 単一のプロンプト |
-| `messages` | array | * | 会話履歴（`role` + `content`） |
+| フィールド | 型     | 必須 | 説明                           |
+| ---------- | ------ | ---- | ------------------------------ |
+| `prompt`   | string | \*   | 単一のプロンプト               |
+| `messages` | array  | \*   | 会話履歴（`role` + `content`） |
 
 ### レスポンス例
 
@@ -64,11 +64,11 @@ curl -X POST http://localhost:8000/api/agent/chat \
 
 ### エラーケース
 
-| ステータス | 説明 |
-|------------|------|
-| 400 | `prompt` も `messages` も未指定 |
-| 503 | MCP サーバー（Kong Gateway）に接続できない |
-| 500 | 予期しないエラー |
+| ステータス | 説明                                       |
+| ---------- | ------------------------------------------ |
+| 400        | `prompt` も `messages` も未指定            |
+| 503        | MCP サーバー（Kong Gateway）に接続できない |
+| 500        | 予期しないエラー                           |
 
 ## サジェスト取得
 
@@ -94,21 +94,21 @@ curl http://localhost:8000/api/agent/suggestions
 
 エージェントは以下のツールを自動的に使い分けます。
 
-| ツール | 元 API | 説明 |
-|--------|--------|------|
-| List products | GET `/api/products` | 商品一覧取得（カテゴリ・キーワード検索対応） |
-| Get product details | GET `/api/products/{id}` | 商品詳細取得 |
-| Get cart | GET `/api/carts` | カート内容取得 |
-| Add item to cart | POST `/api/carts/items` | カートに商品追加 |
-| List orders | GET `/api/orders` | 注文履歴取得 |
-| Create order | POST `/api/orders` | 注文作成 |
+| ツール              | 元 API                   | 説明                                         |
+| ------------------- | ------------------------ | -------------------------------------------- |
+| List products       | GET `/api/products`      | 商品一覧取得（カテゴリ・キーワード検索対応） |
+| Get product details | GET `/api/products/{id}` | 商品詳細取得                                 |
+| Get cart            | GET `/api/carts`         | カート内容取得                               |
+| Add item to cart    | POST `/api/carts/items`  | カートに商品追加                             |
+| List orders         | GET `/api/orders`        | 注文履歴取得                                 |
+| Create order        | POST `/api/orders`       | 注文作成                                     |
 
 ## 環境変数
 
-| 変数名 | デフォルト | 説明 |
-|--------|-----------|------|
-| `PORT` | 3006 | サービスポート |
-| `GATEWAY_ENDPOINT` | http://localhost:8000 | Kong Gateway の内部 URL |
-| `OTEL_SERVICE_NAME` | agent-service | OTel サービス名 |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | http://localhost:4318 | OTel Collector エンドポイント |
-| `DECK_OPENAI_API_KEY` | - | OpenAI API キー（Kong 側で設定） |
+| 変数名                        | デフォルト            | 説明                             |
+| ----------------------------- | --------------------- | -------------------------------- |
+| `PORT`                        | 3006                  | サービスポート                   |
+| `GATEWAY_ENDPOINT`            | http://localhost:8000 | Kong Gateway の内部 URL          |
+| `OTEL_SERVICE_NAME`           | agent-service         | OTel サービス名                  |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | http://localhost:4318 | OTel Collector エンドポイント    |
+| `DECK_OPENAI_API_KEY`         | -                     | OpenAI API キー（Kong 側で設定） |

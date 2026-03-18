@@ -42,12 +42,12 @@ paths:
             maximum: 100
             default: 20
       responses:
-        "200":
+        '200':
           description: 商品一覧
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductList"
+                $ref: '#/components/schemas/ProductList'
     post:
       operationId: createProduct
       summary: 商品作成
@@ -59,14 +59,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateProduct"
+              $ref: '#/components/schemas/CreateProduct'
       responses:
-        "201":
+        '201':
           description: 作成された商品
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Product"
+                $ref: '#/components/schemas/Product'
   /api/products/{id}:
     get:
       operationId: getProduct
@@ -81,18 +81,18 @@ paths:
             type: string
           example: prod-001
       responses:
-        "200":
+        '200':
           description: 商品詳細
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Product"
-        "404":
+                $ref: '#/components/schemas/Product'
+        '404':
           description: 商品が見つかりません
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     Product:
@@ -121,17 +121,17 @@ components:
           example: 50
         createdAt:
           type: string
-          example: "2024-01-01T00:00:00.000Z"
+          example: '2024-01-01T00:00:00.000Z'
         updatedAt:
           type: string
-          example: "2024-01-01T00:00:00.000Z"
+          example: '2024-01-01T00:00:00.000Z'
     ProductList:
       type: object
       properties:
         products:
           type: array
           items:
-            $ref: "#/components/schemas/Product"
+            $ref: '#/components/schemas/Product'
         total:
           type: integer
         page:

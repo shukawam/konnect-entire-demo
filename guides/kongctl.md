@@ -71,6 +71,7 @@ apis:
 ```
 
 ポイント:
+
 - `!file` で OpenAPI YAML から `name` / `description` / `version` を動的に取得
 - `!ref` で他リソース（Portal 等）の ID を参照
 - `attributes` で検索・フィルタ用のタグを付与（`tier: free` / `premium`）

@@ -1,26 +1,29 @@
 ---
-title: "Getting Started"
-description: "Jungle Store Dev Portalの使い方ガイド"
+title: 'Getting Started'
+description: 'Jungle Store Dev Portalの使い方ガイド'
 page-layout:
   sidebar-left: sidebar
 ---
 
-::page-section
----
+## ::page-section
+
 full-width: false
 padding: "var(--kui-space-80) var(--kui-space-50)"
+
 ---
 
 # 🚀 Getting Started
 
 Jungle Store Dev Portalへようこそ！このガイドでは、APIの利用開始から実際の統合まで、ステップバイステップで説明します。
 
-::alert
----
+## ::alert
+
 appearance: "success"
 show-icon: true
 message: "所要時間: 約15分でAPIの呼び出しまで完了できます。"
+
 ---
+
 ::
 
 ---
@@ -58,13 +61,15 @@ curl -X POST http://localhost:8000/api/users/login \
   -d '{"email":"user@example.com","password":"password123"}'
 ```
 
-::alert
----
+## ::alert
+
 appearance: "danger"
 show-icon: true
 title: "重要"
 message: "API Keyは安全に保管してください。決してクライアントサイドのコードやパブリックリポジトリにコミットしないでください。"
+
 ---
+
 ::
 
 ---
@@ -156,19 +161,19 @@ curl http://localhost:8000/api/orders \
 
 ```javascript
 try {
-  const response = await fetch(apiUrl, options);
+  const response = await fetch(apiUrl, options)
 
   if (!response.ok) {
-    const error = await response.json();
-    console.error('API Error:', error.message);
-    throw new Error(error.message);
+    const error = await response.json()
+    console.error('API Error:', error.message)
+    throw new Error(error.message)
   }
 
-  const data = await response.json();
-  return data;
+  const data = await response.json()
+  return data
 } catch (error) {
-  console.error('Request failed:', error);
-  throw error;
+  console.error('Request failed:', error)
+  throw error
 }
 ```
 
@@ -200,31 +205,32 @@ try {
 ### よくある問題
 
 ::accordion-group
-  ::accordion-panel
-  #header
-  401 Unauthorized エラーが発生する
-  #default
-  - API Keyが正しく設定されているか確認（ヘッダー名: `apikey`）
-  - `X-User-Id` ヘッダーが設定されているか確認
-  - デモユーザーの場合は `demo-api-key` を使用
+::accordion-panel
+#header
+401 Unauthorized エラーが発生する
+#default
+
+- API Keyが正しく設定されているか確認（ヘッダー名: `apikey`）
+- `X-User-Id` ヘッダーが設定されているか確認
+- デモユーザーの場合は `demo-api-key` を使用
   ::
   ::accordion-panel
   #header
   429 Too Many Requests エラーが発生する
   #default
-  - Order API: 10リクエスト/分の制限
-  - グローバル: 60リクエスト/分の制限
-  - `X-RateLimit-Remaining` ヘッダーで残りを確認
+- Order API: 10リクエスト/分の制限
+- グローバル: 60リクエスト/分の制限
+- `X-RateLimit-Remaining` ヘッダーで残りを確認
   ::
   ::accordion-panel
   #header
   注文ステータスが変わらない
   #default
-  - Kafka が正常に起動しているか確認: `docker compose logs kafka`
-  - Shipping Service のログを確認: `docker compose logs shipping-service`
-  - 数秒待ってから再度ステータスを確認
+- Kafka が正常に起動しているか確認: `docker compose logs kafka`
+- Shipping Service のログを確認: `docker compose logs shipping-service`
+- 数秒待ってから再度ステータスを確認
   ::
-::
+  ::
 
 ---
 
@@ -234,28 +240,28 @@ try {
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--kui-space-70); margin-top: var(--kui-space-60);">
 
-::card
----
-title: "📖 API ドキュメント"
----
+## ::card
+
+## title: "📖 API ドキュメント"
+
 各APIの詳細な仕様を確認
 
 [ドキュメントを見る →](/apis)
 ::
 
-::card
----
-title: "🔄 ライフサイクル"
----
+## ::card
+
+## title: "🔄 ライフサイクル"
+
 APIバージョニングと廃止ポリシー
 
 [ガイドを見る →](/guides/lifecycle)
 ::
 
-::card
----
-title: "📋 利用規約"
----
+## ::card
+
+## title: "📋 利用規約"
+
 利用ガイドラインとポリシー
 
 [規約を確認 →](/guides/regulation)
@@ -265,10 +271,10 @@ title: "📋 利用規約"
 
 ---
 
-::snippet
----
-name: "footer-support"
----
+## ::snippet
+
+## name: "footer-support"
+
 ::
 
 ::

@@ -22,14 +22,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ChatRequest"
+              $ref: '#/components/schemas/ChatRequest'
       responses:
-        "200":
+        '200':
           description: エージェントからの回答
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ChatResponse"
+                $ref: '#/components/schemas/ChatResponse'
   /api/agent/suggestions:
     get:
       operationId: getSuggestions
@@ -38,12 +38,12 @@ paths:
       tags:
         - Agent
       responses:
-        "200":
+        '200':
           description: 候補一覧
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SuggestionsResponse"
+                $ref: '#/components/schemas/SuggestionsResponse'
 components:
   schemas:
     Message:
@@ -70,7 +70,7 @@ components:
           description: 会話履歴（prompt の代わりに使用可能）
           minItems: 1
           items:
-            $ref: "#/components/schemas/Message"
+            $ref: '#/components/schemas/Message'
     ChatResponse:
       type: object
       properties:

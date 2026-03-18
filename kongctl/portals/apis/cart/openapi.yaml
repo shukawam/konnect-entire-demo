@@ -25,18 +25,18 @@ paths:
             type: string
           example: user-001
       responses:
-        "200":
+        '200':
           description: カート情報
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Cart"
-        "401":
+                $ref: '#/components/schemas/Cart'
+        '401':
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
     delete:
       operationId: clearCart
       summary: カートクリア
@@ -51,24 +51,24 @@ paths:
             type: string
           example: user-001
       responses:
-        "200":
+        '200':
           description: カートクリア完了
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Message"
-        "401":
+                $ref: '#/components/schemas/Message'
+        '401':
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-        "404":
+                $ref: '#/components/schemas/Error'
+        '404':
           description: カートが見つかりません
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
   /api/carts/items:
     post:
       operationId: addItem
@@ -88,20 +88,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddItem"
+              $ref: '#/components/schemas/AddItem'
       responses:
-        "201":
+        '201':
           description: 更新されたカート
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Cart"
-        "401":
+                $ref: '#/components/schemas/Cart'
+        '401':
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
   /api/carts/items/{itemId}:
     patch:
       operationId: updateItemQuantity
@@ -127,26 +127,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateQuantity"
+              $ref: '#/components/schemas/UpdateQuantity'
       responses:
-        "200":
+        '200':
           description: 更新された商品またはメッセージ
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CartItem"
-        "401":
+                $ref: '#/components/schemas/CartItem'
+        '401':
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-        "404":
+                $ref: '#/components/schemas/Error'
+        '404':
           description: 商品が見つかりません
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
     delete:
       operationId: deleteItem
       summary: 商品削除
@@ -167,24 +167,24 @@ paths:
             type: string
           example: item-001
       responses:
-        "200":
+        '200':
           description: 削除完了
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Message"
-        "401":
+                $ref: '#/components/schemas/Message'
+        '401':
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-        "404":
+                $ref: '#/components/schemas/Error'
+        '404':
           description: 商品が見つかりません
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     CartItem:
@@ -217,13 +217,13 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/CartItem"
+            $ref: '#/components/schemas/CartItem'
         createdAt:
           type: string
-          example: "2024-01-01T00:00:00.000Z"
+          example: '2024-01-01T00:00:00.000Z'
         updatedAt:
           type: string
-          example: "2024-01-01T00:00:00.000Z"
+          example: '2024-01-01T00:00:00.000Z'
     AddItem:
       type: object
       required:

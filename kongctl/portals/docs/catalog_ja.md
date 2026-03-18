@@ -34,23 +34,23 @@
 
 ### Product
 
-| 名前        | 型      | 説明             |
-| ----------- | ------- | ---------------- |
-| id          | string  | 商品の ID        |
-| name        | string  | 商品名           |
-| description | string  | 商品の説明       |
-| price       | integer | 商品の価格       |
-| imageUrl    | string  | 商品画像の URL   |
-| category    | string  | 商品カテゴリ     |
-| stock       | integer | 在庫数           |
-| createdAt   | string  | 作成日時         |
-| updatedAt   | string  | 更新日時         |
+| 名前        | 型      | 説明           |
+| ----------- | ------- | -------------- |
+| id          | string  | 商品の ID      |
+| name        | string  | 商品名         |
+| description | string  | 商品の説明     |
+| price       | integer | 商品の価格     |
+| imageUrl    | string  | 商品画像の URL |
+| category    | string  | 商品カテゴリ   |
+| stock       | integer | 在庫数         |
+| createdAt   | string  | 作成日時       |
+| updatedAt   | string  | 更新日時       |
 
 ### ProductList
 
-| 名前     | 型    | 説明           |
-| -------- | ----- | -------------- |
-| products | array | 商品の配列     |
-| total    | int   | 総件数         |
-| page     | int   | 現在のページ   |
-| limit    | int   | 1ページの件数  |
+| 名前     | 型    | 説明          |
+| -------- | ----- | ------------- |
+| products | array | 商品の配列    |
+| total    | int   | 総件数        |
+| page     | int   | 現在のページ  |
+| limit    | int   | 1ページの件数 |

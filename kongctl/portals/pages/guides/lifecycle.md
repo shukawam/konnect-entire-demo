@@ -1,26 +1,29 @@
 ---
-title: "API Lifecycle"
-description: "APIライフサイクル管理とバージョニングポリシー"
+title: 'API Lifecycle'
+description: 'APIライフサイクル管理とバージョニングポリシー'
 page-layout:
   sidebar-left: sidebar
 ---
 
-::page-section
----
+## ::page-section
+
 full-width: false
 padding: "var(--kui-space-80) var(--kui-space-50)"
+
 ---
 
 # 🔄 APIライフサイクル
 
 APIの計画的な進化と安定性を保つため、明確なライフサイクルポリシーを設けています。
 
-::alert
----
+## ::alert
+
 type: "info"
 show-icon: true
 message: "すべてのAPI変更は最低でも3ヶ月前に通知されます。"
+
 ---
+
 ::
 
 ---
@@ -29,10 +32,10 @@ message: "すべてのAPI変更は最低でも3ヶ月前に通知されます。
 
 各APIは以下のステージを経て進化します：
 
-::card
----
-title: "🚧 Beta"
----
+## ::card
+
+## title: "🚧 Beta"
+
 **開発中のAPI**
 
 - 機能やインターフェースが変更される可能性あり
@@ -42,10 +45,10 @@ title: "🚧 Beta"
 **期間:** 通常1-3ヶ月
 ::
 
-::card
----
-title: "✅ Stable"
----
+## ::card
+
+## title: "✅ Stable"
+
 **安定版API**
 
 - 本番環境での使用が推奨
@@ -55,10 +58,10 @@ title: "✅ Stable"
 **期間:** 無期限（または次のメジャーバージョンまで）
 ::
 
-::card
----
-title: "⚠️ Deprecated"
----
+## ::card
+
+## title: "⚠️ Deprecated"
+
 **非推奨API**
 
 - 新規開発での使用は推奨されません
@@ -68,10 +71,10 @@ title: "⚠️ Deprecated"
 **期間:** 通常6ヶ月
 ::
 
-::card
----
-title: "🔚 Sunset"
----
+## ::card
+
+## title: "🔚 Sunset"
+
 **廃止予定API**
 
 - 明確な廃止日が設定されます
@@ -171,12 +174,12 @@ X-API-Replacement: /v2/products
 コード例:
 
 ```javascript
-const response = await fetch(apiUrl);
+const response = await fetch(apiUrl)
 
 if (response.headers.get('X-API-Deprecated')) {
-  console.warn('This API is deprecated!');
-  console.log('Sunset date:', response.headers.get('X-API-Sunset-Date'));
-  console.log('Use instead:', response.headers.get('X-API-Replacement'));
+  console.warn('This API is deprecated!')
+  console.log('Sunset date:', response.headers.get('X-API-Sunset-Date'))
+  console.log('Use instead:', response.headers.get('X-API-Replacement'))
 }
 ```
 
@@ -184,11 +187,11 @@ if (response.headers.get('X-API-Deprecated')) {
 
 ## 📈 バージョン選択のガイドライン
 
-| 推奨度 | バージョン | 説明 |
-|--------|-----------|------|
-| ✅ **推奨** | 最新のStable | 最新機能とパフォーマンス、長期的なサポート保証 |
-| ⚠️ **注意** | Beta | 本番環境では使用しない、テスト目的のみ |
-| ❌ **非推奨** | Deprecated | 新規開発では使用しない、早期に最新版へ移行 |
+| 推奨度        | バージョン   | 説明                                           |
+| ------------- | ------------ | ---------------------------------------------- |
+| ✅ **推奨**   | 最新のStable | 最新機能とパフォーマンス、長期的なサポート保証 |
+| ⚠️ **注意**   | Beta         | 本番環境では使用しない、テスト目的のみ         |
+| ❌ **非推奨** | Deprecated   | 新規開発では使用しない、早期に最新版へ移行     |
 
 **現在の推奨バージョン:** v1.0.0
 
@@ -197,40 +200,42 @@ if (response.headers.get('X-API-Deprecated')) {
 ## 💡 よくある質問
 
 ::accordion-group
-  ::accordion-panel
-  #header
-  複数のメジャーバージョンを同時に使えますか？
-  #default
-  はい、可能です。アプリケーションの異なる部分で異なるバージョンを使用できます。ただし、移行を完了させることを推奨します。
-  ::
-  ::accordion-panel
-  #header
-  Betaバージョンを本番で使った場合はどうなりますか？
-  #default
-  動作しますが、予告なく変更される可能性があります。本番環境ではStableバージョンのみを使用してください。
-  ::
-  ::accordion-panel
-  #header
-  廃止予定日を過ぎたらどうなりますか？
-  #default
-  APIは引き続き動作する場合がありますが、保証されません。できるだけ早く移行してください。
-  ::
+::accordion-panel
+#header
+複数のメジャーバージョンを同時に使えますか？
+#default
+はい、可能です。アプリケーションの異なる部分で異なるバージョンを使用できます。ただし、移行を完了させることを推奨します。
+::
+::accordion-panel
+#header
+Betaバージョンを本番で使った場合はどうなりますか？
+#default
+動作しますが、予告なく変更される可能性があります。本番環境ではStableバージョンのみを使用してください。
+::
+::accordion-panel
+#header
+廃止予定日を過ぎたらどうなりますか？
+#default
+APIは引き続き動作する場合がありますが、保証されません。できるだけ早く移行してください。
+::
 ::
 
 ---
 
-::alert
----
+## ::alert
+
 appearance: "success"
 show-icon: true
 message: "APIのライフサイクルポリシーは、開発者のフィードバックに基づいて継続的に改善されます。"
+
 ---
+
 ::
 
-::snippet
----
-name: "footer-support"
----
+## ::snippet
+
+## name: "footer-support"
+
 ::
 
 ::

@@ -42,14 +42,14 @@
 
 ### Shipment
 
-| 名前           | 型             | 説明                               |
-| -------------- | -------------- | ---------------------------------- |
-| id             | string         | 発送の ID                          |
-| orderId        | string         | 関連する注文の ID                  |
-| userId         | string         | ユーザーの ID                      |
-| status         | string         | 発送ステータス (PROCESSING/SHIPPED)|
-| trackingNumber | string \| null | 追跡番号                           |
-| shippedAt      | string \| null | 発送日時                           |
-| deliveredAt    | string \| null | 配達日時                           |
-| createdAt      | string         | 作成日時                           |
-| updatedAt      | string         | 更新日時                           |
+| 名前           | 型             | 説明                                |
+| -------------- | -------------- | ----------------------------------- |
+| id             | string         | 発送の ID                           |
+| orderId        | string         | 関連する注文の ID                   |
+| userId         | string         | ユーザーの ID                       |
+| status         | string         | 発送ステータス (PROCESSING/SHIPPED) |
+| trackingNumber | string \| null | 追跡番号                            |
+| shippedAt      | string \| null | 発送日時                            |
+| deliveredAt    | string \| null | 配達日時                            |
+| createdAt      | string         | 作成日時                            |
+| updatedAt      | string         | 更新日時                            |

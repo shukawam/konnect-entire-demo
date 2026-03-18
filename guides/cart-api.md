@@ -6,20 +6,20 @@ Base URL: `http://localhost:8000/api/carts`
 
 ## 共通ヘッダー
 
-| ヘッダー | 説明 |
-|----------|------|
-| `apikey` | API キー（例: `demo-api-key`） |
-| `X-User-Id` | ユーザー ID |
+| ヘッダー    | 説明                           |
+| ----------- | ------------------------------ |
+| `apikey`    | API キー（例: `demo-api-key`） |
+| `X-User-Id` | ユーザー ID                    |
 
 ## エンドポイント一覧
 
-| メソッド | パス | 概要 |
-|----------|------|------|
-| GET | `/api/carts/` | カート取得 |
-| POST | `/api/carts/items` | 商品をカートに追加 |
-| PATCH | `/api/carts/items/{itemId}` | カート内商品の数量変更 |
-| DELETE | `/api/carts/items/{itemId}` | カートから商品を削除 |
-| DELETE | `/api/carts/` | カートを空にする |
+| メソッド | パス                        | 概要                   |
+| -------- | --------------------------- | ---------------------- |
+| GET      | `/api/carts/`               | カート取得             |
+| POST     | `/api/carts/items`          | 商品をカートに追加     |
+| PATCH    | `/api/carts/items/{itemId}` | カート内商品の数量変更 |
+| DELETE   | `/api/carts/items/{itemId}` | カートから商品を削除   |
+| DELETE   | `/api/carts/`               | カートを空にする       |
 
 ## カート取得
 
@@ -68,11 +68,11 @@ curl -X POST http://localhost:8000/api/carts/items \
 
 ### リクエストボディ
 
-| フィールド | 型 | 必須 | 説明 |
-|------------|------|------|------|
-| `productId` | string | Yes | 商品 ID |
-| `quantity` | number | Yes | 数量 |
-| `price` | number | Yes | 単価 |
+| フィールド  | 型     | 必須 | 説明    |
+| ----------- | ------ | ---- | ------- |
+| `productId` | string | Yes  | 商品 ID |
+| `quantity`  | number | Yes  | 数量    |
+| `price`     | number | Yes  | 単価    |
 
 ## カート内商品の数量変更
 

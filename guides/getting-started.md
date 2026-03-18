@@ -259,6 +259,7 @@ docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
 http://localhost:3010 にアクセス（ログイン不要）。
 
 プリインストール済みのデータソース:
+
 - **Prometheus** — メトリクス（Kong、サービス）
 - **Tempo** — 分散トレーシング（リクエストの全体フロー）
 - **Loki** — ログ集約

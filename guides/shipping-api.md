@@ -7,18 +7,18 @@ Base URL: `http://localhost:8000/api/shipments`
 
 ## 共通ヘッダー
 
-| ヘッダー | 説明 |
-|----------|------|
-| `apikey` | API キー（例: `demo-api-key`） |
-| `X-User-Id` | ユーザー ID |
+| ヘッダー    | 説明                           |
+| ----------- | ------------------------------ |
+| `apikey`    | API キー（例: `demo-api-key`） |
+| `X-User-Id` | ユーザー ID                    |
 
 ## エンドポイント一覧
 
-| メソッド | パス | 概要 |
-|----------|------|------|
-| GET | `/api/shipments/` | 配送一覧取得 |
-| GET | `/api/shipments/{id}` | 配送詳細取得 |
-| GET | `/api/shipments/order/{orderId}` | 注文 ID で配送情報取得 |
+| メソッド | パス                             | 概要                   |
+| -------- | -------------------------------- | ---------------------- |
+| GET      | `/api/shipments/`                | 配送一覧取得           |
+| GET      | `/api/shipments/{id}`            | 配送詳細取得           |
+| GET      | `/api/shipments/order/{orderId}` | 注文 ID で配送情報取得 |
 
 ## 配送一覧取得
 

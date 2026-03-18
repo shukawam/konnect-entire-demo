@@ -21,20 +21,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RegisterRequest"
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
-        "201":
+        '201':
           description: 登録完了
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
-        "409":
+                $ref: '#/components/schemas/UserResponse'
+        '409':
           description: メールアドレス重複
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
   /api/users/login:
     post:
       operationId: login
@@ -46,20 +46,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginRequest"
+              $ref: '#/components/schemas/LoginRequest'
       responses:
-        "200":
+        '200':
           description: ログイン成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
-        "401":
+                $ref: '#/components/schemas/UserResponse'
+        '401':
           description: 認証失敗
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
   /api/users/me:
     get:
       operationId: getMe
@@ -67,24 +67,24 @@ paths:
       tags:
         - User
       responses:
-        "200":
+        '200':
           description: プロフィール
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserProfile"
-        "401":
+                $ref: '#/components/schemas/UserProfile'
+        '401':
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-        "404":
+                $ref: '#/components/schemas/Error'
+        '404':
           description: ユーザーが見つかりません
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
     patch:
       operationId: updateMe
       summary: プロフィール更新
@@ -95,20 +95,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateProfileRequest"
+              $ref: '#/components/schemas/UpdateProfileRequest'
       responses:
-        "200":
+        '200':
           description: 更新完了
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserProfile"
-        "401":
+                $ref: '#/components/schemas/UserProfile'
+        '401':
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     RegisterRequest:

@@ -1,4 +1,4 @@
-_format_version: "3.0"
+_format_version: '3.0'
 
 services:
   - name: catalog-service
@@ -265,7 +265,7 @@ plugins:
       mode: conversion-listener
       tools:
         - name: list-products
-          description: "商品一覧を取得します。全商品の名前・価格・カテゴリ・在庫が返ります。"
+          description: '商品一覧を取得します。全商品の名前・価格・カテゴリ・在庫が返ります。'
           method: GET
           path: /api/products
           annotations:
@@ -279,7 +279,7 @@ plugins:
       mode: conversion-listener
       tools:
         - name: get-cart
-          description: "ユーザーのカート内容を取得します。"
+          description: 'ユーザーのカート内容を取得します。'
           method: GET
           path: /api/carts
           annotations:
@@ -293,7 +293,7 @@ plugins:
       mode: conversion-listener
       tools:
         - name: list-orders
-          description: "ユーザーの注文履歴を取得します。"
+          description: 'ユーザーの注文履歴を取得します。'
           method: GET
           path: /api/orders
           annotations:

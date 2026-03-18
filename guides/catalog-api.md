@@ -7,11 +7,11 @@ Base URL: `http://localhost:8000/api/products`
 
 ## エンドポイント一覧
 
-| メソッド | パス | 概要 |
-|----------|------|------|
-| GET | `/api/products/` | 商品一覧取得 |
-| GET | `/api/products/{id}` | 商品詳細取得 |
-| POST | `/api/products/` | 商品登録 |
+| メソッド | パス                 | 概要         |
+| -------- | -------------------- | ------------ |
+| GET      | `/api/products/`     | 商品一覧取得 |
+| GET      | `/api/products/{id}` | 商品詳細取得 |
+| POST     | `/api/products/`     | 商品登録     |
 
 ## 商品一覧取得
 
@@ -21,12 +21,12 @@ curl http://localhost:8000/api/products/
 
 ### クエリパラメータ
 
-| パラメータ | 型 | デフォルト | 説明 |
-|------------|------|-----------|------|
-| `category` | string | - | カテゴリでフィルタ |
-| `search` | string | - | 名前・説明文で検索 |
-| `page` | number | 1 | ページ番号 |
-| `limit` | number | 20 | 1 ページあたりの件数（最大 100） |
+| パラメータ | 型     | デフォルト | 説明                             |
+| ---------- | ------ | ---------- | -------------------------------- |
+| `category` | string | -          | カテゴリでフィルタ               |
+| `search`   | string | -          | 名前・説明文で検索               |
+| `page`     | number | 1          | ページ番号                       |
+| `limit`    | number | 20         | 1 ページあたりの件数（最大 100） |
 
 ### レスポンス例
 
@@ -105,11 +105,11 @@ curl -X POST http://localhost:8000/api/products/ \
 
 ### リクエストボディ
 
-| フィールド | 型 | 必須 | 説明 |
-|------------|------|------|------|
-| `name` | string | Yes | 商品名 |
-| `description` | string | Yes | 商品説明 |
-| `price` | number | Yes | 価格 |
-| `imageUrl` | string | Yes | 画像 URL |
-| `category` | string | Yes | カテゴリ |
-| `stock` | number | No | 在庫数（デフォルト: 0） |
+| フィールド    | 型     | 必須 | 説明                    |
+| ------------- | ------ | ---- | ----------------------- |
+| `name`        | string | Yes  | 商品名                  |
+| `description` | string | Yes  | 商品説明                |
+| `price`       | number | Yes  | 価格                    |
+| `imageUrl`    | string | Yes  | 画像 URL                |
+| `category`    | string | Yes  | カテゴリ                |
+| `stock`       | number | No   | 在庫数（デフォルト: 0） |

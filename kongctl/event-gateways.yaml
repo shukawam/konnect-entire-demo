@@ -14,7 +14,7 @@ event_gateways:
         name: jungle-store-kafka
         description: Local Kafka cluster for Jungle Store
         bootstrap_servers:
-          - "kafka:9092"
+          - 'kafka:9092'
         authentication:
           type: anonymous
           insecure_allow_anonymous_virtual_cluster_auth: true
@@ -42,20 +42,20 @@ event_gateways:
                     - name: write
                     - name: describe
                   resource_names:
-                    - match: "order.created"
+                    - match: 'order.created'
                 - action: allow
                   resource_type: topic
                   operations:
                     - name: read
                     - name: describe
                   resource_names:
-                    - match: "order.status-updated"
+                    - match: 'order.status-updated'
                 - action: allow
                   resource_type: group
                   operations:
                     - name: read
                   resource_names:
-                    - match: "order-service-group"
+                    - match: 'order-service-group'
                 - action: deny
                   resource_type: topic
                   operations:
@@ -63,7 +63,7 @@ event_gateways:
                     - name: read
                     - name: describe
                   resource_names:
-                    - match: "*"
+                    - match: '*'
 
       # Shipping Service 用 VC — order.created に read、order.status-updated に write
       - ref: shipping-service-vc
@@ -87,20 +87,20 @@ event_gateways:
                     - name: read
                     - name: describe
                   resource_names:
-                    - match: "order.created"
+                    - match: 'order.created'
                 - action: allow
                   resource_type: topic
                   operations:
                     - name: write
                     - name: describe
                   resource_names:
-                    - match: "order.status-updated"
+                    - match: 'order.status-updated'
                 - action: allow
                   resource_type: group
                   operations:
                     - name: read
                   resource_names:
-                    - match: "shipping-service-group"
+                    - match: 'shipping-service-group'
                 - action: deny
                   resource_type: topic
                   operations:
@@ -108,13 +108,13 @@ event_gateways:
                     - name: read
                     - name: describe
                   resource_names:
-                    - match: "*"
+                    - match: '*'
 
     listeners:
       - ref: order-service-listener
         name: order-service-listener
         addresses:
-          - "0.0.0.0"
+          - '0.0.0.0'
         ports:
           - 19091
           - 19092
@@ -126,13 +126,13 @@ event_gateways:
               type: port_mapping
               destination:
                 name: order-service-vc
-              advertised_host: "event-gateway"
+              advertised_host: 'event-gateway'
               bootstrap_port: at_start
               min_broker_id: 1
       - ref: shipping-service-listener
         name: shipping-service-listener
         addresses:
-          - "0.0.0.0"
+          - '0.0.0.0'
         ports:
           - 19093
           - 19094
@@ -144,6 +144,6 @@ event_gateways:
               type: port_mapping
               destination:
                 name: shipping-service-vc
-              advertised_host: "event-gateway"
+              advertised_host: 'event-gateway'
               bootstrap_port: at_start
               min_broker_id: 1

@@ -7,12 +7,12 @@ Base URL: `http://localhost:8000/api/users`
 
 ## エンドポイント一覧
 
-| メソッド | パス | 認証 | 概要 |
-|----------|------|------|------|
-| POST | `/api/users/register` | 不要 | ユーザー登録 |
-| POST | `/api/users/login` | 不要 | ログイン |
-| GET | `/api/users/me` | `X-User-Id` | プロフィール取得 |
-| PATCH | `/api/users/me` | `X-User-Id` | プロフィール更新 |
+| メソッド | パス                  | 認証        | 概要             |
+| -------- | --------------------- | ----------- | ---------------- |
+| POST     | `/api/users/register` | 不要        | ユーザー登録     |
+| POST     | `/api/users/login`    | 不要        | ログイン         |
+| GET      | `/api/users/me`       | `X-User-Id` | プロフィール取得 |
+| PATCH    | `/api/users/me`       | `X-User-Id` | プロフィール更新 |
 
 ## ユーザー登録
 
@@ -28,11 +28,11 @@ curl -X POST http://localhost:8000/api/users/register \
 
 ### リクエストボディ
 
-| フィールド | 型 | 必須 | 説明 |
-|------------|------|------|------|
-| `email` | string | Yes | メールアドレス（一意） |
-| `name` | string | Yes | ユーザー名 |
-| `password` | string | Yes | パスワード（6 文字以上） |
+| フィールド | 型     | 必須 | 説明                     |
+| ---------- | ------ | ---- | ------------------------ |
+| `email`    | string | Yes  | メールアドレス（一意）   |
+| `name`     | string | Yes  | ユーザー名               |
+| `password` | string | Yes  | パスワード（6 文字以上） |
 
 ### レスポンス例
 
@@ -101,7 +101,7 @@ curl -X PATCH http://localhost:8000/api/users/me \
 
 ### リクエストボディ
 
-| フィールド | 型 | 必須 | 説明 |
-|------------|------|------|------|
-| `name` | string | No | 新しいユーザー名 |
-| `email` | string | No | 新しいメールアドレス |
+| フィールド | 型     | 必須 | 説明                 |
+| ---------- | ------ | ---- | -------------------- |
+| `name`     | string | No   | 新しいユーザー名     |
+| `email`    | string | No   | 新しいメールアドレス |

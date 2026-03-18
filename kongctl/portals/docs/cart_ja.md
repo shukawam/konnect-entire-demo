@@ -49,34 +49,34 @@
 
 ### Cart
 
-| 名前      | 型     | 説明                   |
-| --------- | ------ | ---------------------- |
-| id        | string | カートの ID            |
-| userId    | string | ユーザーの ID          |
-| items     | array  | カート内の商品の配列   |
-| createdAt | string | 作成日時               |
-| updatedAt | string | 更新日時               |
+| 名前      | 型     | 説明                 |
+| --------- | ------ | -------------------- |
+| id        | string | カートの ID          |
+| userId    | string | ユーザーの ID        |
+| items     | array  | カート内の商品の配列 |
+| createdAt | string | 作成日時             |
+| updatedAt | string | 更新日時             |
 
 ### CartItem
 
-| 名前      | 型      | 説明           |
-| --------- | ------- | -------------- |
-| id        | string  | アイテム ID    |
-| cartId    | string  | カートの ID    |
-| productId | string  | 商品の ID      |
-| quantity  | integer | 商品の数量     |
-| price     | integer | 商品の単価     |
+| 名前      | 型      | 説明        |
+| --------- | ------- | ----------- |
+| id        | string  | アイテム ID |
+| cartId    | string  | カートの ID |
+| productId | string  | 商品の ID   |
+| quantity  | integer | 商品の数量  |
+| price     | integer | 商品の単価  |
 
 ### AddItem
 
-| 名前      | 型      | 必須 | 説明       |
-| --------- | ------- | ---- | ---------- |
-| productId | string  | はい | 商品の ID  |
-| quantity  | integer | はい | 数量       |
-| price     | integer | はい | 単価       |
+| 名前      | 型      | 必須 | 説明      |
+| --------- | ------- | ---- | --------- |
+| productId | string  | はい | 商品の ID |
+| quantity  | integer | はい | 数量      |
+| price     | integer | はい | 単価      |
 
 ### UpdateQuantity
 
-| 名前     | 型      | 必須 | 説明                           |
-| -------- | ------- | ---- | ------------------------------ |
+| 名前     | 型      | 必須 | 説明                          |
+| -------- | ------- | ---- | ----------------------------- |
 | quantity | integer | はい | 新しい数量（0以下で商品削除） |

@@ -38,41 +38,41 @@
 
 ### RegisterRequest
 
-| 名前     | 型     | 必須 | 説明                       |
-| -------- | ------ | ---- | -------------------------- |
-| email    | string | はい | メールアドレス             |
-| name     | string | はい | ユーザー名（1文字以上）    |
-| password | string | はい | パスワード（6文字以上）    |
+| 名前     | 型     | 必須 | 説明                    |
+| -------- | ------ | ---- | ----------------------- |
+| email    | string | はい | メールアドレス          |
+| name     | string | はい | ユーザー名（1文字以上） |
+| password | string | はい | パスワード（6文字以上） |
 
 ### LoginRequest
 
-| 名前     | 型     | 必須 | 説明             |
-| -------- | ------ | ---- | ---------------- |
-| email    | string | はい | メールアドレス   |
-| password | string | はい | パスワード       |
+| 名前     | 型     | 必須 | 説明           |
+| -------- | ------ | ---- | -------------- |
+| email    | string | はい | メールアドレス |
+| password | string | はい | パスワード     |
 
 ### UserResponse
 
-| 名前   | 型     | 説明                |
-| ------ | ------ | ------------------- |
-| id     | string | ユーザーの ID       |
-| email  | string | メールアドレス      |
-| name   | string | ユーザー名          |
-| apiKey | string | API Key（認証用）   |
+| 名前   | 型     | 説明              |
+| ------ | ------ | ----------------- |
+| id     | string | ユーザーの ID     |
+| email  | string | メールアドレス    |
+| name   | string | ユーザー名        |
+| apiKey | string | API Key（認証用） |
 
 ### UserProfile
 
-| 名前      | 型     | 説明             |
-| --------- | ------ | ---------------- |
-| id        | string | ユーザーの ID    |
-| email     | string | メールアドレス   |
-| name      | string | ユーザー名       |
-| createdAt | string | 作成日時         |
-| updatedAt | string | 更新日時         |
+| 名前      | 型     | 説明           |
+| --------- | ------ | -------------- |
+| id        | string | ユーザーの ID  |
+| email     | string | メールアドレス |
+| name      | string | ユーザー名     |
+| createdAt | string | 作成日時       |
+| updatedAt | string | 更新日時       |
 
 ### UpdateProfileRequest
 
-| 名前  | 型     | 必須 | 説明               |
-| ----- | ------ | ---- | ------------------ |
-| name  | string | いいえ | ユーザー名       |
-| email | string | いいえ | メールアドレス   |
+| 名前  | 型     | 必須   | 説明           |
+| ----- | ------ | ------ | -------------- |
+| name  | string | いいえ | ユーザー名     |
+| email | string | いいえ | メールアドレス |

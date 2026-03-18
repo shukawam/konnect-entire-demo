@@ -13,19 +13,19 @@ Built with gorilla-themed product data, it demonstrates API Gateway capabilities
 
 ## Tech Stack
 
-| Layer            | Technology                                       |
-| ---------------- | ------------------------------------------------ |
-| Frontend         | Next.js 15, React 19, @vercel/otel               |
-| Backend          | Hono, @hono/zod-openapi, Prisma, KafkaJS         |
-| AI Agent         | @volcano.dev/agent, Kong AI Proxy + MCP Proxy     |
-| API Gateway      | Kong Gateway 3.13 (Konnect hybrid mode)          |
-| Event Gateway    | Kong Event Gateway (Kafka proxy with ACL)        |
-| Database         | MySQL 8.0                                        |
-| Cache            | Redis 8.0 (vector DB for AI Prompt Guard)        |
-| Messaging        | Apache Kafka 3.7.0                               |
-| Observability    | Grafana, Tempo, Prometheus, Loki, OTel Collector |
-| Config Management| Deck (Kong declarative config sync)              |
-| Monorepo         | npm workspaces (`packages/*`, `services/*`)      |
+| Layer             | Technology                                       |
+| ----------------- | ------------------------------------------------ |
+| Frontend          | Next.js 15, React 19, @vercel/otel               |
+| Backend           | Hono, @hono/zod-openapi, Prisma, KafkaJS         |
+| AI Agent          | @volcano.dev/agent, Kong AI Proxy + MCP Proxy    |
+| API Gateway       | Kong Gateway 3.13 (Konnect hybrid mode)          |
+| Event Gateway     | Kong Event Gateway (Kafka proxy with ACL)        |
+| Database          | MySQL 8.0                                        |
+| Cache             | Redis 8.0 (vector DB for AI Prompt Guard)        |
+| Messaging         | Apache Kafka 3.7.0                               |
+| Observability     | Grafana, Tempo, Prometheus, Loki, OTel Collector |
+| Config Management | Deck (Kong declarative config sync)              |
+| Monorepo          | npm workspaces (`packages/*`, `services/*`)      |
 
 ## Prerequisites
 
@@ -43,12 +43,12 @@ cp .env.example .env
 
 Open `.env` and configure the following values for your environment:
 
-| Variable | Description | Example |
-| --- | --- | --- |
-| `CONTROL_PLANE_ID` | Konnect control plane ID | `xxxxxxxx-xxxx-...` |
-| `EVENT_GATEWAY_CP_ID` | Konnect Event Gateway control plane ID | `xxxxxxxx-xxxx-...` |
-| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect control plane name | `my-control-plane` |
-| `DECK_OPENAI_API_KEY` | OpenAI API key (for AI Gateway) | `sk-...` |
+| Variable                          | Description                            | Example             |
+| --------------------------------- | -------------------------------------- | ------------------- |
+| `CONTROL_PLANE_ID`                | Konnect control plane ID               | `xxxxxxxx-xxxx-...` |
+| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway control plane ID | `xxxxxxxx-xxxx-...` |
+| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect control plane name             | `my-control-plane`  |
+| `DECK_OPENAI_API_KEY`             | OpenAI API key (for AI Gateway)        | `sk-...`            |
 
 Other variables (MySQL, Kafka, service URLs, etc.) work with their default values.
 
@@ -131,19 +131,19 @@ curl -X POST http://localhost:8000/api/orders \
 
 ### Kong Plugins
 
-| Plugin | Scope | Description |
-| --- | --- | --- |
-| `cors` | Global | CORS header management |
-| `rate-limiting-advanced` | Global | 60 req/min |
-| `correlation-id` | Global | Auto-assigns `X-Request-Id` header |
-| `opentelemetry` | Global | Sends traces, logs, and metrics to OTel Collector |
-| `key-auth` | Cart, Order, Shipping | API key authentication |
-| `rate-limiting` | Order | 10 req/min (strict limit) |
-| `proxy-cache` | Catalog | Caches GET responses for 30 seconds |
-| `ai-semantic-prompt-guard` | AI Gateway | Input validation with allow/deny rules (Redis + Embeddings) |
-| `ai-prompt-decorator` | AI Gateway | Auto-injects gorilla character system prompt |
-| `ai-proxy-advanced` | AI Gateway | LLM proxy to OpenAI GPT-4o-mini |
-| `ai-mcp-proxy` | MCP (3 routes) | Model Context Protocol tool serving |
+| Plugin                     | Scope                 | Description                                                 |
+| -------------------------- | --------------------- | ----------------------------------------------------------- |
+| `cors`                     | Global                | CORS header management                                      |
+| `rate-limiting-advanced`   | Global                | 60 req/min                                                  |
+| `correlation-id`           | Global                | Auto-assigns `X-Request-Id` header                          |
+| `opentelemetry`            | Global                | Sends traces, logs, and metrics to OTel Collector           |
+| `key-auth`                 | Cart, Order, Shipping | API key authentication                                      |
+| `rate-limiting`            | Order                 | 10 req/min (strict limit)                                   |
+| `proxy-cache`              | Catalog               | Caches GET responses for 30 seconds                         |
+| `ai-semantic-prompt-guard` | AI Gateway            | Input validation with allow/deny rules (Redis + Embeddings) |
+| `ai-prompt-decorator`      | AI Gateway            | Auto-injects gorilla character system prompt                |
+| `ai-proxy-advanced`        | AI Gateway            | LLM proxy to OpenAI GPT-4o-mini                             |
+| `ai-mcp-proxy`             | MCP (3 routes)        | Model Context Protocol tool serving                         |
 
 ### Key-Auth
 
@@ -194,11 +194,11 @@ The Agent Service (port 3006) is an AI chatbot powered by Kong AI Gateway and MC
 
 ### MCP Routes
 
-| Route | Target Service | Tool |
-| --- | --- | --- |
-| `/mcp/products` | Catalog | `list-products` — List all products |
-| `/mcp/carts` | Cart | `get-cart` — Get cart contents |
-| `/mcp/orders` | Order | `list-orders` — Get order history |
+| Route           | Target Service | Tool                                |
+| --------------- | -------------- | ----------------------------------- |
+| `/mcp/products` | Catalog        | `list-products` — List all products |
+| `/mcp/carts`    | Cart           | `get-cart` — Get cart contents      |
+| `/mcp/orders`   | Order          | `list-orders` — Get order history   |
 
 ### Trying the AI Chat
 
@@ -210,10 +210,10 @@ The order-to-shipment flow is handled asynchronously via Kafka. **Kong Event Gat
 
 ### Topic ACL
 
-| Service | Write | Read |
-| --- | --- | --- |
-| Order Service (port 19092) | `order.created` | `order.status-updated` |
-| Shipping Service (port 19093) | `order.status-updated` | `order.created` |
+| Service                       | Write                  | Read                   |
+| ----------------------------- | ---------------------- | ---------------------- |
+| Order Service (port 19092)    | `order.created`        | `order.status-updated` |
+| Shipping Service (port 19093) | `order.status-updated` | `order.created`        |
 
 ### Event Flow
 
@@ -244,14 +244,14 @@ All services send telemetry via OTel Collector to Tempo (traces), Prometheus (me
 
 The `kongctl/` directory contains declarative configuration for Konnect resources.
 
-| File | Contents |
-| --- | --- |
-| `apis.yaml` | 6 API definitions (Catalog, Cart, Order, Shipping, User, Agent) |
-| `control-planes.yaml` | Control plane configuration |
-| `event-gateways.yaml` | Event Gateway + topic ACL configuration |
-| `portals.yaml` | Developer portal configuration |
-| `portal-teams.yaml` | Portal team configuration |
-| `portals/` | OAS specs, API documentation, guide pages |
+| File                  | Contents                                                        |
+| --------------------- | --------------------------------------------------------------- |
+| `apis.yaml`           | 6 API definitions (Catalog, Cart, Order, Shipping, User, Agent) |
+| `control-planes.yaml` | Control plane configuration                                     |
+| `event-gateways.yaml` | Event Gateway + topic ACL configuration                         |
+| `portals.yaml`        | Developer portal configuration                                  |
+| `portal-teams.yaml`   | Portal team configuration                                       |
+| `portals/`            | OAS specs, API documentation, guide pages                       |
 
 ## API Reference
 

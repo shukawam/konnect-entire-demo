@@ -6,7 +6,7 @@ apis:
   - ref: catalog-api
     name: !file portals/apis/catalog/openapi.yaml#info.title
     description: !file portals/apis/catalog/openapi.yaml#info.description
-    version: "1.0.0"
+    version: '1.0.0'
     labels:
       app: jungle-store
     attributes:
@@ -32,7 +32,7 @@ apis:
   - ref: cart-api
     name: !file portals/apis/cart/openapi.yaml#info.title
     description: !file portals/apis/cart/openapi.yaml#info.description
-    version: "1.0.0"
+    version: '1.0.0'
     labels:
       app: jungle-store
     attributes:
@@ -58,7 +58,7 @@ apis:
   - ref: order-api
     name: !file portals/apis/order/openapi.yaml#info.title
     description: !file portals/apis/order/openapi.yaml#info.description
-    version: "1.0.0"
+    version: '1.0.0'
     labels:
       app: jungle-store
     attributes:
@@ -84,7 +84,7 @@ apis:
   - ref: shipping-api
     name: !file portals/apis/shipping/openapi.yaml#info.title
     description: !file portals/apis/shipping/openapi.yaml#info.description
-    version: "1.0.0"
+    version: '1.0.0'
     labels:
       app: jungle-store
     attributes:
@@ -110,7 +110,7 @@ apis:
   - ref: user-api
     name: !file portals/apis/user/openapi.yaml#info.title
     description: !file portals/apis/user/openapi.yaml#info.description
-    version: "1.0.0"
+    version: '1.0.0'
     labels:
       app: jungle-store
     attributes:
@@ -136,7 +136,7 @@ apis:
   - ref: agent-api
     name: !file portals/apis/agent/openapi.yaml#info.title
     description: !file portals/apis/agent/openapi.yaml#info.description
-    version: "0.1.0"
+    version: '0.1.0'
     labels:
       app: jungle-store
     attributes:

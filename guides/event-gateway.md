@@ -27,7 +27,7 @@ backend_clusters:
   - ref: jungle-store-kafka
     name: jungle-store-kafka
     bootstrap_servers:
-      - "kafka:9092"
+      - 'kafka:9092'
     authentication:
       type: anonymous
 ```
@@ -67,30 +67,31 @@ rules:
   - action: allow
     resource_type: topic
     operations: [write, describe]
-    resource_names: ["order.created"]
+    resource_names: ['order.created']
 
   # order.status-updated の read を許可
   - action: allow
     resource_type: topic
     operations: [read, describe]
-    resource_names: ["order.status-updated"]
+    resource_names: ['order.status-updated']
 
   # コンシューマーグループの使用を許可
   - action: allow
     resource_type: group
     operations: [read]
-    resource_names: ["order-service-group"]
+    resource_names: ['order-service-group']
 
   # それ以外のトピックはすべて拒否
   - action: deny
     resource_type: topic
     operations: [write, read, describe]
-    resource_names: ["*"]
+    resource_names: ['*']
 ```
 
 ### Shipping Service（`shipping-service-acl`）
 
 Order Service と逆方向のアクセス権を持ちます:
+
 - `order.created` の **read** を許可
 - `order.status-updated` の **write** を許可
 - `shipping-service-group` コンシューマーグループの使用を許可

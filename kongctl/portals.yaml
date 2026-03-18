@@ -22,47 +22,47 @@ portals:
         visibility: public
         content: !file portals/pages/home.md
       - ref: apis
-        slug: "apis"
-        title: "APIs"
-        description: "API Products available in this Developer Portal."
-        visibility: "private"
-        status: "published"
+        slug: 'apis'
+        title: 'APIs'
+        description: 'API Products available in this Developer Portal.'
+        visibility: 'private'
+        status: 'published'
         content: !file portals/pages/apis.md
       - ref: guides
-        slug: "guides"
-        title: "Guides"
-        description: "Guide for Developer Portal"
-        visibility: "private"
-        status: "published"
+        slug: 'guides'
+        title: 'Guides'
+        description: 'Guide for Developer Portal'
+        visibility: 'private'
+        status: 'published'
         content: !file portals/pages/guides/guides.md
         children:
           - ref: guides-getting-started
-            slug: "getting-started"
-            title: "Getting Started Guide"
-            description: "APIの利用開始から実際の統合まで"
-            visibility: "public"
-            status: "published"
+            slug: 'getting-started'
+            title: 'Getting Started Guide'
+            description: 'APIの利用開始から実際の統合まで'
+            visibility: 'public'
+            status: 'published'
             content: !file portals/pages/guides/getting-started.md
           - ref: guides-lifecycle
-            slug: "lifecycle"
-            title: "API Lifecycle"
-            description: "APIライフサイクル管理とバージョニングポリシー"
-            visibility: "public"
-            status: "published"
+            slug: 'lifecycle'
+            title: 'API Lifecycle'
+            description: 'APIライフサイクル管理とバージョニングポリシー'
+            visibility: 'public'
+            status: 'published'
             content: !file portals/pages/guides/lifecycle.md
           - ref: guides-usage
-            slug: "usage"
-            title: "API Usage Guide"
-            description: "API利用ガイド - ベストプラクティスとパターン"
-            visibility: "public"
-            status: "published"
+            slug: 'usage'
+            title: 'API Usage Guide'
+            description: 'API利用ガイド - ベストプラクティスとパターン'
+            visibility: 'public'
+            status: 'published'
             content: !file portals/pages/guides/usage.md
           - ref: guides-regulation
-            slug: "regulation"
-            title: "Regulations & Policies"
-            description: "利用規約、ポリシー、コンプライアンス"
-            visibility: "public"
-            status: "published"
+            slug: 'regulation'
+            title: 'Regulations & Policies'
+            description: '利用規約、ポリシー、コンプライアンス'
+            visibility: 'public'
+            status: 'published'
             content: !file portals/pages/guides/regulation.md
 
     snippets:

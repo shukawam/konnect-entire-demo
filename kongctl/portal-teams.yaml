@@ -6,7 +6,7 @@ portal_teams:
   - ref: catalog-dev-team
     portal: jungle-store-dev-portal
     name: Catalog API Developer Team
-    description: "Developers with API read access"
+    description: 'Developers with API read access'
     roles:
       - ref: catalog-dev-team-api-viewer
         role_name: API Viewer
@@ -16,7 +16,7 @@ portal_teams:
   - ref: cart-dev-team
     portal: jungle-store-dev-portal
     name: Cart API Developer Team
-    description: "Developers with API read access"
+    description: 'Developers with API read access'
     roles:
       - ref: cart-dev-team-api-viewer
         role_name: API Viewer
@@ -26,7 +26,7 @@ portal_teams:
   - ref: order-dev-team
     portal: jungle-store-dev-portal
     name: Order API Developer Team
-    description: "Developers with API read access"
+    description: 'Developers with API read access'
     roles:
       - ref: order-dev-team-api-viewer
         role_name: API Viewer
@@ -36,7 +36,7 @@ portal_teams:
   - ref: shipping-dev-team
     portal: jungle-store-dev-portal
     name: Shipping API Developer Team
-    description: "Developers with API read access"
+    description: 'Developers with API read access'
     roles:
       - ref: shipping-dev-team-api-viewer
         role_name: API Viewer
@@ -46,7 +46,7 @@ portal_teams:
   - ref: user-dev-team
     portal: jungle-store-dev-portal
     name: User API Developer Team
-    description: "Developers with API read access"
+    description: 'Developers with API read access'
     roles:
       - ref: user-dev-team-api-viewer
         role_name: API Viewer

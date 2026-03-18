@@ -47,22 +47,22 @@
 
 ### Order
 
-| 名前       | 型     | 説明                                         |
-| ---------- | ------ | -------------------------------------------- |
-| id         | string | 注文の ID                                    |
-| userId     | string | ユーザーの ID                                |
-| status     | string | 注文ステータス (PENDING/CONFIRMED/SHIPPED)   |
-| totalPrice | number | 注文の合計金額                               |
-| items      | array  | 注文に含まれる商品の配列                     |
-| createdAt  | string | 注文作成日時                                 |
-| updatedAt  | string | 更新日時                                     |
+| 名前       | 型     | 説明                                       |
+| ---------- | ------ | ------------------------------------------ |
+| id         | string | 注文の ID                                  |
+| userId     | string | ユーザーの ID                              |
+| status     | string | 注文ステータス (PENDING/CONFIRMED/SHIPPED) |
+| totalPrice | number | 注文の合計金額                             |
+| items      | array  | 注文に含まれる商品の配列                   |
+| createdAt  | string | 注文作成日時                               |
+| updatedAt  | string | 更新日時                                   |
 
 ### OrderItem
 
-| 名前      | 型      | 説明         |
-| --------- | ------- | ------------ |
-| id        | string  | アイテム ID  |
-| orderId   | string  | 注文の ID    |
-| productId | string  | 商品の ID    |
-| quantity  | integer | 商品の数量   |
-| price     | number  | 商品の単価   |
+| 名前      | 型      | 説明        |
+| --------- | ------- | ----------- |
+| id        | string  | アイテム ID |
+| orderId   | string  | 注文の ID   |
+| productId | string  | 商品の ID   |
+| quantity  | integer | 商品の数量  |
+| price     | number  | 商品の単価  |
