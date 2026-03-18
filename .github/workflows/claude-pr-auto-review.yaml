@@ -1,0 +1,60 @@
+name: Claude PR Auto Review
+
+on:
+  pull_request:
+    # pushごとの再実行（synchronize）は外す
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+  checks: read
+  statuses: read
+
+concurrency:
+  group: claude-pr-auto-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code auto review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          track_progress: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            このPRをレビューしてください。以下の観点でレビューを行ってください:
+            - コード品質とベストプラクティス
+            - 潜在的なバグや問題
+            - セキュリティへの影響
+            - パフォーマンスへの考慮
+
+            重要度分類（High/Med/Low）で指摘を行い、各問題の理由と具体的な修正案を提示してください。
+            不確実な場合はその旨を明記してください。日本語で回答してください。
+
+            Note: PRブランチは現在のワーキングディレクトリにチェックアウト済みです。
+
+            `gh pr comment` でトップレベルのフィードバックを投稿してください。
+            `mcp__github_inline_comment__create_inline_comment`（`confirmed: true` 付き）で特定のコード行の問題を指摘してください。
+            GitHub コメントとしてのみ投稿し、メッセージとしてレビューテキストを出力しないでください。
+          claude_args: |
+            --permission-mode bypassPermissions
+            --max-turns 15
+            --model claude-sonnet-4-6
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr checks:*),Read,Glob,Grep"
