@@ -18,6 +18,15 @@ processors:
         - 'name == "prisma:client:detect_platform"'
         - 'attributes["url.path"] == "/health"'
         - 'attributes["http.target"] == "/health"'
+        - 'attributes["http.target"] == "/"'
+        - 'attributes["api_kind"] == "heartbeat"'
+        - 'attributes["api_kind"] == "list_offsets"'
+        - 'attributes["api_kind"] == "offset_fetch"'
+        - 'attributes["api_kind"] == "metadata"'
+        - 'attributes["api_kind"] == "sync_group"'
+        - 'attributes["api_kind"] == "join_group"'
+        - 'attributes["api_kind"] == "find_coordinator"'
+        - 'attributes["api_kind"] == "APIVersion(6)"'
 
 exporters:
   otlphttp/tempo:
