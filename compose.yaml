@@ -156,34 +156,18 @@ services:
     container_name: event-gateway
     image: kong/kong-event-gateway:latest
     environment:
+      # see: https://developer.konghq.com/event-gateway/configuration/
       KONNECT_REGION: us
       KONNECT_DOMAIN: konghq.com
       KONNECT_GATEWAY_CLUSTER_ID: ${EVENT_GATEWAY_CP_ID:-}
-      # KONNECT_CLIENT_CERT: /etc/kong/cluster-certs/cluster.crt
-      # KONNECT_CLIENT_KEY: /etc/kong/cluster-certs/cluster.key
-      KONNECT_CLIENT_CERT: |
-        -----BEGIN CERTIFICATE-----
-        MIICUjCCAfigAwIBAgIBATAKBggqhkjOPQQDBDBaMVgwCQYDVQQGEwJVUzBLBgNV
-        BAMeRABrAG8AbgBuAGUAYwB0AC0AagB1AG4AZwBsAGUALQBzAHQAbwByAGUALQBl
-        AHYAZQBuAHQALQBnAGEAdABlAHcAYQB5MB4XDTI2MDMxODA3NTgxMFoXDTM2MDMx
-        ODA3NTgxMFowWjFYMAkGA1UEBhMCVVMwSwYDVQQDHkQAawBvAG4AbgBlAGMAdAAt
-        AGoAdQBuAGcAbABlAC0AcwB0AG8AcgBlAC0AZQB2AGUAbgB0AC0AZwBhAHQAZQB3
-        AGEAeTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABA8A7ZLfjZX4fv7ct4JMFi8G
-        aUKbwCaFcU4aj5MNxU9P2NAHMdhNJupfYfk6ec0RaqkIbo6qZCoJkmPLRPzoBqaj
-        ga4wgaswDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCAAYwHQYDVR0lBBYwFAYIKwYB
-        BQUHAwEGCCsGAQUFBwMCMBcGCSsGAQQBgjcUAgQKDAhjZXJ0VHlwZTAjBgkrBgEE
-        AYI3FQIEFgQUAQEBAQEBAQEBAQEBAQEBAQEBAQEwHAYJKwYBBAGCNxUHBA8wDQYF
-        KQEBAQECAQoCARQwEwYJKwYBBAGCNxUBBAYCBAAUAAowCgYIKoZIzj0EAwQDSAAw
-        RQIhAM1NE4ePjCp7nGMm1FoJa/lFK2F9vBeareRnQKLioGz1AiAFk+/p5kZfXAXd
-        J0tlpfNMukSdU/kMt4cWcFMzlfU7Vw==
-        -----END CERTIFICATE----- 
-      KONNECT_CLIENT_KEY: |
-        -----BEGIN PRIVATE KEY-----
-        MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgG9AJGIOVL23K80We
-        NycXSiq5SJdZPsaqeVUIBYpkeY6gCgYIKoZIzj0DAQehRANCAAQPAO2S342V+H7+
-        3LeCTBYvBmlCm8AmhXFOGo+TDcVPT9jQBzHYTSbqX2H5OnnNEWqpCG6OqmQqCZJj
-        y0T86Aam
-        -----END PRIVATE KEY-----
+      KONNECT_CLIENT_CERT_PATH: /etc/kong/cluster-certs/cluster.crt
+      KONNECT_CLIENT_KEY_PATH: /etc/kong/cluster-certs/cluster.key
+      KEG__OBSERVABILITY__LOG_FLAGS: info
+      KEG__OBSERVABILITY__LOG_FORMAT: json
+      KEG__OBSERVABILITY__METRICS_ROLLUP_ALLOW_MAP: 'api_kind=produce,fetch'
+      KEG__OBSERVABILITY__OTLP__TRACING__ENABLED: true
+      OTEL_SERVICE_NAME: event-gateway
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     ports:
       - 19091:19091
       - 19092:19092
