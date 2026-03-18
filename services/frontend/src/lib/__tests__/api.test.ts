@@ -24,7 +24,7 @@ describe('apiFetch', () => {
     expect(result).toEqual({ data: 'test' })
     expect(mockFetch).toHaveBeenCalledTimes(1)
     const [url, options] = mockFetch.mock.calls[0]
-    expect(url).toBe('http://localhost:8000/api/products')
+    expect(url).toBe('/api/proxy/api/products')
     expect(options.headers['Content-Type']).toBe('application/json')
     // traceparent may be undefined if crypto.getRandomValues is unavailable in test env
     // The header is generated at runtime in the browser
