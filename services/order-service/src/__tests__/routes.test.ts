@@ -165,7 +165,7 @@ describe('POST /', () => {
     const body = await res.json()
     expect(body).toEqual(createdOrder)
 
-    // Verify Kafka event published
+    // Verify Kafka event published (with trace context headers)
     expect(producer.send).toHaveBeenCalledWith({
       topic: 'order.created',
       messages: [
@@ -178,6 +178,7 @@ describe('POST /', () => {
             totalPrice: 3000,
             createdAt: '2026-01-01T00:00:00.000Z',
           }),
+          headers: expect.any(Object),
         },
       ],
     })

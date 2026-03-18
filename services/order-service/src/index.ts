@@ -1,13 +1,18 @@
 import { serve } from '@hono/node-server'
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { logger } from 'hono/logger'
+import { createLogger } from '@konnect-demo/shared'
 import routes from './routes.js'
 import { connectKafka, disconnectKafka } from './kafka.js'
 import { startConsumer } from './consumer.js'
 
+const log = createLogger('order-service')
 const app = new OpenAPIHono()
 
-app.use('*', logger())
+app.use(
+  '*',
+  logger((message) => log.info(message)),
+)
 app.get('/health', (c) => c.json({ status: 'ok' }))
 app.route('/api/orders', routes)
 
@@ -23,18 +28,18 @@ async function main() {
   try {
     await connectKafka()
     await startConsumer()
-    console.log('Kafka consumer started')
+    log.info('Kafka consumer started')
   } catch (err) {
-    console.error('Failed to connect Kafka, starting without it:', err)
+    log.error({ err }, 'Failed to connect Kafka, starting without it')
   }
 
   serve({ fetch: app.fetch, port }, () => {
-    console.log(`Order service running on port ${port}`)
+    log.info({ port }, 'Order service running')
   })
 }
 
 process.on('SIGTERM', async () => {
-  console.log('Shutting down...')
+  log.info('Shutting down...')
   await disconnectKafka()
   process.exit(0)
 })

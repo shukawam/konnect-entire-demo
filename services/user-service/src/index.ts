@@ -1,11 +1,16 @@
 import { serve } from '@hono/node-server'
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { logger } from 'hono/logger'
+import { createLogger } from '@konnect-demo/shared'
 import userRoutes from './routes.js'
 
+const log = createLogger('user-service')
 const app = new OpenAPIHono()
 
-app.use('*', logger())
+app.use(
+  '*',
+  logger((message) => log.info(message)),
+)
 app.get('/health', (c) => c.json({ status: 'ok' }))
 app.route('/api/users', userRoutes)
 
@@ -16,5 +21,5 @@ app.doc('/openapi.json', {
 })
 
 const port = parseInt(process.env.PORT || '3005')
-console.log(`User Service starting on port ${port}`)
+log.info({ port }, 'User Service starting')
 serve({ fetch: app.fetch, port })

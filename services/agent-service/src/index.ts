@@ -3,7 +3,10 @@ import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import pino from 'pino'
 import { runAgent } from './agent.js'
+
+const log = pino({ name: 'agent-service', level: process.env.LOG_LEVEL || 'info' })
 
 const messageSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -21,7 +24,10 @@ const chatRequestSchema = z
 
 const app = new Hono()
 
-app.use('*', logger())
+app.use(
+  '*',
+  logger((message) => log.info(message)),
+)
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
@@ -52,5 +58,5 @@ app.get('/api/agent/suggestions', (c) => {
 })
 
 const port = parseInt(process.env.PORT || '3006')
-console.log(`Agent Service starting on port ${port}`)
+log.info({ port }, 'Agent Service starting')
 serve({ fetch: app.fetch, port })

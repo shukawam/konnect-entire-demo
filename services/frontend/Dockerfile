@@ -11,7 +11,7 @@ COPY services/shipping-service/package.json ./services/shipping-service/
 COPY services/user-service/package.json ./services/user-service/
 COPY services/agent-service/package.json ./services/agent-service/
 
-RUN npm install --workspace=services/frontend
+RUN npm install --workspace=services/frontend --ignore-scripts
 
 COPY packages/shared/ ./packages/shared/
 COPY services/frontend/ ./services/frontend/

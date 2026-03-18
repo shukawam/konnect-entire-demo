@@ -10,7 +10,7 @@ COPY services/order-service/package.json ./services/order-service/
 COPY services/user-service/package.json ./services/user-service/
 COPY services/agent-service/package.json ./services/agent-service/
 COPY services/frontend/package.json ./services/frontend/
-RUN npm install --workspace=services/shipping-service --workspace=packages/shared
+RUN npm install --workspace=services/shipping-service --workspace=packages/shared --ignore-scripts
 COPY packages/shared/ ./packages/shared/
 COPY services/shipping-service/ ./services/shipping-service/
 RUN npx prisma generate --schema=services/shipping-service/prisma/schema.prisma

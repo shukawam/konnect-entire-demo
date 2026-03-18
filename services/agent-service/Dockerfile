@@ -10,7 +10,7 @@ COPY services/shipping-service/package.json ./services/shipping-service/
 COPY services/user-service/package.json ./services/user-service/
 COPY services/agent-service/package.json ./services/agent-service/
 COPY services/frontend/package.json ./services/frontend/
-RUN npm install --workspace=services/agent-service --workspace=packages/shared
+RUN npm install --workspace=services/agent-service --workspace=packages/shared --ignore-scripts
 COPY packages/shared/ ./packages/shared/
 COPY services/agent-service/ ./services/agent-service/
 WORKDIR /app/services/agent-service

@@ -6,6 +6,9 @@ import {
   MCPConnectionError,
 } from '@volcano.dev/agent'
 import { HTTPException } from 'hono/http-exception'
+import pino from 'pino'
+
+const log = pino({ name: 'agent-service', level: process.env.LOG_LEVEL || 'info' })
 
 const serviceName = process.env.OTEL_SERVICE_NAME || 'agent-service'
 const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318'
@@ -63,7 +66,7 @@ export async function runAgent(prompt: string): Promise<string> {
         message: 'MCP server is unavailable. Please check Kong Gateway is running.',
       })
     }
-    console.error('[runAgent] unexpected error:', e)
+    log.error({ err: e }, 'Unexpected error in runAgent')
     throw new HTTPException(500, {
       message: 'Unexpected error occurred.',
     })

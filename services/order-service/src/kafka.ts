@@ -1,4 +1,7 @@
 import { Kafka } from 'kafkajs'
+import { createLogger } from '@konnect-demo/shared'
+
+const log = createLogger('order-service')
 
 const kafka = new Kafka({
   clientId: 'order-service',
@@ -10,10 +13,10 @@ export const consumer = kafka.consumer({ groupId: 'order-service-group' })
 
 export async function connectKafka() {
   await producer.connect()
-  console.log('Kafka producer connected')
+  log.info('Kafka producer connected')
 
   await consumer.connect()
-  console.log('Kafka consumer connected')
+  log.info('Kafka consumer connected')
 
   await consumer.subscribe({ topic: 'order.status-updated', fromBeginning: true })
 }

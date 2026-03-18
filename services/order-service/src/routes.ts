@@ -1,6 +1,10 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { context, propagation } from '@opentelemetry/api'
+import { createLogger } from '@konnect-demo/shared'
 import { prisma } from './db.js'
 import { producer } from './kafka.js'
+
+const log = createLogger('order-service')
 
 const CART_SERVICE_URL = process.env.CART_SERVICE_URL || 'http://localhost:3002'
 const CATALOG_SERVICE_URL = process.env.CATALOG_SERVICE_URL || 'http://localhost:3001'
@@ -196,7 +200,7 @@ app.openapi(createOrderRoute, async (c) => {
         }
       }
     } catch (err) {
-      console.warn(`Failed to check stock for product ${item.productId}, skipping:`, err)
+      log.warn({ err, productId: item.productId }, 'Failed to check stock, skipping')
     }
   }
 
@@ -221,8 +225,13 @@ app.openapi(createOrderRoute, async (c) => {
     include: { items: true },
   })
 
-  // 5. Publish order.created event
+  // 5. Publish order.created event (inject trace context into Kafka headers)
   try {
+    const headers: Record<string, string> = {}
+    propagation.inject(context.active(), headers)
+
+    log.info({ traceHeaders: headers }, 'Injected trace context into Kafka headers')
+
     await producer.send({
       topic: 'order.created',
       messages: [
@@ -235,12 +244,13 @@ app.openapi(createOrderRoute, async (c) => {
             totalPrice: order.totalPrice,
             createdAt: order.createdAt,
           }),
+          headers,
         },
       ],
     })
-    console.log(`Published order.created event for order ${order.id}`)
+    log.info({ orderId: order.id }, 'Published order.created event')
   } catch (err) {
-    console.error(`Failed to publish order.created event for order ${order.id}:`, err)
+    log.error({ err, orderId: order.id }, 'Failed to publish order.created event')
   }
 
   // 6. Clear cart
@@ -250,7 +260,7 @@ app.openapi(createOrderRoute, async (c) => {
       headers: { 'X-User-Id': userId },
     })
   } catch (err) {
-    console.error(`Failed to clear cart for user ${userId}:`, err)
+    log.error({ err, userId }, 'Failed to clear cart')
   }
 
   // 7. Return created order

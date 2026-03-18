@@ -1,11 +1,16 @@
 import { serve } from '@hono/node-server'
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { logger } from 'hono/logger'
+import { createLogger } from '@konnect-demo/shared'
 import productRoutes from './routes.js'
 
+const log = createLogger('catalog-service')
 const app = new OpenAPIHono()
 
-app.use('*', logger())
+app.use(
+  '*',
+  logger((message) => log.info(message)),
+)
 
 app.get('/health', (c) => c.json({ status: 'ok', service: 'catalog-service' }))
 
@@ -23,5 +28,5 @@ app.doc('/openapi.json', {
 })
 
 const port = Number(process.env.PORT) || 3001
-console.log(`Catalog service starting on port ${port}`)
+log.info({ port }, 'Catalog service starting')
 serve({ fetch: app.fetch, port })

@@ -10,5 +10,10 @@
   },
   "devDependencies": {
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@opentelemetry/api-logs": "^0.203.0",
+    "@opentelemetry/sdk-logs": "^0.203.0",
+    "pino": "^10.3.1"
   }
 }
