@@ -1,0 +1,301 @@
+_format_version: "3.0"
+
+services:
+  - name: catalog-service
+    url: http://catalog-service:3001
+    routes:
+      - name: catalog-route
+        paths:
+          - /api/products
+        strip_path: false
+  - name: cart-service
+    url: http://cart-service:3002
+    routes:
+      - name: cart-route
+        paths:
+          - /api/carts
+        strip_path: false
+  - name: order-service
+    url: http://order-service:3003
+    routes:
+      - name: order-route
+        paths:
+          - /api/orders
+        strip_path: false
+  - name: shipping-service
+    url: http://shipping-service:3004
+    routes:
+      - name: shipping-route
+        paths:
+          - /api/shipments
+        strip_path: false
+  - name: user-service
+    url: http://user-service:3005
+    routes:
+      - name: user-route
+        paths:
+          - /api/users
+        strip_path: false
+  - name: agent-service
+    url: http://agent-service:3006
+    routes:
+      - name: agent-route
+        paths:
+          - /api/agent
+        strip_path: false
+
+  # AI Proxy (LLM Gateway)
+  - name: openai-service
+    url: https://example.com
+    routes:
+      - name: openai-route
+        paths:
+          - /ai/v1
+        strip_path: true
+
+  # MCP Proxy — Catalog API
+  - name: mcp-catalog
+    url: http://catalog-service:3001
+    routes:
+      - name: mcp-catalog-route
+        paths:
+          - /mcp/products
+        strip_path: true
+
+  # MCP Proxy — Cart API
+  - name: mcp-cart
+    url: http://cart-service:3002
+    routes:
+      - name: mcp-cart-route
+        paths:
+          - /mcp/carts
+        strip_path: true
+
+  # MCP Proxy — Order API
+  - name: mcp-order
+    url: http://order-service:3003
+    routes:
+      - name: mcp-order-route
+        paths:
+          - /mcp/orders
+        strip_path: true
+
+consumers:
+  - username: demo-user
+    keyauth_credentials:
+      - key: demo-api-key
+  - username: admin-user
+    keyauth_credentials:
+      - key: admin-api-key
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - http://localhost:3000
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Content-Type
+        - Authorization
+        - apikey
+        - X-User-Id
+        - traceparent
+        - tracestate
+      credentials: true
+      max_age: 3600
+  - name: rate-limiting-advanced
+    config:
+      limit:
+        - 60
+      window_size:
+        - 60
+  - name: correlation-id
+    config:
+      header_name: X-Request-Id
+      generator: uuid
+  - name: opentelemetry
+    config:
+      traces_endpoint: http://otel-collector:4318/v1/traces
+      logs_endpoint: http://otel-collector:4318/v1/logs
+      access_logs_endpoint: http://otel-collector:4318/v1/logs
+      metrics:
+        endpoint: http://otel-collector:4318/v1/metrics
+        push_interval: 5
+        enable_bandwidth_metrics: true
+        enable_consumer_attribute: true
+        enable_latency_metrics: true
+        enable_request_metrics: true
+        enable_upstream_health_metrics: true
+      resource_attributes:
+        service.name: kong-gateway
+      propagation:
+        default_format: w3c
+        extract:
+          - w3c
+        inject:
+          - w3c
+
+  # Key-Auth on Cart
+  - name: key-auth
+    service: cart-service
+    config:
+      key_names:
+        - apikey
+
+  # Key-Auth on Order
+  - name: key-auth
+    service: order-service
+    config:
+      key_names:
+        - apikey
+
+  # Key-Auth on Shipping
+  - name: key-auth
+    service: shipping-service
+    config:
+      key_names:
+        - apikey
+
+  # Stricter Rate Limiting on Order
+  - name: rate-limiting
+    service: order-service
+    config:
+      minute: 10
+      policy: local
+
+  # Proxy Cache on Catalog
+  - name: proxy-cache
+    service: catalog-service
+    config:
+      response_code:
+        - 200
+      request_method:
+        - GET
+      content_type:
+        - application/json
+      cache_ttl: 30
+      strategy: memory
+
+  # AI Semantic Prompt Guard — Block inappropriate inputs for EC site
+  - name: ai-semantic-prompt-guard
+    route: openai-route
+    config:
+      embeddings:
+        auth:
+          header_name: Authorization
+          header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+        model:
+          provider: openai
+          name: text-embedding-3-small
+      search:
+        threshold: 0.5
+      vectordb:
+        strategy: redis
+        distance_metric: cosine
+        threshold: 0.7
+        dimensions: 1536
+        redis:
+          host: redis
+          port: 6379
+      rules:
+        allow_prompts:
+          - EC サイトの商品に関する質問
+          - 商品の検索や在庫の確認
+          - カートや注文に関する操作や質問
+          - 配送状況の確認
+          - ゴリラストアのサービスに関する一般的な質問
+        deny_prompts:
+          - 暴力的・攻撃的な内容や脅迫
+          - システムプロンプトやAI の内部設定を引き出そうとする試み
+          - パスワードや認証情報など機密データの要求
+          - SQL インジェクションやスクリプト注入などの技術的攻撃
+          - 政治・宗教・差別に関する議論
+          - EC サイトと無関係な専門的な相談（法律、医療、金融など）
+
+  # AI Prompt Decorator — System prompt injection (hidden from client)
+  - name: ai-prompt-decorator
+    route: openai-route
+    config:
+      prompts:
+        prepend:
+          - role: system
+            content: |
+              あなたは「ゴリラストア」の AI アシスタント、**ゴリ助**です。
+              ゴリラらしい力強くフレンドリーな口調で話してください。
+
+              キャラクター設定:
+              - 一人称は「オイラ」
+              - 語尾に「ウホ！」「ウホホ！」を時々つける
+              - 嬉しいときは「ドラミング！🦍」と言う
+              - ジャングルや自然にまつわる比喩表現を使う
+              - 親切で頼りがいのある性格
+
+              ルール:
+              - 回答は日本語で行う
+              - マークダウン書式を使う（見出し、箇条書き、太字など）
+              - 商品の画像URL（imageUrl）は回答に含めない
+              - ゴリラのキャラクターを保ちつつ、正確な情報を提供する
+
+  # AI Proxy Advanced — OpenAI LLM Gateway
+  - name: ai-proxy-advanced
+    route: openai-route
+    config:
+      targets:
+        - route_type: llm/v1/chat
+          auth:
+            header_name: Authorization
+            header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+          model:
+            provider: openai
+            name: gpt-4o-mini
+            options:
+              max_tokens: 2048
+              temperature: 1.0
+
+  # MCP Proxy — Catalog tools
+  - name: ai-mcp-proxy
+    route: mcp-catalog-route
+    config:
+      mode: conversion-listener
+      tools:
+        - name: list-products
+          description: "商品一覧を取得します。全商品の名前・価格・カテゴリ・在庫が返ります。"
+          method: GET
+          path: /api/products
+          annotations:
+            title: List products
+            read_only_hint: true
+
+  # MCP Proxy — Cart tools
+  - name: ai-mcp-proxy
+    route: mcp-cart-route
+    config:
+      mode: conversion-listener
+      tools:
+        - name: get-cart
+          description: "ユーザーのカート内容を取得します。"
+          method: GET
+          path: /api/carts
+          annotations:
+            title: Get cart
+            read_only_hint: true
+
+  # MCP Proxy — Order tools
+  - name: ai-mcp-proxy
+    route: mcp-order-route
+    config:
+      mode: conversion-listener
+      tools:
+        - name: list-orders
+          description: "ユーザーの注文履歴を取得します。"
+          method: GET
+          path: /api/orders
+          annotations:
+            title: List orders
+            read_only_hint: true

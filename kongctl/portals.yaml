@@ -1,0 +1,89 @@
+_defaults:
+  kongctl:
+    namespace: jungle-store
+
+portals:
+  - ref: jungle-store-dev-portal
+    name: jungle-store-dev-portal
+    display_name: Jungle Store Dev Portal
+    description: Dev Portal for Jungle Store demo.
+    authentication_enabled: true
+    rbac_enabled: false
+    default_api_visibility: private
+    default_page_visibility: private
+    auto_approve_developers: false
+    auto_approve_applications: false
+
+    pages:
+      - ref: home
+        slug: /
+        title: Home
+        description: Home page for Jungle Store Dev Portal
+        visibility: public
+        content: !file portals/pages/home.md
+      - ref: apis
+        slug: "apis"
+        title: "APIs"
+        description: "API Products available in this Developer Portal."
+        visibility: "private"
+        status: "published"
+        content: !file portals/pages/apis.md
+      - ref: guides
+        slug: "guides"
+        title: "Guides"
+        description: "Guide for Developer Portal"
+        visibility: "private"
+        status: "published"
+        content: !file portals/pages/guides/guides.md
+        children:
+          - ref: guides-getting-started
+            slug: "getting-started"
+            title: "Getting Started Guide"
+            description: "APIの利用開始から実際の統合まで"
+            visibility: "public"
+            status: "published"
+            content: !file portals/pages/guides/getting-started.md
+          - ref: guides-lifecycle
+            slug: "lifecycle"
+            title: "API Lifecycle"
+            description: "APIライフサイクル管理とバージョニングポリシー"
+            visibility: "public"
+            status: "published"
+            content: !file portals/pages/guides/lifecycle.md
+          - ref: guides-usage
+            slug: "usage"
+            title: "API Usage Guide"
+            description: "API利用ガイド - ベストプラクティスとパターン"
+            visibility: "public"
+            status: "published"
+            content: !file portals/pages/guides/usage.md
+          - ref: guides-regulation
+            slug: "regulation"
+            title: "Regulations & Policies"
+            description: "利用規約、ポリシー、コンプライアンス"
+            visibility: "public"
+            status: "published"
+            content: !file portals/pages/guides/regulation.md
+
+    snippets:
+      - ref: page-nav
+        name: page-nav
+        title: Page Nav
+        description: Page navigation for sidebar
+        visibility: public
+        status: published
+        content: !file portals/snippets/page-nav.md
+      - ref: sidebar
+        name: sidebar
+        title: Jungle Store Sidebar
+        description: Jungle Store Sidebar
+        visibility: public
+        status: published
+        content: !file portals/snippets/sidebar.md
+      - ref: footer-support
+        name: footer-support
+        title: Footer Support
+        description: Support contact information for footer
+        visibility: public
+        status: published
+        content: !file portals/snippets/footer-support.md

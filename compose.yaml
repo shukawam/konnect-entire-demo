@@ -1,0 +1,582 @@
+x-default: &default
+  networks:
+    - konnect-entire-demo-network
+
+x-otel-env: &otel-env
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  OTEL_NODE_RESOURCE_DETECTORS: env,host,os
+  NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register
+
+networks:
+  konnect-entire-demo-network:
+
+volumes:
+  mysql_data:
+  tempo_data:
+  loki_data:
+
+services:
+  # ============================================================
+  # Infrastructure
+  # ============================================================
+  mysql:
+    <<: *default
+    container_name: mysql
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./config/mysql/init-databases.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    <<: *default
+    container_name: kafka
+    image: apache/kafka:3.7.0
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qg
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          '/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1',
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  kafka-init:
+    <<: *default
+    container_name: kafka-init
+    image: apache/kafka:3.7.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic order.created
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic order.status-updated
+        echo "Kafka topics created."
+
+  kafka-ui:
+    <<: *default
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:v0.7.2
+    ports:
+      - '8080:8080'
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  redis:
+    <<: *default
+    container_name: redis
+    image: redis:8.0.2
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kong:
+    <<: *default
+    container_name: kong
+    image: kong/kong-gateway:3.13
+    environment:
+      KONG_ROLE: data_plane
+      KONG_DATABASE: off
+      KONG_VITALS: off
+      KONG_CLUSTER_MTLS: pki
+      KONG_CLUSTER_CONTROL_PLANE: ${CONTROL_PLANE_ID:-}.us.cp.konghq.com:443
+      KONG_CLUSTER_SERVER_NAME: ${CONTROL_PLANE_ID:-}.us.cp.konghq.com
+      KONG_CLUSTER_TELEMETRY_ENDPOINT: ${CONTROL_PLANE_ID:-}.us.tp.konghq.com:443
+      KONG_CLUSTER_TELEMETRY_SERVER_NAME: ${CONTROL_PLANE_ID:-}.us.tp.konghq.com
+      KONG_CLUSTER_CERT: /etc/kong/cluster-certs/cluster.crt
+      KONG_CLUSTER_CERT_KEY: /etc/kong/cluster-certs/cluster.key
+      KONG_LUA_SSL_TRUSTED_CERTIFICATE: system
+      KONG_KONNECT_MODE: on
+      KONG_CLUSTER_DP_LABELS: type:docker-macOsArmOS
+      KONG_ROUTER_FLAVOR: expressions
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
+      KONG_TRACING_INSTRUMENTATIONS: all
+      KONG_TRACING_SAMPLING_RATE: 1.0
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    ports:
+      - 8000:8000
+      - 8100:8100
+    volumes:
+      - ./certs:/etc/kong/cluster-certs
+    healthcheck:
+      test: ['CMD', 'kong', 'health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      catalog-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      shipping-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+
+  event-gateway:
+    <<: *default
+    container_name: event-gateway
+    image: kong/kong-event-gateway:latest
+    environment:
+      KONNECT_REGION: us
+      KONNECT_DOMAIN: konghq.com
+      KONNECT_GATEWAY_CLUSTER_ID: ${EVENT_GATEWAY_CP_ID:-}
+      # KONNECT_CLIENT_CERT: /etc/kong/cluster-certs/cluster.crt
+      # KONNECT_CLIENT_KEY: /etc/kong/cluster-certs/cluster.key
+      KONNECT_CLIENT_CERT: |
+        -----BEGIN CERTIFICATE-----
+        MIICUjCCAfigAwIBAgIBATAKBggqhkjOPQQDBDBaMVgwCQYDVQQGEwJVUzBLBgNV
+        BAMeRABrAG8AbgBuAGUAYwB0AC0AagB1AG4AZwBsAGUALQBzAHQAbwByAGUALQBl
+        AHYAZQBuAHQALQBnAGEAdABlAHcAYQB5MB4XDTI2MDMxODA3NTgxMFoXDTM2MDMx
+        ODA3NTgxMFowWjFYMAkGA1UEBhMCVVMwSwYDVQQDHkQAawBvAG4AbgBlAGMAdAAt
+        AGoAdQBuAGcAbABlAC0AcwB0AG8AcgBlAC0AZQB2AGUAbgB0AC0AZwBhAHQAZQB3
+        AGEAeTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABA8A7ZLfjZX4fv7ct4JMFi8G
+        aUKbwCaFcU4aj5MNxU9P2NAHMdhNJupfYfk6ec0RaqkIbo6qZCoJkmPLRPzoBqaj
+        ga4wgaswDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCAAYwHQYDVR0lBBYwFAYIKwYB
+        BQUHAwEGCCsGAQUFBwMCMBcGCSsGAQQBgjcUAgQKDAhjZXJ0VHlwZTAjBgkrBgEE
+        AYI3FQIEFgQUAQEBAQEBAQEBAQEBAQEBAQEBAQEwHAYJKwYBBAGCNxUHBA8wDQYF
+        KQEBAQECAQoCARQwEwYJKwYBBAGCNxUBBAYCBAAUAAowCgYIKoZIzj0EAwQDSAAw
+        RQIhAM1NE4ePjCp7nGMm1FoJa/lFK2F9vBeareRnQKLioGz1AiAFk+/p5kZfXAXd
+        J0tlpfNMukSdU/kMt4cWcFMzlfU7Vw==
+        -----END CERTIFICATE----- 
+      KONNECT_CLIENT_KEY: |
+        -----BEGIN PRIVATE KEY-----
+        MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgG9AJGIOVL23K80We
+        NycXSiq5SJdZPsaqeVUIBYpkeY6gCgYIKoZIzj0DAQehRANCAAQPAO2S342V+H7+
+        3LeCTBYvBmlCm8AmhXFOGo+TDcVPT9jQBzHYTSbqX2H5OnnNEWqpCG6OqmQqCZJj
+        y0T86Aam
+        -----END PRIVATE KEY-----
+    ports:
+      - 19091:19091
+      - 19092:19092
+      - 19093:19093
+      - 19094:19094
+    volumes:
+      - ./certs/event-gateway:/etc/kong/cluster-certs
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  deck:
+    <<: *default
+    image: kong/deck:v1.49.0
+    container_name: deck
+    working_dir: /files
+    volumes:
+      - ./config/kong/kong.yaml:/files/kong.yaml
+    environment:
+      DECK_KONNECT_CONTROL_PLANE_NAME: ${DECK_KONNECT_CONTROL_PLANE_NAME:-}
+      DECK_OPENAI_API_KEY: ${DECK_OPENAI_API_KEY:-}
+    command: ['gateway', 'sync', 'kong.yaml']
+    depends_on:
+      - kong
+
+  # ============================================================
+  # Observability
+  # ============================================================
+  tempo-init:
+    <<: *default
+    container_name: tempo-init
+    image: grafana/tempo:2.8.0
+    user: root
+    entrypoint:
+      - 'chown'
+      - '10001:10001'
+      - '/var/tempo'
+    volumes:
+      - tempo_data:/var/tempo
+
+  memcached:
+    <<: *default
+    container_name: memcached
+    image: memcached:1.6.38
+    ports:
+      - '11211:11211'
+    environment:
+      - MEMCACHED_MAX_MEMORY=64m
+      - MEMCACHED_THREADS=4
+
+  tempo:
+    <<: *default
+    container_name: tempo
+    image: grafana/tempo:2.8.0
+    command: ['-config.file=/etc/tempo.yaml']
+    volumes:
+      - ./config/observability/tempo/tempo.yaml:/etc/tempo.yaml
+      - tempo_data:/var/tempo
+    ports:
+      - '3200:3200'
+    depends_on:
+      - tempo-init
+
+  prometheus:
+    <<: *default
+    container_name: prometheus
+    image: prom/prometheus:v3.4.1
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+    volumes:
+      - ./config/observability/prometheus/prometheus.yaml:/etc/prometheus.yaml
+
+  loki-init:
+    <<: *default
+    container_name: loki-init
+    image: grafana/loki:3.5.1
+    user: root
+    entrypoint:
+      - 'chown'
+      - '10001:10001'
+      - '/tmp/loki'
+    volumes:
+      - loki_data:/tmp/loki
+
+  loki:
+    <<: *default
+    container_name: loki
+    image: grafana/loki:3.5.1
+    command: '-config.file=/etc/loki/loki.yaml'
+    environment:
+      LOG_CLUSTER_DEPTH: '8'
+      LOG_SIM_TH: '0.3'
+    volumes:
+      - ./config/observability/loki/loki.yaml:/etc/loki/loki.yaml
+      - loki_data:/tmp/loki
+    ports:
+      - '3100:3100'
+    depends_on:
+      - loki-init
+
+  otel-collector:
+    <<: *default
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:0.128.0
+    volumes:
+      - ./config/observability/otel-collector/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+      - '8888:8888'
+      - '8889:8889'
+
+  grafana:
+    <<: *default
+    container_name: grafana
+    image: grafana/grafana:12.0.1
+    volumes:
+      - ./config/observability/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./config/observability/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+      - ./config/observability/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: true
+      GF_SERVER_HTTP_PORT: 3010
+    ports:
+      - '3010:3010'
+
+  # ============================================================
+  # Application Services
+  # ============================================================
+  catalog-service:
+    <<: *default
+    container_name: catalog-service
+    build:
+      context: .
+      dockerfile: services/catalog-service/Dockerfile
+    command:
+      [
+        'sh',
+        '-c',
+        'npx prisma db push --skip-generate && npx tsx prisma/seed.ts && npx tsx watch src/index.ts',
+      ]
+    ports:
+      - '3001:3001'
+    environment:
+      <<: *otel-env
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-rootpassword}@mysql:3306/catalog_db
+      PORT: 3001
+      OTEL_SERVICE_NAME: catalog-service
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3001/health'').then(r=>{if(!r.ok)throw r})"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      mysql:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./services/catalog-service/src
+          target: /app/services/catalog-service/src
+        - action: rebuild
+          path: ./services/catalog-service/package.json
+        - action: rebuild
+          path: ./services/catalog-service/prisma/schema.prisma
+
+  cart-service:
+    <<: *default
+    container_name: cart-service
+    build:
+      context: .
+      dockerfile: services/cart-service/Dockerfile
+    command: ['sh', '-c', 'npx prisma db push --skip-generate && npx tsx watch src/index.ts']
+    ports:
+      - '3002:3002'
+    environment:
+      <<: *otel-env
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-rootpassword}@mysql:3306/cart_db
+      PORT: 3002
+      OTEL_SERVICE_NAME: cart-service
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3002/health'').then(r=>{if(!r.ok)throw r})"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      mysql:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./services/cart-service/src
+          target: /app/services/cart-service/src
+        - action: rebuild
+          path: ./services/cart-service/package.json
+        - action: rebuild
+          path: ./services/cart-service/prisma/schema.prisma
+
+  order-service:
+    <<: *default
+    container_name: order-service
+    build:
+      context: .
+      dockerfile: services/order-service/Dockerfile
+    command: ['sh', '-c', 'npx prisma db push --skip-generate && npx tsx watch src/index.ts']
+    ports:
+      - '3003:3003'
+    environment:
+      <<: *otel-env
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-rootpassword}@mysql:3306/order_db
+      KAFKA_BROKER: event-gateway:19091
+      CART_SERVICE_URL: http://cart-service:3002
+      PORT: 3003
+      OTEL_SERVICE_NAME: order-service
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3003/health'').then(r=>{if(!r.ok)throw r})"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      mysql:
+        condition: service_healthy
+      event-gateway:
+        condition: service_started
+    develop:
+      watch:
+        - action: sync
+          path: ./services/order-service/src
+          target: /app/services/order-service/src
+        - action: rebuild
+          path: ./services/order-service/package.json
+        - action: rebuild
+          path: ./services/order-service/prisma/schema.prisma
+
+  shipping-service:
+    <<: *default
+    container_name: shipping-service
+    build:
+      context: .
+      dockerfile: services/shipping-service/Dockerfile
+    command: ['sh', '-c', 'npx prisma db push --skip-generate && npx tsx watch src/index.ts']
+    ports:
+      - '3004:3004'
+    environment:
+      <<: *otel-env
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-rootpassword}@mysql:3306/shipping_db
+      KAFKA_BROKER: event-gateway:19093
+      PORT: 3004
+      OTEL_SERVICE_NAME: shipping-service
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3004/health'').then(r=>{if(!r.ok)throw r})"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      mysql:
+        condition: service_healthy
+      event-gateway:
+        condition: service_started
+    develop:
+      watch:
+        - action: sync
+          path: ./services/shipping-service/src
+          target: /app/services/shipping-service/src
+        - action: rebuild
+          path: ./services/shipping-service/package.json
+        - action: rebuild
+          path: ./services/shipping-service/prisma/schema.prisma
+
+  user-service:
+    <<: *default
+    container_name: user-service
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    command:
+      [
+        'sh',
+        '-c',
+        'npx prisma db push --skip-generate && npx tsx prisma/seed.ts && npx tsx watch src/index.ts',
+      ]
+    ports:
+      - '3005:3005'
+    environment:
+      <<: *otel-env
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-rootpassword}@mysql:3306/user_db
+      PORT: 3005
+      OTEL_SERVICE_NAME: user-service
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3005/health'').then(r=>{if(!r.ok)throw r})"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      mysql:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./services/user-service/src
+          target: /app/services/user-service/src
+        - action: rebuild
+          path: ./services/user-service/package.json
+        - action: rebuild
+          path: ./services/user-service/prisma/schema.prisma
+
+  agent-service:
+    <<: *default
+    container_name: agent-service
+    build:
+      context: .
+      dockerfile: services/agent-service/Dockerfile
+    command: ['npx', 'tsx', 'watch', 'src/index.ts']
+    ports:
+      - '3006:3006'
+    environment:
+      PORT: 3006
+      OTEL_SERVICE_NAME: agent-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      GATEWAY_ENDPOINT: http://kong:8000
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3006/health'').then(r=>{if(!r.ok)throw r})"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      kong:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./services/agent-service/src
+          target: /app/services/agent-service/src
+        - action: rebuild
+          path: ./services/agent-service/package.json
+
+  frontend:
+    <<: *default
+    container_name: frontend
+    build:
+      context: .
+      dockerfile: services/frontend/Dockerfile
+    command: ['npx', 'next', 'dev', '--port', '3000']
+    ports:
+      - '3000:3000'
+    environment:
+      BACKEND_URL: http://kong:8000
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: frontend
+      NEXT_OTEL_VERBOSE: 1
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "fetch(''http://localhost:3000'').then(r=>{if(!r.ok)throw r})"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - kong
+    develop:
+      watch:
+        - action: sync
+          path: ./services/frontend/src
+          target: /app/services/frontend/src
+        - action: sync
+          path: ./services/frontend/public
+          target: /app/services/frontend/public
+        - action: rebuild
+          path: ./services/frontend/package.json

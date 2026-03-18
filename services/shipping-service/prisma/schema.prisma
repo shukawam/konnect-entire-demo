@@ -1,0 +1,24 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["tracing"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Shipment {
+  id             String    @id @default(uuid())
+  orderId        String    @unique @map("order_id")
+  userId         String    @map("user_id")
+  status         String    @default("PROCESSING")
+  trackingNumber String?   @map("tracking_number")
+  shippedAt      DateTime? @map("shipped_at")
+  deliveredAt    DateTime? @map("delivered_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("shipments")
+}

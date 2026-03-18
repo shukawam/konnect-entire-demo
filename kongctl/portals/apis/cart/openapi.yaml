@@ -1,0 +1,256 @@
+openapi: 3.1.0
+info:
+  title: Cart Service API
+  description: カートサービス API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3002
+    description: Local development server
+tags:
+  - name: Cart
+    description: ショッピングカート関連のエンドポイント
+paths:
+  /api/carts:
+    get:
+      operationId: getCart
+      summary: カート取得
+      description: ユーザーのカートを取得します。カートが存在しない場合は自動的に作成されます。
+      tags:
+        - Cart
+      parameters:
+        - in: header
+          name: x-user-id
+          required: true
+          schema:
+            type: string
+          example: user-001
+      responses:
+        "200":
+          description: カート情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "401":
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: clearCart
+      summary: カートクリア
+      description: カート内の全商品を削除し、カートを削除します。
+      tags:
+        - Cart
+      parameters:
+        - in: header
+          name: x-user-id
+          required: true
+          schema:
+            type: string
+          example: user-001
+      responses:
+        "200":
+          description: カートクリア完了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "401":
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: カートが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/carts/items:
+    post:
+      operationId: addItem
+      summary: 商品追加
+      description: カートに商品を追加します。既に同じ商品がある場合は数量が加算されます。
+      tags:
+        - Cart
+      parameters:
+        - in: header
+          name: x-user-id
+          required: true
+          schema:
+            type: string
+          example: user-001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddItem"
+      responses:
+        "201":
+          description: 更新されたカート
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "401":
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/carts/items/{itemId}:
+    patch:
+      operationId: updateItemQuantity
+      summary: 数量変更
+      description: カート内の商品の数量を変更します。数量が0以下の場合は商品を削除します。
+      tags:
+        - Cart
+      parameters:
+        - in: header
+          name: x-user-id
+          required: true
+          schema:
+            type: string
+          example: user-001
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+          example: item-001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQuantity"
+      responses:
+        "200":
+          description: 更新された商品またはメッセージ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartItem"
+        "401":
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: 商品が見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteItem
+      summary: 商品削除
+      description: カートから商品を削除します。
+      tags:
+        - Cart
+      parameters:
+        - in: header
+          name: x-user-id
+          required: true
+          schema:
+            type: string
+          example: user-001
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+          example: item-001
+      responses:
+        "200":
+          description: 削除完了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "401":
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: 商品が見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: item-001
+        cartId:
+          type: string
+          example: cart-001
+        productId:
+          type: string
+          example: prod-001
+        quantity:
+          type: integer
+          example: 2
+        price:
+          type: integer
+          example: 2980
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          example: cart-001
+        userId:
+          type: string
+          example: user-001
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        createdAt:
+          type: string
+          example: "2024-01-01T00:00:00.000Z"
+        updatedAt:
+          type: string
+          example: "2024-01-01T00:00:00.000Z"
+    AddItem:
+      type: object
+      required:
+        - productId
+        - quantity
+        - price
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+        price:
+          type: integer
+    UpdateQuantity:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+    Error:
+      type: object
+      properties:
+        error:
+          type: string

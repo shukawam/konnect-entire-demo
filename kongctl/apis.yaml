@@ -1,0 +1,160 @@
+_defaults:
+  kongctl:
+    namespace: jungle-store
+
+apis:
+  - ref: catalog-api
+    name: !file portals/apis/catalog/openapi.yaml#info.title
+    description: !file portals/apis/catalog/openapi.yaml#info.description
+    version: "1.0.0"
+    labels:
+      app: jungle-store
+    attributes:
+      app:
+        - jungle-store
+      tier:
+        - free
+    versions:
+      - ref: catalog-api-v1
+        version: !file portals/apis/catalog/openapi.yaml#info.version
+        spec: !file portals/apis/catalog/openapi.yaml
+    documents:
+      - ref: catalog-api-getting-started
+        title: Getting Started
+        slug: catalog-api-getting-started
+        status: published
+        content: !file portals/docs/catalog_ja.md
+    publications:
+      - ref: catalog-api-v1-publication
+        portal_id: !ref jungle-store-dev-portal#id
+        visibility: private
+
+  - ref: cart-api
+    name: !file portals/apis/cart/openapi.yaml#info.title
+    description: !file portals/apis/cart/openapi.yaml#info.description
+    version: "1.0.0"
+    labels:
+      app: jungle-store
+    attributes:
+      app:
+        - jungle-store
+      tier:
+        - free
+    versions:
+      - ref: cart-api-v1
+        version: !file portals/apis/cart/openapi.yaml#info.version
+        spec: !file portals/apis/cart/openapi.yaml
+    documents:
+      - ref: cart-api-getting-started
+        title: Getting Started
+        slug: cart-api-getting-started
+        status: published
+        content: !file portals/docs/cart_ja.md
+    publications:
+      - ref: cart-api-v1-publication
+        portal_id: !ref jungle-store-dev-portal#id
+        visibility: private
+
+  - ref: order-api
+    name: !file portals/apis/order/openapi.yaml#info.title
+    description: !file portals/apis/order/openapi.yaml#info.description
+    version: "1.0.0"
+    labels:
+      app: jungle-store
+    attributes:
+      app:
+        - jungle-store
+      tier:
+        - free
+    versions:
+      - ref: order-api-v1
+        version: !file portals/apis/order/openapi.yaml#info.version
+        spec: !file portals/apis/order/openapi.yaml
+    documents:
+      - ref: order-api-getting-started
+        title: Getting Started
+        slug: order-api-getting-started
+        status: published
+        content: !file portals/docs/order_ja.md
+    publications:
+      - ref: order-api-v1-publication
+        portal_id: !ref jungle-store-dev-portal#id
+        visibility: private
+
+  - ref: shipping-api
+    name: !file portals/apis/shipping/openapi.yaml#info.title
+    description: !file portals/apis/shipping/openapi.yaml#info.description
+    version: "1.0.0"
+    labels:
+      app: jungle-store
+    attributes:
+      app:
+        - jungle-store
+      tier:
+        - free
+    versions:
+      - ref: shipping-api-v1
+        version: !file portals/apis/shipping/openapi.yaml#info.version
+        spec: !file portals/apis/shipping/openapi.yaml
+    documents:
+      - ref: shipping-api-getting-started
+        title: Getting Started
+        slug: shipping-api-getting-started
+        status: published
+        content: !file portals/docs/shipping_ja.md
+    publications:
+      - ref: shipping-api-v1-publication
+        portal_id: !ref jungle-store-dev-portal#id
+        visibility: private
+
+  - ref: user-api
+    name: !file portals/apis/user/openapi.yaml#info.title
+    description: !file portals/apis/user/openapi.yaml#info.description
+    version: "1.0.0"
+    labels:
+      app: jungle-store
+    attributes:
+      app:
+        - jungle-store
+      tier:
+        - free
+    versions:
+      - ref: user-api-v1
+        version: !file portals/apis/user/openapi.yaml#info.version
+        spec: !file portals/apis/user/openapi.yaml
+    documents:
+      - ref: user-api-getting-started
+        title: Getting Started
+        slug: user-api-getting-started
+        status: published
+        content: !file portals/docs/user_ja.md
+    publications:
+      - ref: user-api-v1-publication
+        portal_id: !ref jungle-store-dev-portal#id
+        visibility: private
+
+  - ref: agent-api
+    name: !file portals/apis/agent/openapi.yaml#info.title
+    description: !file portals/apis/agent/openapi.yaml#info.description
+    version: "0.1.0"
+    labels:
+      app: jungle-store
+    attributes:
+      app:
+        - jungle-store
+      tier:
+        - premium
+    versions:
+      - ref: agent-api-v1
+        version: !file portals/apis/agent/openapi.yaml#info.version
+        spec: !file portals/apis/agent/openapi.yaml
+    documents:
+      - ref: agent-api-getting-started
+        title: Getting Started
+        slug: agent-api-getting-started
+        status: published
+        content: !file portals/docs/agent_ja.md
+    publications:
+      - ref: agent-api-v1-publication
+        portal_id: !ref jungle-store-dev-portal#id
+        visibility: private

@@ -1,0 +1,169 @@
+openapi: 3.1.0
+info:
+  title: Shipping Service API
+  description: 配送サービス API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3004
+    description: Local development server
+tags:
+  - name: Shipping
+    description: 配送関連のエンドポイント
+paths:
+  /api/shipments:
+    get:
+      operationId: listShipments
+      summary: 発送一覧取得
+      tags:
+        - Shipping
+      parameters:
+        - in: header
+          name: x-user-id
+          required: true
+          schema:
+            type: string
+          example: user-456
+      responses:
+        "200":
+          description: 発送一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Shipment"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/shipments/{id}:
+    get:
+      operationId: getShipment
+      summary: 発送詳細取得
+      tags:
+        - Shipping
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: "clxyz..."
+        - in: header
+          name: x-user-id
+          required: true
+          schema:
+            type: string
+          example: user-456
+      responses:
+        "200":
+          description: 発送詳細
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/shipments/order/{orderId}:
+    get:
+      operationId: getShipmentByOrder
+      summary: 注文IDで発送情報取得
+      tags:
+        - Shipping
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+          example: order-123
+        - in: header
+          name: x-user-id
+          required: true
+          schema:
+            type: string
+          example: user-456
+      responses:
+        "200":
+          description: 発送詳細
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Shipment:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "clxyz..."
+        orderId:
+          type: string
+          example: order-123
+        userId:
+          type: string
+          example: user-456
+        status:
+          type: string
+          example: SHIPPED
+        trackingNumber:
+          type: string
+          nullable: true
+          example: 1Z999AA10123456784
+        shippedAt:
+          type: string
+          nullable: true
+          example: "2025-01-01T00:00:00.000Z"
+        deliveredAt:
+          type: string
+          nullable: true
+          example: null
+        createdAt:
+          type: string
+          example: "2025-01-01T00:00:00.000Z"
+        updatedAt:
+          type: string
+          example: "2025-01-01T00:00:00.000Z"
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Error message

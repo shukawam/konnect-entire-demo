@@ -1,0 +1,27 @@
+{
+  "name": "konnect-entire-demo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev:catalog": "npm run dev -w services/catalog-service",
+    "dev:cart": "npm run dev -w services/cart-service",
+    "dev:order": "npm run dev -w services/order-service",
+    "dev:shipping": "npm run dev -w services/shipping-service",
+    "dev:user": "npm run dev -w services/user-service",
+    "dev:agent": "npm run dev -w services/agent-service",
+    "dev:frontend": "npm run dev -w services/frontend",
+    "db:generate": "npm run db:generate -ws --if-present",
+    "db:push": "npm run db:push -ws --if-present",
+    "db:seed": "npm run db:seed -ws --if-present",
+    "test": "npm run test -ws --if-present",
+    "test:coverage": "npm run test:coverage -ws --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0"
+  }
+}

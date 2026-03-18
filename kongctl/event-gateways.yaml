@@ -1,0 +1,149 @@
+_defaults:
+  kongctl:
+    namespace: jungle-store
+
+event_gateways:
+  - ref: jungle-store-event-gateway
+    name: jungle-store-event-gateway
+    description: Event Gateway for Jungle Store Kafka messaging.
+    labels:
+      environment: local
+
+    backend_clusters:
+      - ref: jungle-store-kafka
+        name: jungle-store-kafka
+        description: Local Kafka cluster for Jungle Store
+        bootstrap_servers:
+          - "kafka:9092"
+        authentication:
+          type: anonymous
+          insecure_allow_anonymous_virtual_cluster_auth: true
+
+    virtual_clusters:
+      # Order Service 用 VC — order.created に write、order.status-updated に read
+      - ref: order-service-vc
+        name: order-service-vc
+        destination:
+          name: jungle-store-kafka
+        authentication:
+          - type: anonymous
+        dns_label: order-service
+        # acl_mode: enforce_on_gateway  # TODO: kongctl が cluster_policies を同期できるようになったら戻す
+        acl_mode: passthrough
+        cluster_policies:
+          - ref: order-service-acl
+            type: acls
+            name: order-service-acl
+            config:
+              rules:
+                - action: allow
+                  resource_type: topic
+                  operations:
+                    - name: write
+                    - name: describe
+                  resource_names:
+                    - match: "order.created"
+                - action: allow
+                  resource_type: topic
+                  operations:
+                    - name: read
+                    - name: describe
+                  resource_names:
+                    - match: "order.status-updated"
+                - action: allow
+                  resource_type: group
+                  operations:
+                    - name: read
+                  resource_names:
+                    - match: "order-service-group"
+                - action: deny
+                  resource_type: topic
+                  operations:
+                    - name: write
+                    - name: read
+                    - name: describe
+                  resource_names:
+                    - match: "*"
+
+      # Shipping Service 用 VC — order.created に read、order.status-updated に write
+      - ref: shipping-service-vc
+        name: shipping-service-vc
+        destination:
+          name: jungle-store-kafka
+        authentication:
+          - type: anonymous
+        dns_label: shipping-service
+        # acl_mode: enforce_on_gateway  # TODO: kongctl が cluster_policies を同期できるようになったら戻す
+        acl_mode: passthrough
+        cluster_policies:
+          - ref: shipping-service-acl
+            type: acls
+            name: shipping-service-acl
+            config:
+              rules:
+                - action: allow
+                  resource_type: topic
+                  operations:
+                    - name: read
+                    - name: describe
+                  resource_names:
+                    - match: "order.created"
+                - action: allow
+                  resource_type: topic
+                  operations:
+                    - name: write
+                    - name: describe
+                  resource_names:
+                    - match: "order.status-updated"
+                - action: allow
+                  resource_type: group
+                  operations:
+                    - name: read
+                  resource_names:
+                    - match: "shipping-service-group"
+                - action: deny
+                  resource_type: topic
+                  operations:
+                    - name: write
+                    - name: read
+                    - name: describe
+                  resource_names:
+                    - match: "*"
+
+    listeners:
+      - ref: order-service-listener
+        name: order-service-listener
+        addresses:
+          - "0.0.0.0"
+        ports:
+          - 19091
+          - 19092
+        policies:
+          - ref: forward-to-order-service
+            type: forward_to_virtual_cluster
+            name: forward-to-order-service
+            config:
+              type: port_mapping
+              destination:
+                name: order-service-vc
+              advertised_host: "event-gateway"
+              bootstrap_port: at_start
+              min_broker_id: 1
+      - ref: shipping-service-listener
+        name: shipping-service-listener
+        addresses:
+          - "0.0.0.0"
+        ports:
+          - 19093
+          - 19094
+        policies:
+          - ref: forward-to-shipping-service
+            type: forward_to_virtual_cluster
+            name: forward-to-shipping-service
+            config:
+              type: port_mapping
+              destination:
+                name: shipping-service-vc
+              advertised_host: "event-gateway"
+              bootstrap_port: at_start
+              min_broker_id: 1

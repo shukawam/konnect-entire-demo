@@ -1,0 +1,55 @@
+_defaults:
+  kongctl:
+    namespace: jungle-store
+
+portal_teams:
+  - ref: catalog-dev-team
+    portal: jungle-store-dev-portal
+    name: Catalog API Developer Team
+    description: "Developers with API read access"
+    roles:
+      - ref: catalog-dev-team-api-viewer
+        role_name: API Viewer
+        entity_id: !ref catalog-api#id
+        entity_type_name: apis
+        entity_region: us
+  - ref: cart-dev-team
+    portal: jungle-store-dev-portal
+    name: Cart API Developer Team
+    description: "Developers with API read access"
+    roles:
+      - ref: cart-dev-team-api-viewer
+        role_name: API Viewer
+        entity_id: !ref cart-api#id
+        entity_type_name: apis
+        entity_region: us
+  - ref: order-dev-team
+    portal: jungle-store-dev-portal
+    name: Order API Developer Team
+    description: "Developers with API read access"
+    roles:
+      - ref: order-dev-team-api-viewer
+        role_name: API Viewer
+        entity_id: !ref order-api#id
+        entity_type_name: apis
+        entity_region: us
+  - ref: shipping-dev-team
+    portal: jungle-store-dev-portal
+    name: Shipping API Developer Team
+    description: "Developers with API read access"
+    roles:
+      - ref: shipping-dev-team-api-viewer
+        role_name: API Viewer
+        entity_id: !ref shipping-api#id
+        entity_type_name: apis
+        entity_region: us
+  - ref: user-dev-team
+    portal: jungle-store-dev-portal
+    name: User API Developer Team
+    description: "Developers with API read access"
+    roles:
+      - ref: user-dev-team-api-viewer
+        role_name: API Viewer
+        entity_id: !ref user-api#id
+        entity_type_name: apis
+        entity_region: us

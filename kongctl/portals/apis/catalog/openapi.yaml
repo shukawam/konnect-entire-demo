@@ -1,0 +1,167 @@
+openapi: 3.1.0
+info:
+  title: Catalog Service API
+  description: 商品カタログサービス API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+tags:
+  - name: Catalog
+    description: 商品カタログ関連のエンドポイント
+paths:
+  /api/products:
+    get:
+      operationId: listProducts
+      summary: 商品一覧取得
+      description: 商品一覧を取得します。カテゴリや検索クエリでフィルタリングできます。
+      tags:
+        - Catalog
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          example: バナナ
+        - in: query
+          name: search
+          schema:
+            type: string
+          example: ゴリラ
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: 商品一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductList"
+    post:
+      operationId: createProduct
+      summary: 商品作成
+      description: 新しい商品を作成します（管理者用）。
+      tags:
+        - Catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProduct"
+      responses:
+        "201":
+          description: 作成された商品
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+  /api/products/{id}:
+    get:
+      operationId: getProduct
+      summary: 商品詳細取得
+      tags:
+        - Catalog
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: prod-001
+      responses:
+        "200":
+          description: 商品詳細
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: 商品が見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: prod-001
+        name:
+          type: string
+          example: 極上キングバナナ 1房
+        description:
+          type: string
+          example: ジャングル最深部で厳選された特大キングバナナ
+        price:
+          type: integer
+          example: 1980
+        imageUrl:
+          type: string
+          example: /images/products/king-banana.jpg
+        category:
+          type: string
+          example: バナナ
+        stock:
+          type: integer
+          example: 50
+        createdAt:
+          type: string
+          example: "2024-01-01T00:00:00.000Z"
+        updatedAt:
+          type: string
+          example: "2024-01-01T00:00:00.000Z"
+    ProductList:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+    CreateProduct:
+      type: object
+      required:
+        - name
+        - description
+        - price
+        - imageUrl
+        - category
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: integer
+        imageUrl:
+          type: string
+        category:
+          type: string
+        stock:
+          type: integer
+          default: 0
+    Error:
+      type: object
+      properties:
+        error:
+          type: string

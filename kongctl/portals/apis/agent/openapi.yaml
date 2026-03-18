@@ -1,0 +1,90 @@
+openapi: 3.1.0
+info:
+  title: Agent Service API
+  description: AI搭載ショッピングアシスタント API
+  version: 0.1.0
+servers:
+  - url: http://localhost:3006
+    description: Local development server
+tags:
+  - name: Agent
+    description: AIエージェント関連のエンドポイント
+paths:
+  /api/agent/chat:
+    post:
+      operationId: chat
+      summary: エージェントとチャット
+      description: AIエージェントにメッセージを送り、回答を取得します。prompt または messages のいずれかを指定してください。
+      tags:
+        - Agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: エージェントからの回答
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+  /api/agent/suggestions:
+    get:
+      operationId: getSuggestions
+      summary: チャット候補取得
+      description: チャットの入力候補を取得します。
+      tags:
+        - Agent
+      responses:
+        "200":
+          description: 候補一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionsResponse"
+components:
+  schemas:
+    Message:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum:
+            - user
+            - assistant
+        content:
+          type: string
+    ChatRequest:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: エージェントへの入力テキスト
+        messages:
+          type: array
+          description: 会話履歴（prompt の代わりに使用可能）
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Message"
+    ChatResponse:
+      type: object
+      properties:
+        response:
+          type: string
+          description: エージェントからの回答
+    SuggestionsResponse:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: string
+          example:
+            - どんな商品がありますか？
+            - おすすめの商品を教えてください
+            - 注文履歴を確認したい

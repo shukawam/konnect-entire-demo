@@ -1,0 +1,12 @@
+_defaults:
+  kongctl:
+    namespace: jungle-store
+
+control_planes:
+  - ref: jungle-store-gateway
+    name: jungle-store-gateway
+    description: Kong Gateway for Jungle Store.
+    auth_type: pki_client_certs
+    cluster_type: CLUSTER_TYPE_CONTROL_PLANE
+    labels:
+      environment: local
