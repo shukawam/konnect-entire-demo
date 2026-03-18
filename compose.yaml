@@ -4,6 +4,7 @@ x-default: &default
 
 x-otel-env: &otel-env
   OTEL_TRACES_EXPORTER: otlp
+  OTEL_LOGS_EXPORTER: otlp
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
   OTEL_NODE_RESOURCE_DETECTORS: env,host,os
   NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register
