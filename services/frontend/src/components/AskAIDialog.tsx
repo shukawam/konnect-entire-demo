@@ -97,7 +97,12 @@ export default function AskAIDialog() {
 
   return (
     <>
-      <button ref={fabRef} className="ask-ai-fab" onClick={() => setOpen(!open)} aria-label="AI に質問">
+      <button
+        ref={fabRef}
+        className="ask-ai-fab"
+        onClick={() => setOpen(!open)}
+        aria-label="AI に質問"
+      >
         {open ? '✕' : '✨'}
       </button>
 

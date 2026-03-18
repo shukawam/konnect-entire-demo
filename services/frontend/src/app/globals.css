@@ -34,20 +34,36 @@
   --nav-text-muted: #666;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue',
+    sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--secondary-dark); text-decoration: none; }
-a:hover { color: var(--secondary); text-decoration: none; }
+a {
+  color: var(--secondary-dark);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--secondary);
+  text-decoration: none;
+}
 
-.container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.5rem 0; }
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 0;
+}
 
 /* ============================================================
    Navigation — Liquid Glass bar
@@ -78,15 +94,24 @@ a:hover { color: var(--secondary); text-decoration: none; }
   color: var(--text);
   letter-spacing: -0.03em;
 }
-.nav-logo span { color: var(--secondary); }
-.nav-links { display: flex; gap: 1.25rem; align-items: center; }
+.nav-logo span {
+  color: var(--secondary);
+}
+.nav-links {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+}
 .nav-links a {
   color: var(--nav-text-muted);
   font-weight: 500;
   font-size: 0.92rem;
   transition: color 0.2s;
 }
-.nav-links a:hover { color: var(--text); text-decoration: none; }
+.nav-links a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
 .nav-links a.nav-active {
   color: var(--secondary-dark);
   border-bottom: 2px solid var(--secondary);
@@ -94,7 +119,9 @@ a:hover { color: var(--secondary); text-decoration: none; }
   margin-bottom: -6px;
 }
 
-.cart-link { position: relative; }
+.cart-link {
+  position: relative;
+}
 .cart-badge {
   position: absolute;
   top: -8px;
@@ -133,13 +160,13 @@ a:hover { color: var(--secondary); text-decoration: none; }
   box-shadow: var(--glass-shadow);
 }
 .card::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
 }
 .card {
   position: relative;
@@ -157,7 +184,7 @@ a:hover { color: var(--secondary); text-decoration: none; }
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(240,240,240,0.5), rgba(220,220,220,0.3));
+  background: linear-gradient(135deg, rgba(240, 240, 240, 0.5), rgba(220, 220, 220, 0.3));
 }
 .card-image img {
   width: 100%;
@@ -169,9 +196,16 @@ a:hover { color: var(--secondary); text-decoration: none; }
   transform: scale(1.06);
 }
 
-.card-body { padding: 1.25rem; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
-.card-body .card-price { margin-top: auto; }
-
+.card-body {
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.card-body .card-price {
+  margin-top: auto;
+}
 
 .card-title {
   font-size: 1.05rem;
@@ -234,8 +268,14 @@ a:hover { color: var(--secondary); text-decoration: none; }
   -webkit-backdrop-filter: blur(8px);
   color: white;
 }
-.btn-danger:hover { background: #dc3545; }
-.btn-sm { padding: 0.3rem 0.75rem; font-size: 0.82rem; border-radius: 10px; }
+.btn-danger:hover {
+  background: #dc3545;
+}
+.btn-sm {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.82rem;
+  border-radius: 10px;
+}
 .btn-ghost {
   background: var(--glass-bg);
   backdrop-filter: blur(8px);
@@ -243,12 +283,16 @@ a:hover { color: var(--secondary); text-decoration: none; }
   color: var(--text);
   border: 1px solid var(--glass-border-subtle);
 }
-.btn-ghost:hover { background: var(--glass-bg-hover); }
+.btn-ghost:hover {
+  background: var(--glass-bg-hover);
+}
 
 /* ============================================================
    Forms — Liquid Glass inputs
    ============================================================ */
-.form-group { margin-bottom: 1.25rem; }
+.form-group {
+  margin-bottom: 1.25rem;
+}
 .form-group label {
   display: block;
   margin-bottom: 0.4rem;
@@ -274,7 +318,9 @@ a:hover { color: var(--secondary); text-decoration: none; }
   background: rgba(255, 255, 255, 0.8);
   box-shadow: 0 0 0 3px rgba(146, 182, 0, 0.12);
 }
-.form-group input::placeholder { color: var(--text-muted); }
+.form-group input::placeholder {
+  color: var(--text-muted);
+}
 
 /* ============================================================
    Cart — Liquid Glass items
@@ -333,7 +379,8 @@ a:hover { color: var(--secondary); text-decoration: none; }
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-.status-PENDING, .status-PROCESSING {
+.status-PENDING,
+.status-PROCESSING {
   background: rgba(255, 193, 7, 0.15);
   color: #8a6d00;
   border: 1px solid rgba(255, 193, 7, 0.25);
@@ -343,7 +390,8 @@ a:hover { color: var(--secondary); text-decoration: none; }
   color: var(--secondary-dark);
   border: 1px solid rgba(146, 182, 0, 0.25);
 }
-.status-SHIPPED, .status-IN_TRANSIT {
+.status-SHIPPED,
+.status-IN_TRANSIT {
   background: rgba(59, 130, 246, 0.1);
   color: #1d4ed8;
   border: 1px solid rgba(59, 130, 246, 0.2);
@@ -357,7 +405,9 @@ a:hover { color: var(--secondary); text-decoration: none; }
 /* ============================================================
    Page header
    ============================================================ */
-.page-header { padding: 2rem 0 0.5rem; }
+.page-header {
+  padding: 2rem 0 0.5rem;
+}
 .page-header h1 {
   font-size: 1.75rem;
   font-weight: 700;
@@ -391,12 +441,19 @@ a:hover { color: var(--secondary); text-decoration: none; }
 /* ============================================================
    Section
    ============================================================ */
-.section { padding: 1.5rem 0 2rem; }
+.section {
+  padding: 1.5rem 0 2rem;
+}
 
 /* ============================================================
    Filter pills — Liquid Glass
    ============================================================ */
-.filter-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; padding: 1rem 0 0; }
+.filter-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 0 0;
+}
 .filter-btn {
   padding: 0.4rem 1rem;
   border: 1px solid var(--glass-border-subtle);
@@ -425,7 +482,11 @@ a:hover { color: var(--secondary); text-decoration: none; }
 /* ============================================================
    Quantity controls — Liquid Glass
    ============================================================ */
-.qty-controls { display: flex; align-items: center; gap: 0.5rem; }
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .qty-btn {
   width: 34px;
   height: 34px;
@@ -482,8 +543,14 @@ a:hover { color: var(--secondary); text-decoration: none; }
    Toast notification
    ============================================================ */
 @keyframes toast-fade-in {
-  from { opacity: 0; transform: translate(-50%, 20px); }
-  to   { opacity: 1; transform: translate(-50%, 0); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 .toast {
   position: fixed;
@@ -581,7 +648,9 @@ a:hover { color: var(--secondary); text-decoration: none; }
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.06);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -591,8 +660,14 @@ a:hover { color: var(--secondary); text-decoration: none; }
   padding: 0;
 }
 @keyframes ask-ai-slide-up {
-  from { opacity: 0; transform: translateY(16px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .ask-ai-header {
@@ -624,7 +699,9 @@ a:hover { color: var(--secondary); text-decoration: none; }
   font-size: 0.95rem;
   line-height: 1.6;
 }
-.ask-ai-welcome p { margin-bottom: 0.5rem; }
+.ask-ai-welcome p {
+  margin-bottom: 0.5rem;
+}
 .ask-ai-suggestions {
   display: flex;
   flex-direction: column;
@@ -664,7 +741,9 @@ a:hover { color: var(--secondary); text-decoration: none; }
   line-height: 1.55;
   word-break: break-word;
 }
-.ask-ai-msg-user .ask-ai-msg-content { white-space: pre-wrap; }
+.ask-ai-msg-user .ask-ai-msg-content {
+  white-space: pre-wrap;
+}
 
 /* Markdown in assistant messages */
 .ask-ai-msg-assistant .ask-ai-msg-content h1,
@@ -677,17 +756,29 @@ a:hover { color: var(--secondary); text-decoration: none; }
 }
 .ask-ai-msg-assistant .ask-ai-msg-content h1:first-child,
 .ask-ai-msg-assistant .ask-ai-msg-content h2:first-child,
-.ask-ai-msg-assistant .ask-ai-msg-content h3:first-child { margin-top: 0; }
-.ask-ai-msg-assistant .ask-ai-msg-content p { margin: 0.3rem 0; }
-.ask-ai-msg-assistant .ask-ai-msg-content p:first-child { margin-top: 0; }
-.ask-ai-msg-assistant .ask-ai-msg-content p:last-child { margin-bottom: 0; }
+.ask-ai-msg-assistant .ask-ai-msg-content h3:first-child {
+  margin-top: 0;
+}
+.ask-ai-msg-assistant .ask-ai-msg-content p {
+  margin: 0.3rem 0;
+}
+.ask-ai-msg-assistant .ask-ai-msg-content p:first-child {
+  margin-top: 0;
+}
+.ask-ai-msg-assistant .ask-ai-msg-content p:last-child {
+  margin-bottom: 0;
+}
 .ask-ai-msg-assistant .ask-ai-msg-content ul,
 .ask-ai-msg-assistant .ask-ai-msg-content ol {
   margin: 0.3rem 0;
   padding-left: 1.25rem;
 }
-.ask-ai-msg-assistant .ask-ai-msg-content li { margin: 0.15rem 0; }
-.ask-ai-msg-assistant .ask-ai-msg-content strong { font-weight: 700; }
+.ask-ai-msg-assistant .ask-ai-msg-content li {
+  margin: 0.15rem 0;
+}
+.ask-ai-msg-assistant .ask-ai-msg-content strong {
+  font-weight: 700;
+}
 .ask-ai-msg-assistant .ask-ai-msg-content code {
   background: rgba(0, 0, 0, 0.06);
   padding: 0.1rem 0.35rem;
@@ -723,11 +814,23 @@ a:hover { color: var(--secondary); text-decoration: none; }
   background: var(--text-muted);
   animation: ask-ai-dot 1.2s infinite;
 }
-.ask-ai-typing span:nth-child(2) { animation-delay: 0.2s; }
-.ask-ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+.ask-ai-typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.ask-ai-typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
 @keyframes ask-ai-dot {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1.1); }
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
 }
 
 .ask-ai-input-bar {
@@ -755,7 +858,9 @@ a:hover { color: var(--secondary); text-decoration: none; }
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 0 0 3px rgba(146, 182, 0, 0.12);
 }
-.ask-ai-input-bar input::placeholder { color: var(--text-muted); }
+.ask-ai-input-bar input::placeholder {
+  color: var(--text-muted);
+}
 .ask-ai-send {
   padding: 0.65rem 1.1rem;
   border: none;
@@ -774,11 +879,15 @@ a:hover { color: var(--secondary); text-decoration: none; }
   background: var(--secondary-dark);
   box-shadow: 0 4px 12px rgba(146, 182, 0, 0.3);
 }
-.ask-ai-send:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.ask-ai-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
 /* Soft gradient blobs for depth behind glass */
 body::before {
-  content: "";
+  content: '';
   position: fixed;
   top: 0;
   left: 0;
