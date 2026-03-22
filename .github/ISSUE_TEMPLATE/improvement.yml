@@ -6,16 +6,6 @@ body:
     attributes:
       value: |
         改善提案テンプレートです。できるだけ具体的に記載してください。
-  - type: dropdown
-    id: priority
-    attributes:
-      label: 優先度
-      options:
-        - high
-        - medium
-        - low
-    validations:
-      required: true
   - type: textarea
     id: current-state
     attributes:
