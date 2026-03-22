@@ -71,6 +71,36 @@ describe('POST /api/agent/chat', () => {
 
     expect(res.status).toBe(400)
   })
+
+  it('MCP サーバー接続エラー時に 503 を返す', async () => {
+    const { HTTPException } = await import('hono/http-exception')
+    vi.mocked(runAgent).mockRejectedValue(
+      new HTTPException(503, { message: 'MCP server is unavailable.' }),
+    )
+
+    const res = await app.request('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'test' }),
+    })
+
+    expect(res.status).toBe(503)
+  })
+
+  it('予期しないエラー時に 500 を返す', async () => {
+    const { HTTPException } = await import('hono/http-exception')
+    vi.mocked(runAgent).mockRejectedValue(
+      new HTTPException(500, { message: 'Unexpected error occurred.' }),
+    )
+
+    const res = await app.request('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'test' }),
+    })
+
+    expect(res.status).toBe(500)
+  })
 })
 
 // ---------- GET /api/agent/suggestions ----------

@@ -28,7 +28,7 @@ app.post('/api/agent/chat', zValidator('json', chatRequestSchema), async (c) => 
       .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
       .join('\n')
   } else {
-    prompt = body.prompt!
+    prompt = body.prompt ?? ''
   }
 
   const response = await runAgent(prompt)

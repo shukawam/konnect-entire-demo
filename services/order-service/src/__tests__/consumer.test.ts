@@ -123,6 +123,18 @@ describe('order.status-updated consumer', () => {
     expect(prisma.order.update).not.toHaveBeenCalled()
   })
 
+  it('orderId が欠落したイベントをスキップする', async () => {
+    await messageHandler({
+      topic: 'order.status-updated',
+      message: {
+        value: Buffer.from(JSON.stringify({ status: 'CONFIRMED' })),
+        headers: {},
+      },
+    })
+
+    expect(prisma.order.update).not.toHaveBeenCalled()
+  })
+
   it('DB エラー時にエラーを握りつぶして処理を継続する', async () => {
     vi.mocked(prisma.order.update).mockRejectedValue(new Error('DB error'))
 

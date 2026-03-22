@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 vi.mock('../db.js', () => ({
   prisma: {
@@ -60,6 +60,10 @@ beforeEach(async () => {
   })
 
   await startConsumer()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('order.created consumer', () => {
