@@ -13,7 +13,7 @@ afterEach(() => {
 })
 
 describe('apiFetch', () => {
-  it('calls fetch with correct URL and default headers', async () => {
+  it('正しい URL とデフォルトヘッダーで fetch を呼ぶ', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({ data: 'test' }),
@@ -30,7 +30,7 @@ describe('apiFetch', () => {
     // The header is generated at runtime in the browser
   })
 
-  it('includes apiKey header when provided', async () => {
+  it('apiKey が指定された場合ヘッダーに含める', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({}),
@@ -42,7 +42,7 @@ describe('apiFetch', () => {
     expect(options.headers['apikey']).toBe('my-key')
   })
 
-  it('includes X-User-Id header when provided', async () => {
+  it('userId が指定された場合 X-User-Id ヘッダーに含める', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({}),
@@ -54,7 +54,7 @@ describe('apiFetch', () => {
     expect(options.headers['X-User-Id']).toBe('user-1')
   })
 
-  it('passes method and body through', async () => {
+  it('method と body をそのまま渡す', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({}),
@@ -70,7 +70,7 @@ describe('apiFetch', () => {
     expect(options.body).toBe(JSON.stringify({ productId: 'p1', quantity: 1 }))
   })
 
-  it('throws error with message from response body', async () => {
+  it('レスポンスボディのエラーメッセージでエラーをスローする', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
       status: 400,
@@ -80,7 +80,7 @@ describe('apiFetch', () => {
     await expect(apiFetch('/api/orders')).rejects.toThrow('Cart is empty')
   })
 
-  it('throws generic error when response has no error field', async () => {
+  it('error フィールドがない場合は汎用エラーメッセージをスローする', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
       status: 500,
@@ -90,7 +90,7 @@ describe('apiFetch', () => {
     await expect(apiFetch('/api/orders')).rejects.toThrow('サーバーでエラーが発生しました')
   })
 
-  it('throws generic error when response body is not JSON', async () => {
+  it('レスポンスが JSON でない場合は接続エラーをスローする', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
       status: 502,

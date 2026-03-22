@@ -63,7 +63,7 @@ beforeEach(async () => {
 })
 
 describe('order.created consumer', () => {
-  it('creates a shipment and publishes CONFIRMED event', async () => {
+  it('配送を作成し CONFIRMED イベントを発行する', async () => {
     const shipment = {
       id: 'ship-1',
       orderId: 'order-1',
@@ -101,7 +101,7 @@ describe('order.created consumer', () => {
     })
   })
 
-  it('updates shipment to SHIPPED after timeout', async () => {
+  it('タイムアウト後に配送ステータスを SHIPPED に更新する', async () => {
     const shipment = {
       id: 'ship-1',
       orderId: 'order-1',
@@ -148,7 +148,7 @@ describe('order.created consumer', () => {
     })
   })
 
-  it('skips messages with null value', async () => {
+  it('value が null のメッセージをスキップする', async () => {
     await messageHandler({
       message: { value: null, headers: {} },
     })
@@ -156,7 +156,7 @@ describe('order.created consumer', () => {
     expect(prisma.shipment.create).not.toHaveBeenCalled()
   })
 
-  it('skips events with missing orderId or userId', async () => {
+  it('orderId または userId が欠落したイベントをスキップする', async () => {
     await messageHandler({
       message: {
         value: Buffer.from(JSON.stringify({ orderId: 'order-1' })),
@@ -167,7 +167,7 @@ describe('order.created consumer', () => {
     expect(prisma.shipment.create).not.toHaveBeenCalled()
   })
 
-  it('handles create error gracefully', async () => {
+  it('DB エラー時にエラーを握りつぶして処理を継続する', async () => {
     vi.mocked(prisma.shipment.create).mockRejectedValue(new Error('DB error'))
 
     await expect(

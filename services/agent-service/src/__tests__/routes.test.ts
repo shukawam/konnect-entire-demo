@@ -14,7 +14,7 @@ beforeEach(() => {
 // ---------- POST /api/agent/chat ----------
 
 describe('POST /api/agent/chat', () => {
-  it('returns 200 with prompt', async () => {
+  it('prompt 指定で 200 を返す', async () => {
     vi.mocked(runAgent).mockResolvedValue('ゴリラTシャツがおすすめです')
 
     const res = await app.request('/api/agent/chat', {
@@ -29,7 +29,7 @@ describe('POST /api/agent/chat', () => {
     expect(runAgent).toHaveBeenCalledWith('おすすめの商品は？')
   })
 
-  it('returns 200 with messages array', async () => {
+  it('messages 配列指定で 200 を返す', async () => {
     vi.mocked(runAgent).mockResolvedValue('カートに追加しました')
 
     const res = await app.request('/api/agent/chat', {
@@ -52,7 +52,7 @@ describe('POST /api/agent/chat', () => {
     )
   })
 
-  it('returns 400 when neither prompt nor messages provided', async () => {
+  it('prompt も messages も未指定の場合 400 を返す', async () => {
     const res = await app.request('/api/agent/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -62,7 +62,7 @@ describe('POST /api/agent/chat', () => {
     expect(res.status).toBe(400)
   })
 
-  it('returns 400 with empty messages array', async () => {
+  it('空の messages 配列の場合 400 を返す', async () => {
     const res = await app.request('/api/agent/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -76,7 +76,7 @@ describe('POST /api/agent/chat', () => {
 // ---------- GET /api/agent/suggestions ----------
 
 describe('GET /api/agent/suggestions', () => {
-  it('returns 200 with suggestions list', async () => {
+  it('サジェスト一覧を 200 で返す', async () => {
     const res = await app.request('/api/agent/suggestions')
     expect(res.status).toBe(200)
     const body = await res.json()

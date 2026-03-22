@@ -31,7 +31,7 @@ beforeEach(() => {
 })
 
 describe('GET /', () => {
-  it('returns product list with total, page, limit', async () => {
+  it('商品一覧を total, page, limit 付きで返す', async () => {
     vi.mocked(prisma.product.findMany).mockResolvedValue([mockProduct])
     vi.mocked(prisma.product.count).mockResolvedValue(1)
 
@@ -54,7 +54,7 @@ describe('GET /', () => {
     expect(prisma.product.count).toHaveBeenCalledWith({ where: {} })
   })
 
-  it('filters by category', async () => {
+  it('カテゴリでフィルタリングできる', async () => {
     vi.mocked(prisma.product.findMany).mockResolvedValue([mockProduct])
     vi.mocked(prisma.product.count).mockResolvedValue(1)
 
@@ -73,7 +73,7 @@ describe('GET /', () => {
     })
   })
 
-  it('filters by search', async () => {
+  it('検索キーワードでフィルタリングできる', async () => {
     vi.mocked(prisma.product.findMany).mockResolvedValue([mockProduct])
     vi.mocked(prisma.product.count).mockResolvedValue(1)
 
@@ -91,7 +91,7 @@ describe('GET /', () => {
 })
 
 describe('GET /{id}', () => {
-  it('returns product when found', async () => {
+  it('商品が存在する場合はその商品を返す', async () => {
     vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any)
 
     const res = await app.request('/prod-001')
@@ -104,7 +104,7 @@ describe('GET /{id}', () => {
     })
   })
 
-  it('returns 404 when not found', async () => {
+  it('商品が存在しない場合 404 を返す', async () => {
     vi.mocked(prisma.product.findUnique).mockResolvedValue(null)
 
     const res = await app.request('/nonexistent')
@@ -116,7 +116,7 @@ describe('GET /{id}', () => {
 })
 
 describe('POST /', () => {
-  it('creates product and returns 201', async () => {
+  it('商品を作成して 201 を返す', async () => {
     const input = {
       name: '新商品バナナ',
       description: 'テスト用バナナ',

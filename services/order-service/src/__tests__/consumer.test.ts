@@ -57,7 +57,7 @@ beforeEach(async () => {
 })
 
 describe('order.status-updated consumer', () => {
-  it('updates order status on valid event', async () => {
+  it('有効なイベントで注文ステータスを更新する', async () => {
     vi.mocked(prisma.order.update).mockResolvedValue({} as any)
 
     await messageHandler({
@@ -79,7 +79,7 @@ describe('order.status-updated consumer', () => {
     })
   })
 
-  it('handles SHIPPED status update', async () => {
+  it('SHIPPED ステータスの更新を処理する', async () => {
     vi.mocked(prisma.order.update).mockResolvedValue({} as any)
 
     await messageHandler({
@@ -102,7 +102,7 @@ describe('order.status-updated consumer', () => {
     })
   })
 
-  it('skips messages with null value', async () => {
+  it('value が null のメッセージをスキップする', async () => {
     await messageHandler({
       topic: 'order.status-updated',
       message: { value: null, headers: {} },
@@ -111,7 +111,7 @@ describe('order.status-updated consumer', () => {
     expect(prisma.order.update).not.toHaveBeenCalled()
   })
 
-  it('ignores non order.status-updated topics', async () => {
+  it('order.status-updated 以外のトピックは無視する', async () => {
     await messageHandler({
       topic: 'other.topic',
       message: {
@@ -123,7 +123,7 @@ describe('order.status-updated consumer', () => {
     expect(prisma.order.update).not.toHaveBeenCalled()
   })
 
-  it('handles DB error gracefully', async () => {
+  it('DB エラー時にエラーを握りつぶして処理を継続する', async () => {
     vi.mocked(prisma.order.update).mockRejectedValue(new Error('DB error'))
 
     await expect(

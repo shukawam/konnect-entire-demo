@@ -29,12 +29,12 @@ beforeEach(() => {
 })
 
 describe('GET /', () => {
-  it('returns 400 without X-User-Id header', async () => {
+  it('X-User-Id ヘッダーがない場合 400 を返す', async () => {
     const res = await app.request('/')
     expect(res.status).toBe(400)
   })
 
-  it('returns 200 with shipments', async () => {
+  it('配送一覧を 200 で返す', async () => {
     mockFindMany.mockResolvedValue([shipmentFixture])
 
     const res = await app.request('/', {
@@ -51,7 +51,7 @@ describe('GET /', () => {
 })
 
 describe('GET /{id}', () => {
-  it('returns 200 when found and correct user', async () => {
+  it('配送が存在し本人のものである場合 200 を返す', async () => {
     mockFindUnique.mockResolvedValue(shipmentFixture)
 
     const res = await app.request('/ship-1', {
@@ -63,7 +63,7 @@ describe('GET /{id}', () => {
     expect(mockFindUnique).toHaveBeenCalledWith({ where: { id: 'ship-1' } })
   })
 
-  it('returns 404 when not found', async () => {
+  it('配送が存在しない場合 404 を返す', async () => {
     mockFindUnique.mockResolvedValue(null)
 
     const res = await app.request('/ship-999', {
@@ -74,7 +74,7 @@ describe('GET /{id}', () => {
     expect(body.error).toBeDefined()
   })
 
-  it('returns 403 when wrong user', async () => {
+  it('他ユーザーの配送の場合 403 を返す', async () => {
     mockFindUnique.mockResolvedValue(shipmentFixture)
 
     const res = await app.request('/ship-1', {
@@ -87,7 +87,7 @@ describe('GET /{id}', () => {
 })
 
 describe('GET /order/{orderId}', () => {
-  it('returns 200 when found and correct user', async () => {
+  it('注文IDに紐づく配送が存在し本人のものである場合 200 を返す', async () => {
     mockFindUnique.mockResolvedValue(shipmentFixture)
 
     const res = await app.request('/order/order-1', {
@@ -101,7 +101,7 @@ describe('GET /order/{orderId}', () => {
     })
   })
 
-  it('returns 404 when not found', async () => {
+  it('注文IDに紐づく配送が存在しない場合 404 を返す', async () => {
     mockFindUnique.mockResolvedValue(null)
 
     const res = await app.request('/order/order-999', {
@@ -112,7 +112,7 @@ describe('GET /order/{orderId}', () => {
     expect(body.error).toBeDefined()
   })
 
-  it('returns 403 when wrong user', async () => {
+  it('他ユーザーの配送の場合 403 を返す', async () => {
     mockFindUnique.mockResolvedValue(shipmentFixture)
 
     const res = await app.request('/order/order-1', {

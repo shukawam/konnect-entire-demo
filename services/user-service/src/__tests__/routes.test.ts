@@ -31,7 +31,7 @@ beforeEach(() => {
 })
 
 describe('POST /register', () => {
-  it('success -> 201', async () => {
+  it('登録成功で 201 を返す', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
     vi.mocked(prisma.user.create).mockResolvedValue(mockUser)
 
@@ -55,7 +55,7 @@ describe('POST /register', () => {
     })
   })
 
-  it('duplicate email -> 409', async () => {
+  it('メールアドレス重複の場合 409 を返す', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser)
 
     const res = await app.request('/register', {
@@ -73,7 +73,7 @@ describe('POST /register', () => {
 })
 
 describe('POST /login', () => {
-  it('success -> 200', async () => {
+  it('ログイン成功で 200 を返す', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser)
     vi.mocked(bcrypt.compare).mockResolvedValue(true as never)
 
@@ -93,7 +93,7 @@ describe('POST /login', () => {
     })
   })
 
-  it('wrong email -> 401', async () => {
+  it('メールアドレスが間違っている場合 401 を返す', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
 
     const res = await app.request('/login', {
@@ -105,7 +105,7 @@ describe('POST /login', () => {
     expect(res.status).toBe(401)
   })
 
-  it('wrong password -> 401', async () => {
+  it('パスワードが間違っている場合 401 を返す', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser)
     vi.mocked(bcrypt.compare).mockResolvedValue(false as never)
 
@@ -120,12 +120,12 @@ describe('POST /login', () => {
 })
 
 describe('GET /me', () => {
-  it('without header -> 401', async () => {
+  it('ヘッダーがない場合 401 を返す', async () => {
     const res = await app.request('/me', { method: 'GET' })
     expect(res.status).toBe(401)
   })
 
-  it('user found -> 200', async () => {
+  it('ユーザーが見つかった場合 200 を返す', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser)
 
     const res = await app.request('/me', {
@@ -144,7 +144,7 @@ describe('GET /me', () => {
     })
   })
 
-  it('user not found -> 404', async () => {
+  it('ユーザーが見つからない場合 404 を返す', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
 
     const res = await app.request('/me', {
@@ -157,7 +157,7 @@ describe('GET /me', () => {
 })
 
 describe('PATCH /me', () => {
-  it('success -> 200', async () => {
+  it('プロフィール更新成功で 200 を返す', async () => {
     const updatedUser = { ...mockUser, name: 'Updated Name' }
     vi.mocked(prisma.user.update).mockResolvedValue(updatedUser)
 
@@ -178,7 +178,7 @@ describe('PATCH /me', () => {
     })
   })
 
-  it('without header -> 401', async () => {
+  it('ヘッダーがない場合 401 を返す', async () => {
     const res = await app.request('/me', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
