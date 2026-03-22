@@ -1,0 +1,45 @@
+name: Bug Report
+description: バグの報告
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグ報告テンプレートです。再現手順をできるだけ詳しく記載してください。
+  - type: textarea
+    id: description
+    attributes:
+      label: バグの概要
+      description: 発生している問題を簡潔に記載してください
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 再現手順
+      description: バグを再現するための手順を記載してください
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期待する動作
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 実際の動作
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境情報
+      description: OS、ブラウザ、Docker バージョンなど
+    validations:
+      required: false

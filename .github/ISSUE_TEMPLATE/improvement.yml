@@ -1,0 +1,46 @@
+name: Improvement
+description: コードベースの改善提案
+labels: ['improvement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        改善提案テンプレートです。できるだけ具体的に記載してください。
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 優先度
+      options:
+        - high
+        - medium
+        - low
+    validations:
+      required: true
+  - type: textarea
+    id: current-state
+    attributes:
+      label: 現状
+      description: 現在の状態や問題点を記載してください
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 改善案
+      description: 具体的な改善内容を記載してください
+    validations:
+      required: true
+  - type: textarea
+    id: affected-scope
+    attributes:
+      label: 影響範囲
+      description: 変更が影響するサービスやファイルを記載してください
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 補足
+      description: 参考情報やその他の補足があれば記載してください
+    validations:
+      required: false
