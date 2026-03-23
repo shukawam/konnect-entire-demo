@@ -1,43 +1,200 @@
 _format_version: '3.0'
 
+upstreams:
+  - name: catalog-service.upstream
+    targets:
+      - target: catalog-service:3001
+        weight: 100
+    healthchecks:
+      active:
+        type: http
+        http_path: /health
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+      passive:
+        type: http
+        healthy:
+          successes: 2
+        unhealthy:
+          http_failures: 3
+
+  - name: cart-service.upstream
+    targets:
+      - target: cart-service:3002
+        weight: 100
+    healthchecks:
+      active:
+        type: http
+        http_path: /health
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+      passive:
+        type: http
+        healthy:
+          successes: 2
+        unhealthy:
+          http_failures: 3
+
+  - name: order-service.upstream
+    targets:
+      - target: order-service:3003
+        weight: 100
+    healthchecks:
+      active:
+        type: http
+        http_path: /health
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+      passive:
+        type: http
+        healthy:
+          successes: 2
+        unhealthy:
+          http_failures: 3
+
+  - name: shipping-service.upstream
+    targets:
+      - target: shipping-service:3004
+        weight: 100
+    healthchecks:
+      active:
+        type: http
+        http_path: /health
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+      passive:
+        type: http
+        healthy:
+          successes: 2
+        unhealthy:
+          http_failures: 3
+
+  - name: user-service.upstream
+    targets:
+      - target: user-service:3005
+        weight: 100
+    healthchecks:
+      active:
+        type: http
+        http_path: /health
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+      passive:
+        type: http
+        healthy:
+          successes: 2
+        unhealthy:
+          http_failures: 3
+
+  - name: agent-service.upstream
+    targets:
+      - target: agent-service:3006
+        weight: 100
+    healthchecks:
+      active:
+        type: http
+        http_path: /health
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+      passive:
+        type: http
+        healthy:
+          successes: 2
+        unhealthy:
+          http_failures: 3
+
 services:
   - name: catalog-service
-    url: http://catalog-service:3001
+    host: catalog-service.upstream
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
     routes:
       - name: catalog-route
         paths:
           - /api/products
         strip_path: false
   - name: cart-service
-    url: http://cart-service:3002
+    host: cart-service.upstream
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
     routes:
       - name: cart-route
         paths:
           - /api/carts
         strip_path: false
   - name: order-service
-    url: http://order-service:3003
+    host: order-service.upstream
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
     routes:
       - name: order-route
         paths:
           - /api/orders
         strip_path: false
   - name: shipping-service
-    url: http://shipping-service:3004
+    host: shipping-service.upstream
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
     routes:
       - name: shipping-route
         paths:
           - /api/shipments
         strip_path: false
   - name: user-service
-    url: http://user-service:3005
+    host: user-service.upstream
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
     routes:
       - name: user-route
         paths:
           - /api/users
         strip_path: false
   - name: agent-service
-    url: http://agent-service:3006
+    host: agent-service.upstream
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
     routes:
       - name: agent-route
         paths:

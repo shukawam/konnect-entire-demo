@@ -184,6 +184,7 @@ app.openapi(createOrderRoute, async (c) => {
   // 1. Fetch cart from Cart Service
   const cartRes = await fetch(`${CART_SERVICE_URL}/api/carts`, {
     headers: { 'X-User-Id': userId },
+    signal: AbortSignal.timeout(5000),
   })
 
   if (!cartRes.ok) {
@@ -202,7 +203,9 @@ app.openapi(createOrderRoute, async (c) => {
   // 3. Stock validation
   for (const item of cart.items) {
     try {
-      const productRes = await fetch(`${CATALOG_SERVICE_URL}/api/products/${item.productId}`)
+      const productRes = await fetch(`${CATALOG_SERVICE_URL}/api/products/${item.productId}`, {
+        signal: AbortSignal.timeout(5000),
+      })
       if (productRes.ok) {
         const product = (await productRes.json()) as { name: string; stock: number }
         if (item.quantity > product.stock) {
@@ -268,6 +271,7 @@ app.openapi(createOrderRoute, async (c) => {
     await fetch(`${CART_SERVICE_URL}/api/carts`, {
       method: 'DELETE',
       headers: { 'X-User-Id': userId },
+      signal: AbortSignal.timeout(5000),
     })
   } catch (err) {
     log.error({ err, userId }, 'Failed to clear cart')
