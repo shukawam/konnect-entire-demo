@@ -282,6 +282,7 @@ plugins:
       window_size:
         - 60
       namespace: jungle-store
+      strategy: local # 複数 DP でカウンター共有する場合は redis を使用
   # MCP ルートは AI エージェントの内部通信のため、グローバルより緩いレート制限を適用
   - name: rate-limiting-advanced
     service: mcp-catalog
