@@ -27,6 +27,10 @@ export async function startConsumer() {
           log.info({ topic, event }, 'Received event')
 
           if (topic === 'order.status-updated') {
+            if (!event.orderId || !event.status) {
+              log.error('Invalid order.status-updated event: missing orderId or status')
+              return
+            }
             await prisma.order.update({
               where: { id: event.orderId },
               data: { status: event.status },

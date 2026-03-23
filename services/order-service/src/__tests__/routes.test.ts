@@ -34,12 +34,12 @@ afterEach(() => {
 // ---------- GET / ----------
 
 describe('GET /', () => {
-  it('returns 400 without X-User-Id header', async () => {
+  it('X-User-Id ヘッダーがない場合 400 を返す', async () => {
     const res = await app.request('/')
     expect(res.status).toBe(400)
   })
 
-  it('returns 200 with orders', async () => {
+  it('注文一覧を 200 で返す', async () => {
     const orders = [
       {
         id: 'order-1',
@@ -70,7 +70,7 @@ describe('GET /', () => {
 // ---------- GET /{id} ----------
 
 describe('GET /{id}', () => {
-  it('returns 200 when order found and belongs to user', async () => {
+  it('注文が存在し本人のものである場合 200 を返す', async () => {
     const order = {
       id: 'order-1',
       userId: 'user-1',
@@ -90,7 +90,7 @@ describe('GET /{id}', () => {
     expect(body).toEqual(order)
   })
 
-  it('returns 404 when order not found', async () => {
+  it('注文が存在しない場合 404 を返す', async () => {
     vi.mocked(prisma.order.findUnique).mockResolvedValue(null)
 
     const res = await app.request('/order-999', {
@@ -101,7 +101,7 @@ describe('GET /{id}', () => {
     expect(body.error).toBe('Order not found')
   })
 
-  it('returns 403 when order belongs to different user', async () => {
+  it('他ユーザーの注文の場合 403 を返す', async () => {
     const order = {
       id: 'order-1',
       userId: 'user-2',
@@ -125,12 +125,12 @@ describe('GET /{id}', () => {
 // ---------- POST / ----------
 
 describe('POST /', () => {
-  it('returns 400 without X-User-Id header', async () => {
+  it('X-User-Id ヘッダーがない場合 400 を返す', async () => {
     const res = await app.request('/', { method: 'POST' })
     expect(res.status).toBe(400)
   })
 
-  it('returns 201 on success, publishes event, and clears cart', async () => {
+  it('注文成功で 201 を返し、イベント発行とカートクリアを行う', async () => {
     const cartItems = [{ productId: 'prod-1', quantity: 2, price: 1500 }]
     const createdOrder = {
       id: 'order-1',
@@ -193,7 +193,7 @@ describe('POST /', () => {
     })
   })
 
-  it('returns 502 when cart fetch fails', async () => {
+  it('カート取得に失敗した場合 502 を返す', async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500 } as any)
 
     const res = await app.request('/', {
@@ -206,7 +206,7 @@ describe('POST /', () => {
     expect(body.error).toBe('Failed to fetch cart')
   })
 
-  it('returns 400 when stock is insufficient', async () => {
+  it('在庫不足の場合 400 を返す', async () => {
     mockFetch
       .mockResolvedValueOnce({
         ok: true,
@@ -227,7 +227,7 @@ describe('POST /', () => {
     expect(body.error).toContain('在庫不足')
   })
 
-  it('returns 400 when cart is empty', async () => {
+  it('カートが空の場合 400 を返す', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ items: [] }),

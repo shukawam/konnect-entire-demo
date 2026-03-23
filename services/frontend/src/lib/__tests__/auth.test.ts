@@ -13,7 +13,7 @@ beforeEach(() => {
 })
 
 describe('storeUser', () => {
-  it('stores user in localStorage', () => {
+  it('ユーザー情報を localStorage に保存する', () => {
     storeUser(mockUser)
     const stored = JSON.parse(localStorage.getItem('user')!)
     expect(stored).toEqual(mockUser)
@@ -21,18 +21,18 @@ describe('storeUser', () => {
 })
 
 describe('getStoredUser', () => {
-  it('returns null when no user stored', () => {
+  it('ユーザーが保存されていない場合 null を返す', () => {
     expect(getStoredUser()).toBeNull()
   })
 
-  it('returns user when stored', () => {
+  it('保存済みのユーザーを返す', () => {
     localStorage.setItem('user', JSON.stringify(mockUser))
     expect(getStoredUser()).toEqual(mockUser)
   })
 })
 
 describe('clearUser', () => {
-  it('removes user from localStorage', () => {
+  it('localStorage からユーザー情報を削除する', () => {
     storeUser(mockUser)
     clearUser()
     expect(localStorage.getItem('user')).toBeNull()

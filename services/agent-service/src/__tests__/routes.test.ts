@@ -1,0 +1,116 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+vi.mock('../agent.js', () => ({
+  runAgent: vi.fn(),
+}))
+
+import app from '../routes.js'
+import { runAgent } from '../agent.js'
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
+// ---------- POST /api/agent/chat ----------
+
+describe('POST /api/agent/chat', () => {
+  it('prompt 指定で 200 を返す', async () => {
+    vi.mocked(runAgent).mockResolvedValue('ゴリラTシャツがおすすめです')
+
+    const res = await app.request('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'おすすめの商品は？' }),
+    })
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body).toEqual({ response: 'ゴリラTシャツがおすすめです' })
+    expect(runAgent).toHaveBeenCalledWith('おすすめの商品は？')
+  })
+
+  it('messages 配列指定で 200 を返す', async () => {
+    vi.mocked(runAgent).mockResolvedValue('カートに追加しました')
+
+    const res = await app.request('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'user', content: 'Tシャツをカートに入れて' },
+          { role: 'assistant', content: 'どのTシャツですか？' },
+          { role: 'user', content: 'ゴリラTシャツ' },
+        ],
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body).toEqual({ response: 'カートに追加しました' })
+    expect(runAgent).toHaveBeenCalledWith(
+      'User: Tシャツをカートに入れて\nAssistant: どのTシャツですか？\nUser: ゴリラTシャツ',
+    )
+  })
+
+  it('prompt も messages も未指定の場合 400 を返す', async () => {
+    const res = await app.request('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+
+    expect(res.status).toBe(400)
+  })
+
+  it('空の messages 配列の場合 400 を返す', async () => {
+    const res = await app.request('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [] }),
+    })
+
+    expect(res.status).toBe(400)
+  })
+
+  it('MCP サーバー接続エラー時に 503 を返す', async () => {
+    const { HTTPException } = await import('hono/http-exception')
+    vi.mocked(runAgent).mockRejectedValue(
+      new HTTPException(503, { message: 'MCP server is unavailable.' }),
+    )
+
+    const res = await app.request('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'test' }),
+    })
+
+    expect(res.status).toBe(503)
+  })
+
+  it('予期しないエラー時に 500 を返す', async () => {
+    const { HTTPException } = await import('hono/http-exception')
+    vi.mocked(runAgent).mockRejectedValue(
+      new HTTPException(500, { message: 'Unexpected error occurred.' }),
+    )
+
+    const res = await app.request('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'test' }),
+    })
+
+    expect(res.status).toBe(500)
+  })
+})
+
+// ---------- GET /api/agent/suggestions ----------
+
+describe('GET /api/agent/suggestions', () => {
+  it('サジェスト一覧を 200 で返す', async () => {
+    const res = await app.request('/api/agent/suggestions')
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.suggestions).toHaveLength(3)
+    expect(body.suggestions).toContain('どんな商品がありますか？')
+  })
+})
