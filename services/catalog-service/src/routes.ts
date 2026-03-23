@@ -1,5 +1,14 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import type { Product } from '@prisma/client'
 import { prisma } from './db.js'
+
+function serializeProduct(product: Product) {
+  return {
+    ...product,
+    createdAt: product.createdAt.toISOString(),
+    updatedAt: product.updatedAt.toISOString(),
+  }
+}
 
 const app = new OpenAPIHono()
 
@@ -80,7 +89,7 @@ app.openapi(listProducts, async (c) => {
     prisma.product.count({ where }),
   ])
 
-  return c.json({ products, total, page, limit }, 200)
+  return c.json({ products: products.map(serializeProduct), total, page, limit }, 200)
 })
 
 const getProduct = createRoute({
@@ -107,7 +116,7 @@ app.openapi(getProduct, async (c) => {
   const { id } = c.req.valid('param')
   const product = await prisma.product.findUnique({ where: { id } })
   if (!product) return c.json({ error: 'Product not found' }, 404)
-  return c.json(product as any, 200)
+  return c.json(serializeProduct(product), 200)
 })
 
 const createProduct = createRoute({
@@ -130,7 +139,7 @@ const createProduct = createRoute({
 app.openapi(createProduct, async (c) => {
   const data = c.req.valid('json')
   const product = await prisma.product.create({ data })
-  return c.json(product as any, 201)
+  return c.json(serializeProduct(product), 201)
 })
 
 export default app

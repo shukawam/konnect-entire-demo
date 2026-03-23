@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { Shipment } from '@prisma/client'
 
 vi.mock('../db.js', () => ({
   prisma: {
@@ -51,6 +52,18 @@ type EachMessageHandler = (payload: {
 
 let messageHandler: EachMessageHandler
 
+const mockShipment: Shipment = {
+  id: 'ship-1',
+  orderId: 'order-1',
+  userId: 'user-1',
+  status: 'PROCESSING',
+  trackingNumber: 'TRK-ABCD1234',
+  shippedAt: null,
+  deliveredAt: null,
+  createdAt: new Date('2026-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+}
+
 beforeEach(async () => {
   vi.clearAllMocks()
   vi.useFakeTimers()
@@ -68,14 +81,7 @@ afterEach(() => {
 
 describe('order.created consumer', () => {
   it('配送を作成し CONFIRMED イベントを発行する', async () => {
-    const shipment = {
-      id: 'ship-1',
-      orderId: 'order-1',
-      userId: 'user-1',
-      status: 'PROCESSING',
-      trackingNumber: 'TRK-ABCD1234',
-    }
-    vi.mocked(prisma.shipment.create).mockResolvedValue(shipment as any)
+    vi.mocked(prisma.shipment.create).mockResolvedValue(mockShipment)
 
     await messageHandler({
       message: {
@@ -106,18 +112,12 @@ describe('order.created consumer', () => {
   })
 
   it('タイムアウト後に配送ステータスを SHIPPED に更新する', async () => {
-    const shipment = {
-      id: 'ship-1',
-      orderId: 'order-1',
-      userId: 'user-1',
-      status: 'PROCESSING',
-      trackingNumber: 'TRK-ABCD1234',
-    }
-    vi.mocked(prisma.shipment.create).mockResolvedValue(shipment as any)
-    vi.mocked(prisma.shipment.update).mockResolvedValue({
-      ...shipment,
+    vi.mocked(prisma.shipment.create).mockResolvedValue(mockShipment)
+    const shippedShipment: Shipment = {
+      ...mockShipment,
       status: 'SHIPPED',
-    } as any)
+    }
+    vi.mocked(prisma.shipment.update).mockResolvedValue(shippedShipment)
 
     await messageHandler({
       message: {

@@ -1,8 +1,18 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import type { Order, OrderItem } from '@prisma/client'
 import { context, propagation } from '@opentelemetry/api'
+import type { Context } from 'hono'
 import { createLogger } from '@konnect-demo/shared'
 import { prisma } from './db.js'
 import { producer } from './kafka.js'
+
+function serializeOrder(order: Order & { items: OrderItem[] }) {
+  return {
+    ...order,
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
+  }
+}
 
 const log = createLogger('order-service')
 
@@ -130,7 +140,7 @@ const createOrderRoute = createRoute({
 const app = new OpenAPIHono()
 
 /** Extract userId from X-User-Id header; 401 if missing */
-function getUserId(c: any): string | null {
+function getUserId(c: Context): string | null {
   const userId = c.req.header('X-User-Id')
   if (!userId) return null
   return userId
@@ -147,7 +157,7 @@ app.openapi(listOrdersRoute, async (c) => {
     orderBy: { createdAt: 'desc' },
   })
 
-  return c.json(orders as any, 200)
+  return c.json(orders.map(serializeOrder), 200)
 })
 
 // Get order by ID
@@ -163,7 +173,7 @@ app.openapi(getOrderRoute, async (c) => {
   if (!order) return c.json({ error: 'Order not found' }, 404)
   if (order.userId !== userId) return c.json({ error: 'Forbidden' }, 403)
 
-  return c.json(order as any, 200)
+  return c.json(serializeOrder(order), 200)
 })
 
 // Create order from cart
@@ -264,7 +274,7 @@ app.openapi(createOrderRoute, async (c) => {
   }
 
   // 7. Return created order
-  return c.json(order as any, 201)
+  return c.json(serializeOrder(order), 201)
 })
 
 export default app

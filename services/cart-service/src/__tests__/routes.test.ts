@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { Cart, CartItem } from '@prisma/client'
 
 vi.mock('../db.js', () => ({
   prisma: {
@@ -19,15 +20,25 @@ vi.mock('../db.js', () => ({
 import app from '../routes.js'
 import { prisma } from '../db.js'
 
-const mockCart = {
+const mockCartBase: Cart = {
   id: 'cart-001',
   userId: 'user-001',
+  createdAt: new Date('2024-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+}
+
+const mockCart: Cart & { items: CartItem[] } = {
+  ...mockCartBase,
   items: [],
+}
+
+const expectedCart = {
+  ...mockCart,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
 }
 
-const mockItem = {
+const mockItem: CartItem = {
   id: 'item-001',
   cartId: 'cart-001',
   productId: 'prod-001',
@@ -46,14 +57,14 @@ describe('GET /', () => {
   })
 
   it('既存のカートがある場合 200 で返す', async () => {
-    vi.mocked(prisma.cart.findUnique).mockResolvedValue(mockCart as any)
+    vi.mocked(prisma.cart.findUnique).mockResolvedValue(mockCart)
 
     const res = await app.request('/', {
       headers: { 'X-User-Id': 'user-001' },
     })
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body).toEqual(mockCart)
+    expect(body).toEqual(expectedCart)
     expect(prisma.cart.findUnique).toHaveBeenCalledWith({
       where: { userId: 'user-001' },
       include: { items: true },
@@ -62,14 +73,14 @@ describe('GET /', () => {
 
   it('カートが存在しない場合は新規作成して返す', async () => {
     vi.mocked(prisma.cart.findUnique).mockResolvedValue(null)
-    vi.mocked(prisma.cart.create).mockResolvedValue(mockCart as any)
+    vi.mocked(prisma.cart.create).mockResolvedValue(mockCart)
 
     const res = await app.request('/', {
       headers: { 'X-User-Id': 'user-001' },
     })
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body).toEqual(mockCart)
+    expect(body).toEqual(expectedCart)
     expect(prisma.cart.create).toHaveBeenCalledWith({
       data: { userId: 'user-001' },
       include: { items: true },
@@ -79,14 +90,19 @@ describe('GET /', () => {
 
 describe('POST /items', () => {
   it('新規アイテムを追加して 201 を返す', async () => {
-    const cartWithItem = { ...mockCart, items: [mockItem] }
+    const cartWithItem: Cart & { items: CartItem[] } = { ...mockCart, items: [mockItem] }
+    const expectedCartWithItem = {
+      ...cartWithItem,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    }
     // cart exists
     vi.mocked(prisma.cart.findUnique)
-      .mockResolvedValueOnce({ id: 'cart-001', userId: 'user-001' } as any) // ensure cart
-      .mockResolvedValueOnce(cartWithItem as any) // return updated cart
+      .mockResolvedValueOnce(mockCartBase) // ensure cart
+      .mockResolvedValueOnce(cartWithItem) // return updated cart
     // no existing item
     vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(null)
-    vi.mocked(prisma.cartItem.create).mockResolvedValue(mockItem as any)
+    vi.mocked(prisma.cartItem.create).mockResolvedValue(mockItem)
 
     const res = await app.request('/items', {
       method: 'POST',
@@ -98,18 +114,21 @@ describe('POST /items', () => {
     })
     expect(res.status).toBe(201)
     const body = await res.json()
-    expect(body).toEqual(cartWithItem)
+    expect(body).toEqual(expectedCartWithItem)
     expect(prisma.cartItem.create).toHaveBeenCalled()
   })
 
   it('既存アイテムの場合は数量を加算する', async () => {
-    const existingItem = { ...mockItem, quantity: 1 }
-    const cartWithItem = { ...mockCart, items: [{ ...mockItem, quantity: 3 }] }
+    const existingItem: CartItem = { ...mockItem, quantity: 1 }
+    const cartWithItem: Cart & { items: CartItem[] } = {
+      ...mockCart,
+      items: [{ ...mockItem, quantity: 3 }],
+    }
     vi.mocked(prisma.cart.findUnique)
-      .mockResolvedValueOnce({ id: 'cart-001', userId: 'user-001' } as any)
-      .mockResolvedValueOnce(cartWithItem as any)
-    vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(existingItem as any)
-    vi.mocked(prisma.cartItem.update).mockResolvedValue({ ...mockItem, quantity: 3 } as any)
+      .mockResolvedValueOnce(mockCartBase)
+      .mockResolvedValueOnce(cartWithItem)
+    vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(existingItem)
+    vi.mocked(prisma.cartItem.update).mockResolvedValue({ ...mockItem, quantity: 3 })
 
     const res = await app.request('/items', {
       method: 'POST',
@@ -145,8 +164,8 @@ describe('PATCH /items/:id', () => {
   })
 
   it('数量が正の場合は更新する', async () => {
-    vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(mockItem as any)
-    vi.mocked(prisma.cartItem.update).mockResolvedValue({ ...mockItem, quantity: 5 } as any)
+    vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(mockItem)
+    vi.mocked(prisma.cartItem.update).mockResolvedValue({ ...mockItem, quantity: 5 })
 
     const res = await app.request('/items/item-001', {
       method: 'PATCH',
@@ -166,8 +185,8 @@ describe('PATCH /items/:id', () => {
   })
 
   it('数量が 0 以下の場合はアイテムを削除する', async () => {
-    vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(mockItem as any)
-    vi.mocked(prisma.cartItem.delete).mockResolvedValue(mockItem as any)
+    vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(mockItem)
+    vi.mocked(prisma.cartItem.delete).mockResolvedValue(mockItem)
 
     const res = await app.request('/items/item-001', {
       method: 'PATCH',
@@ -186,8 +205,8 @@ describe('PATCH /items/:id', () => {
 
 describe('DELETE /items/:id', () => {
   it('アイテムを削除して 200 を返す', async () => {
-    vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(mockItem as any)
-    vi.mocked(prisma.cartItem.delete).mockResolvedValue(mockItem as any)
+    vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(mockItem)
+    vi.mocked(prisma.cartItem.delete).mockResolvedValue(mockItem)
 
     const res = await app.request('/items/item-001', {
       method: 'DELETE',
@@ -213,11 +232,8 @@ describe('DELETE /items/:id', () => {
 
 describe('DELETE /', () => {
   it('カートを削除して 200 を返す', async () => {
-    vi.mocked(prisma.cart.findUnique).mockResolvedValue({
-      id: 'cart-001',
-      userId: 'user-001',
-    } as any)
-    vi.mocked(prisma.cart.delete).mockResolvedValue(mockCart as any)
+    vi.mocked(prisma.cart.findUnique).mockResolvedValue(mockCartBase)
+    vi.mocked(prisma.cart.delete).mockResolvedValue(mockCartBase)
 
     const res = await app.request('/', {
       method: 'DELETE',

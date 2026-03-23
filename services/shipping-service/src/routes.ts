@@ -1,5 +1,21 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import type { Shipment } from '@prisma/client'
+import type { Context } from 'hono'
 import { prisma } from './db.js'
+
+function serializeShipment(shipment: Shipment) {
+  return {
+    ...shipment,
+    shippedAt: shipment.shippedAt?.toISOString() ?? null,
+    deliveredAt: shipment.deliveredAt?.toISOString() ?? null,
+    createdAt: shipment.createdAt.toISOString(),
+    updatedAt: shipment.updatedAt.toISOString(),
+  }
+}
+
+function getUserId(c: Context): string | null {
+  return c.req.header('X-User-Id') || null
+}
 
 const app = new OpenAPIHono()
 
@@ -50,7 +66,7 @@ const listShipmentsRoute = createRoute({
 })
 
 app.openapi(listShipmentsRoute, async (c) => {
-  const userId = c.req.header('X-User-Id')
+  const userId = getUserId(c)
   if (!userId) {
     return c.json({ error: 'Unauthorized: X-User-Id header is required' }, 401)
   }
@@ -60,7 +76,7 @@ app.openapi(listShipmentsRoute, async (c) => {
     orderBy: { createdAt: 'desc' },
   })
 
-  return c.json(shipments as any, 200)
+  return c.json(shipments.map(serializeShipment), 200)
 })
 
 const getShipmentRoute = createRoute({
@@ -93,7 +109,7 @@ const getShipmentRoute = createRoute({
 })
 
 app.openapi(getShipmentRoute, async (c) => {
-  const userId = c.req.header('X-User-Id')
+  const userId = getUserId(c)
   if (!userId) {
     return c.json({ error: 'Unauthorized: X-User-Id header is required' }, 401)
   }
@@ -112,7 +128,7 @@ app.openapi(getShipmentRoute, async (c) => {
     return c.json({ error: 'Forbidden' }, 403)
   }
 
-  return c.json(shipment as any, 200)
+  return c.json(serializeShipment(shipment), 200)
 })
 
 const getShipmentByOrderRoute = createRoute({
@@ -145,7 +161,7 @@ const getShipmentByOrderRoute = createRoute({
 })
 
 app.openapi(getShipmentByOrderRoute, async (c) => {
-  const userId = c.req.header('X-User-Id')
+  const userId = getUserId(c)
   if (!userId) {
     return c.json({ error: 'Unauthorized: X-User-Id header is required' }, 401)
   }
@@ -164,7 +180,7 @@ app.openapi(getShipmentByOrderRoute, async (c) => {
     return c.json({ error: 'Forbidden' }, 403)
   }
 
-  return c.json(shipment as any, 200)
+  return c.json(serializeShipment(shipment), 200)
 })
 
 export default app
