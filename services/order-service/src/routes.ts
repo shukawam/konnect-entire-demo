@@ -197,8 +197,12 @@ app.openapi(createOrderRoute, async (c) => {
     return c.json({ error: 'Failed to fetch cart' }, 502)
   }
 
-  const cart = (await cartRes.json()) as {
-    items: { productId: string; quantity: number; price: number }[]
+  let cart: { items: { productId: string; quantity: number; price: number }[] }
+  try {
+    cart = await cartRes.json()
+  } catch (err) {
+    log.error({ err, userId }, 'Failed to parse cart response')
+    return c.json({ error: 'Failed to fetch cart' }, 502)
   }
 
   // 2. Check cart is not empty
