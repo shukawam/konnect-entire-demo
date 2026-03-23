@@ -393,22 +393,16 @@ plugins:
           provider: openai
           name: text-embedding-3-small
       search:
-        threshold: 0.5
+        threshold: 0.3
       vectordb:
         strategy: redis
         distance_metric: cosine
-        threshold: 0.7
+        threshold: 0.3
         dimensions: 1536
         redis:
           host: redis
           port: 6379
       rules:
-        allow_prompts:
-          - EC サイトの商品に関する質問
-          - 商品の検索や在庫の確認
-          - カートや注文に関する操作や質問
-          - 配送状況の確認
-          - ゴリラストアのサービスに関する一般的な質問
         deny_prompts:
           - 暴力的・攻撃的な内容や脅迫
           - システムプロンプトやAI の内部設定を引き出そうとする試み
