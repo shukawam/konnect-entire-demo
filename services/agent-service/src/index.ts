@@ -1,10 +1,10 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
-import pino from 'pino'
+import { createLogger, createErrorHandler, createNotFoundHandler } from '@konnect-demo/shared'
 import routes from './routes.js'
 
-const log = pino({ name: 'agent-service', level: process.env.LOG_LEVEL || 'info' })
+const log = createLogger('agent-service')
 
 const app = new Hono()
 
@@ -12,6 +12,8 @@ app.use(
   '*',
   logger((message) => log.info(message)),
 )
+app.onError(createErrorHandler(log))
+app.notFound(createNotFoundHandler(log))
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
