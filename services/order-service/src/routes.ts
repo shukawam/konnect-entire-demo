@@ -182,10 +182,16 @@ app.openapi(createOrderRoute, async (c) => {
   if (!userId) return c.json({ error: 'Unauthorized' }, 401)
 
   // 1. Fetch cart from Cart Service
-  const cartRes = await fetch(`${CART_SERVICE_URL}/api/carts`, {
-    headers: { 'X-User-Id': userId },
-    signal: AbortSignal.timeout(5000),
-  })
+  let cartRes: Response
+  try {
+    cartRes = await fetch(`${CART_SERVICE_URL}/api/carts`, {
+      headers: { 'X-User-Id': userId },
+      signal: AbortSignal.timeout(5000),
+    })
+  } catch (err) {
+    log.error({ err, userId }, 'Failed to fetch cart')
+    return c.json({ error: 'Failed to fetch cart' }, 502)
+  }
 
   if (!cartRes.ok) {
     return c.json({ error: 'Failed to fetch cart' }, 502)

@@ -21,6 +21,7 @@ upstreams:
           successes: 2
         unhealthy:
           http_failures: 3
+          tcp_failures: 1
 
   - name: cart-service.upstream
     targets:
@@ -42,6 +43,7 @@ upstreams:
           successes: 2
         unhealthy:
           http_failures: 3
+          tcp_failures: 1
 
   - name: order-service.upstream
     targets:
@@ -63,6 +65,7 @@ upstreams:
           successes: 2
         unhealthy:
           http_failures: 3
+          tcp_failures: 1
 
   - name: shipping-service.upstream
     targets:
@@ -84,6 +87,7 @@ upstreams:
           successes: 2
         unhealthy:
           http_failures: 3
+          tcp_failures: 1
 
   - name: user-service.upstream
     targets:
@@ -105,6 +109,7 @@ upstreams:
           successes: 2
         unhealthy:
           http_failures: 3
+          tcp_failures: 1
 
   - name: agent-service.upstream
     targets:
@@ -126,6 +131,7 @@ upstreams:
           successes: 2
         unhealthy:
           http_failures: 3
+          tcp_failures: 1
 
 services:
   - name: catalog-service
@@ -155,7 +161,7 @@ services:
   - name: order-service
     host: order-service.upstream
     protocol: http
-    retries: 3
+    retries: 0 # POST による注文作成の重複を防ぐためリトライ無効
     connect_timeout: 5000
     read_timeout: 15000
     write_timeout: 10000
@@ -211,6 +217,9 @@ services:
         strip_path: true
 
   # MCP Proxy — Catalog API
+  # MCP プロキシは ai-mcp-proxy プラグインの特殊ルーティング（strip_path + path 書き換え）を
+  # 使用するため、upstream 経由ではなく直接 URL を指定する。
+  # ヘルスチェック・リトライはバックエンドサービス側の upstream で担保される。
   - name: mcp-catalog
     url: http://catalog-service:3001
     routes:
