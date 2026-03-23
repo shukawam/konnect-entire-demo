@@ -71,6 +71,10 @@ const registerRoute = createRoute({
       description: 'メールアドレス重複',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    500: {
+      description: 'サーバーエラー',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -101,6 +105,10 @@ const loginRoute = createRoute({
       content: { 'application/json': { schema: UserResponseSchema } },
     },
     401: { description: '認証失敗', content: { 'application/json': { schema: ErrorSchema } } },
+    500: {
+      description: 'サーバーエラー',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -127,6 +135,10 @@ const getMeRoute = createRoute({
     401: { description: '認証エラー', content: { 'application/json': { schema: ErrorSchema } } },
     404: {
       description: 'ユーザーが見つかりません',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    500: {
+      description: 'サーバーエラー',
       content: { 'application/json': { schema: ErrorSchema } },
     },
   },
@@ -164,6 +176,10 @@ const updateMeRoute = createRoute({
       content: { 'application/json': { schema: UserProfileSchema } },
     },
     401: { description: '認証エラー', content: { 'application/json': { schema: ErrorSchema } } },
+    500: {
+      description: 'サーバーエラー',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 

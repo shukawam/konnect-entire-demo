@@ -62,6 +62,10 @@ const listShipmentsRoute = createRoute({
       description: 'Unauthorized',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    500: {
+      description: 'Internal Server Error',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -103,6 +107,10 @@ const getShipmentRoute = createRoute({
     },
     404: {
       description: 'Not Found',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    500: {
+      description: 'Internal Server Error',
       content: { 'application/json': { schema: ErrorSchema } },
     },
   },
@@ -155,6 +163,10 @@ const getShipmentByOrderRoute = createRoute({
     },
     404: {
       description: 'Not Found',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    500: {
+      description: 'Internal Server Error',
       content: { 'application/json': { schema: ErrorSchema } },
     },
   },

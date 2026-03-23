@@ -70,6 +70,10 @@ const listOrdersRoute = createRoute({
       description: 'Unauthorized',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    500: {
+      description: 'Internal Server Error',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -101,6 +105,10 @@ const getOrderRoute = createRoute({
       description: 'Not Found',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    500: {
+      description: 'Internal Server Error',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -130,6 +138,10 @@ const createOrderRoute = createRoute({
     },
     502: {
       description: 'Bad Gateway (failed to fetch cart)',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    500: {
+      description: 'Internal Server Error',
       content: { 'application/json': { schema: ErrorSchema } },
     },
   },

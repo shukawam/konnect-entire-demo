@@ -88,6 +88,10 @@ const getCart = createRoute({
       description: '認証エラー',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    500: {
+      description: 'サーバーエラー',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -212,6 +216,10 @@ const updateItemQuantity = createRoute({
       description: '商品が見つかりません',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    500: {
+      description: 'サーバーエラー',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -273,6 +281,10 @@ const deleteItem = createRoute({
       description: '商品が見つかりません',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    500: {
+      description: 'サーバーエラー',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -320,6 +332,10 @@ const clearCart = createRoute({
     },
     404: {
       description: 'カートが見つかりません',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    500: {
+      description: 'サーバーエラー',
       content: { 'application/json': { schema: ErrorSchema } },
     },
   },
