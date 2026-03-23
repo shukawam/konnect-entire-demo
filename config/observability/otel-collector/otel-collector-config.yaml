@@ -5,6 +5,8 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
+  # Kong 3.13 の OTel プラグインは AI 関連メトリクスを出力しないため、
+  # Prometheus エンドポイントからスクレイプして AI メトリクスを収集する
   prometheus:
     config:
       scrape_configs:

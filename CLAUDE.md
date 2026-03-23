@@ -94,7 +94,7 @@ services/<名前>/src/
 - 設定ファイルは `config/<ツール名>/` に配置（例: `config/observability/tempo/`）
 - OpenAPI 仕様は Zod スキーマから自動生成する（手書き禁止）
 - OTel 計装は NODE_OPTIONS によるゼロコード方式を優先する
-- Kong の設定は `config/kong/kong.yml` の宣言型 YAML を使用し、decK を用いて管理する
+- Kong の設定は `config/kong/kong.yaml` の宣言型 YAML を使用し、decK を用いて管理する
 - 実装は必ず適切なブランチを作成し、プルリクエストを通じてマージする（main ブランチへの直接コミット禁止）
 - 新機能などの実装後は、必ずテストを追加する
 - コードスタイルはプロジェクトの ESLint 設定に従う（Prettier も併用）

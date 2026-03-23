@@ -291,6 +291,7 @@ plugins:
       window_size:
         - 60
       namespace: jungle-store-mcp-catalog
+      strategy: local # 複数 DP でカウンター共有する場合は redis を使用
   - name: rate-limiting-advanced
     service: mcp-cart
     config:
@@ -299,6 +300,7 @@ plugins:
       window_size:
         - 60
       namespace: jungle-store-mcp-cart
+      strategy: local
   - name: rate-limiting-advanced
     service: mcp-order
     config:
@@ -307,6 +309,7 @@ plugins:
       window_size:
         - 60
       namespace: jungle-store-mcp-order
+      strategy: local
   - name: correlation-id
     config:
       header_name: X-Request-Id
@@ -455,7 +458,7 @@ plugins:
               input_cost: 0.15 # per 1M tokens
               output_cost: 0.6 # per 1M tokens
           logging:
-            log_payloads: true
+            log_payloads: true # デモ用。本番では false 推奨（PII 漏洩リスク）
             log_statistics: true
 
   # MCP Proxy — Catalog tools
