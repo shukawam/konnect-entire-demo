@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { Order, OrderItem } from '@prisma/client'
 
 vi.mock('../db.js', () => ({
   prisma: {
@@ -23,6 +24,36 @@ import { producer } from '../kafka.js'
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
+function mockResponse(body: unknown, options: { ok?: boolean; status?: number } = {}): Response {
+  return {
+    ok: options.ok ?? true,
+    status: options.status ?? 200,
+    json: async () => body,
+  } as Response
+}
+
+const mockOrderDate = new Date('2026-01-01T00:00:00.000Z')
+
+const mockOrderItems: OrderItem[] = [
+  { id: 'item-1', orderId: 'order-1', productId: 'prod-1', quantity: 2, price: 1500 },
+]
+
+const mockOrder: Order & { items: OrderItem[] } = {
+  id: 'order-1',
+  userId: 'user-1',
+  status: 'PENDING',
+  totalPrice: 3000,
+  items: mockOrderItems,
+  createdAt: mockOrderDate,
+  updatedAt: mockOrderDate,
+}
+
+const expectedOrder = {
+  ...mockOrder,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
@@ -40,25 +71,14 @@ describe('GET /', () => {
   })
 
   it('注文一覧を 200 で返す', async () => {
-    const orders = [
-      {
-        id: 'order-1',
-        userId: 'user-1',
-        status: 'PENDING',
-        totalPrice: 3000,
-        items: [],
-        createdAt: '2026-01-01T00:00:00.000Z',
-        updatedAt: '2026-01-01T00:00:00.000Z',
-      },
-    ]
-    vi.mocked(prisma.order.findMany).mockResolvedValue(orders as any)
+    vi.mocked(prisma.order.findMany).mockResolvedValue([mockOrder])
 
     const res = await app.request('/', {
       headers: { 'X-User-Id': 'user-1' },
     })
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body).toEqual(orders)
+    expect(body).toEqual([expectedOrder])
     expect(prisma.order.findMany).toHaveBeenCalledWith({
       where: { userId: 'user-1' },
       include: { items: true },
@@ -71,23 +91,14 @@ describe('GET /', () => {
 
 describe('GET /{id}', () => {
   it('注文が存在し本人のものである場合 200 を返す', async () => {
-    const order = {
-      id: 'order-1',
-      userId: 'user-1',
-      status: 'PENDING',
-      totalPrice: 3000,
-      items: [],
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    }
-    vi.mocked(prisma.order.findUnique).mockResolvedValue(order as any)
+    vi.mocked(prisma.order.findUnique).mockResolvedValue(mockOrder)
 
     const res = await app.request('/order-1', {
       headers: { 'X-User-Id': 'user-1' },
     })
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body).toEqual(order)
+    expect(body).toEqual(expectedOrder)
   })
 
   it('注文が存在しない場合 404 を返す', async () => {
@@ -102,16 +113,11 @@ describe('GET /{id}', () => {
   })
 
   it('他ユーザーの注文の場合 403 を返す', async () => {
-    const order = {
-      id: 'order-1',
+    const otherUserOrder: Order & { items: OrderItem[] } = {
+      ...mockOrder,
       userId: 'user-2',
-      status: 'PENDING',
-      totalPrice: 3000,
-      items: [],
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
     }
-    vi.mocked(prisma.order.findUnique).mockResolvedValue(order as any)
+    vi.mocked(prisma.order.findUnique).mockResolvedValue(otherUserOrder)
 
     const res = await app.request('/order-1', {
       headers: { 'X-User-Id': 'user-1' },
@@ -132,29 +138,14 @@ describe('POST /', () => {
 
   it('注文成功で 201 を返し、イベント発行とカートクリアを行う', async () => {
     const cartItems = [{ productId: 'prod-1', quantity: 2, price: 1500 }]
-    const createdOrder = {
-      id: 'order-1',
-      userId: 'user-1',
-      status: 'PENDING',
-      totalPrice: 3000,
-      items: [{ id: 'item-1', orderId: 'order-1', productId: 'prod-1', quantity: 2, price: 1500 }],
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    }
 
     // 1st call: GET cart, 2nd call: GET product (stock check), 3rd call: DELETE cart
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ items: cartItems }),
-      } as any)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ id: 'prod-1', name: 'Test Product', stock: 10 }),
-      } as any)
-      .mockResolvedValueOnce({ ok: true } as any)
+      .mockResolvedValueOnce(mockResponse({ items: cartItems }))
+      .mockResolvedValueOnce(mockResponse({ id: 'prod-1', name: 'Test Product', stock: 10 }))
+      .mockResolvedValueOnce(mockResponse(null))
 
-    vi.mocked(prisma.order.create).mockResolvedValue(createdOrder as any)
+    vi.mocked(prisma.order.create).mockResolvedValue(mockOrder)
 
     const res = await app.request('/', {
       method: 'POST',
@@ -163,7 +154,7 @@ describe('POST /', () => {
 
     expect(res.status).toBe(201)
     const body = await res.json()
-    expect(body).toEqual(createdOrder)
+    expect(body).toEqual(expectedOrder)
 
     // Verify Kafka event published (with trace context headers)
     expect(producer.send).toHaveBeenCalledWith({
@@ -174,9 +165,9 @@ describe('POST /', () => {
           value: JSON.stringify({
             orderId: 'order-1',
             userId: 'user-1',
-            items: createdOrder.items,
+            items: mockOrder.items,
             totalPrice: 3000,
-            createdAt: '2026-01-01T00:00:00.000Z',
+            createdAt: mockOrder.createdAt,
           }),
           headers: expect.any(Object),
         },
@@ -194,7 +185,7 @@ describe('POST /', () => {
   })
 
   it('カート取得に失敗した場合 502 を返す', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 } as any)
+    mockFetch.mockResolvedValueOnce(mockResponse(null, { ok: false, status: 500 }))
 
     const res = await app.request('/', {
       method: 'POST',
@@ -208,14 +199,10 @@ describe('POST /', () => {
 
   it('在庫不足の場合 400 を返す', async () => {
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ items: [{ productId: 'prod-1', quantity: 5, price: 1500 }] }),
-      } as any)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ id: 'prod-1', name: 'Test Product', stock: 2 }),
-      } as any)
+      .mockResolvedValueOnce(
+        mockResponse({ items: [{ productId: 'prod-1', quantity: 5, price: 1500 }] }),
+      )
+      .mockResolvedValueOnce(mockResponse({ id: 'prod-1', name: 'Test Product', stock: 2 }))
 
     const res = await app.request('/', {
       method: 'POST',
@@ -228,10 +215,7 @@ describe('POST /', () => {
   })
 
   it('カートが空の場合 400 を返す', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ items: [] }),
-    } as any)
+    mockFetch.mockResolvedValueOnce(mockResponse({ items: [] }))
 
     const res = await app.request('/', {
       method: 'POST',

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { Order } from '@prisma/client'
 
 vi.mock('../db.js', () => ({
   prisma: {
@@ -46,6 +47,15 @@ type EachMessageHandler = (payload: {
 
 let messageHandler: EachMessageHandler
 
+const emptyOrder: Order = {
+  id: '',
+  userId: '',
+  status: '',
+  totalPrice: 0,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
 beforeEach(async () => {
   vi.clearAllMocks()
 
@@ -58,7 +68,7 @@ beforeEach(async () => {
 
 describe('order.status-updated consumer', () => {
   it('有効なイベントで注文ステータスを更新する', async () => {
-    vi.mocked(prisma.order.update).mockResolvedValue({} as any)
+    vi.mocked(prisma.order.update).mockResolvedValue(emptyOrder)
 
     await messageHandler({
       topic: 'order.status-updated',
@@ -80,7 +90,7 @@ describe('order.status-updated consumer', () => {
   })
 
   it('SHIPPED ステータスの更新を処理する', async () => {
-    vi.mocked(prisma.order.update).mockResolvedValue({} as any)
+    vi.mocked(prisma.order.update).mockResolvedValue(emptyOrder)
 
     await messageHandler({
       topic: 'order.status-updated',

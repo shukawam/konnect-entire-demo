@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { Product } from '@prisma/client'
 
 vi.mock('../db.js', () => ({
   prisma: {
@@ -14,7 +15,7 @@ vi.mock('../db.js', () => ({
 import app from '../routes.js'
 import { prisma } from '../db.js'
 
-const mockProduct = {
+const mockProduct: Product = {
   id: 'prod-001',
   name: '極上キングバナナ 1房',
   description: 'ジャングル最深部で厳選された特大キングバナナ',
@@ -22,6 +23,12 @@ const mockProduct = {
   imageUrl: '/images/products/king-banana.jpg',
   category: 'バナナ',
   stock: 50,
+  createdAt: new Date('2024-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+}
+
+const expectedProduct = {
+  ...mockProduct,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
 }
@@ -40,7 +47,7 @@ describe('GET /', () => {
 
     expect(res.status).toBe(200)
     expect(body).toEqual({
-      products: [mockProduct],
+      products: [expectedProduct],
       total: 1,
       page: 1,
       limit: 20,
@@ -62,7 +69,7 @@ describe('GET /', () => {
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body.products).toEqual([mockProduct])
+    expect(body.products).toEqual([expectedProduct])
     expect(prisma.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { category: 'バナナ' },
@@ -81,7 +88,7 @@ describe('GET /', () => {
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body.products).toEqual([mockProduct])
+    expect(body.products).toEqual([expectedProduct])
     expect(prisma.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { name: { contains: 'キング' } },
@@ -92,13 +99,13 @@ describe('GET /', () => {
 
 describe('GET /{id}', () => {
   it('商品が存在する場合はその商品を返す', async () => {
-    vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any)
+    vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct)
 
     const res = await app.request('/prod-001')
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body).toEqual(mockProduct)
+    expect(body).toEqual(expectedProduct)
     expect(prisma.product.findUnique).toHaveBeenCalledWith({
       where: { id: 'prod-001' },
     })
@@ -125,8 +132,8 @@ describe('POST /', () => {
       category: 'バナナ',
       stock: 10,
     }
-    const created = { ...mockProduct, ...input, id: 'prod-new' }
-    vi.mocked(prisma.product.create).mockResolvedValue(created as any)
+    const created: Product = { ...mockProduct, ...input, id: 'prod-new' }
+    vi.mocked(prisma.product.create).mockResolvedValue(created)
 
     const res = await app.request('/', {
       method: 'POST',
@@ -136,7 +143,11 @@ describe('POST /', () => {
     const body = await res.json()
 
     expect(res.status).toBe(201)
-    expect(body).toEqual(created)
+    expect(body).toEqual({
+      ...created,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    })
     expect(prisma.product.create).toHaveBeenCalledWith({ data: input })
   })
 })

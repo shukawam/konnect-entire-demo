@@ -1,5 +1,15 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import type { Cart, CartItem } from '@prisma/client'
+import type { Context } from 'hono'
 import { prisma } from './db.js'
+
+function serializeCart(cart: Cart & { items: CartItem[] }) {
+  return {
+    ...cart,
+    createdAt: cart.createdAt.toISOString(),
+    updatedAt: cart.updatedAt.toISOString(),
+  }
+}
 
 const app = new OpenAPIHono()
 
@@ -51,7 +61,7 @@ const MessageSchema = z
   .openapi('Message')
 
 // Helper: extract userId from X-User-Id header
-function getUserId(c: any): string | null {
+function getUserId(c: Context): string | null {
   return c.req.header('X-User-Id') || null
 }
 
@@ -99,7 +109,7 @@ app.openapi(getCart, async (c) => {
     })
   }
 
-  return c.json(cart as any, 200)
+  return c.json(serializeCart(cart), 200)
 })
 
 // POST /items — 商品追加（upsert）
@@ -162,7 +172,11 @@ app.openapi(addItem, async (c) => {
     include: { items: true },
   })
 
-  return c.json(updatedCart as any, 201)
+  if (!updatedCart) {
+    return c.json({ error: 'Cart not found' }, 401)
+  }
+
+  return c.json(serializeCart(updatedCart), 201)
 })
 
 // PATCH /items/{itemId} — 数量変更（0以下なら削除）
@@ -184,7 +198,7 @@ const updateItemQuantity = createRoute({
   responses: {
     200: {
       description: '更新された商品またはメッセージ',
-      content: { 'application/json': { schema: CartItemSchema } },
+      content: { 'application/json': { schema: z.union([CartItemSchema, MessageSchema]) } },
     },
     401: {
       description: '認証エラー',
@@ -216,7 +230,7 @@ app.openapi(updateItemQuantity, async (c) => {
 
   if (quantity <= 0) {
     await prisma.cartItem.delete({ where: { id: itemId } })
-    return c.json({ message: 'Item removed from cart' } as any, 200)
+    return c.json({ message: 'Item removed from cart' }, 200)
   }
 
   const item = await prisma.cartItem.update({
@@ -224,7 +238,7 @@ app.openapi(updateItemQuantity, async (c) => {
     data: { quantity },
   })
 
-  return c.json(item as any, 200)
+  return c.json(item, 200)
 })
 
 // DELETE /items/{itemId} — 商品削除
@@ -316,7 +330,7 @@ app.openapi(clearCart, async (c) => {
   const cart = await prisma.cart.findUnique({ where: { userId } })
 
   if (!cart) {
-    return c.json({ error: 'Cart not found' } as any, 404)
+    return c.json({ error: 'Cart not found' }, 404)
   }
 
   await prisma.cart.delete({ where: { id: cart.id } })
