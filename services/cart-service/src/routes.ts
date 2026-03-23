@@ -173,7 +173,7 @@ app.openapi(addItem, async (c) => {
   })
 
   if (!updatedCart) {
-    return c.json({ error: 'Cart not found' }, 401)
+    return c.json({ error: 'Failed to retrieve cart' }, 500)
   }
 
   return c.json(serializeCart(updatedCart), 201)

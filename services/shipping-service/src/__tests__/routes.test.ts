@@ -10,8 +10,8 @@ vi.mock('../db.js', () => ({
 import app from '../routes.js'
 import { prisma } from '../db.js'
 
-const mockFindMany = prisma.shipment.findMany as ReturnType<typeof vi.fn>
-const mockFindUnique = prisma.shipment.findUnique as ReturnType<typeof vi.fn>
+const mockFindMany = vi.mocked(prisma.shipment.findMany)
+const mockFindUnique = vi.mocked(prisma.shipment.findUnique)
 
 const mockShipment: Shipment = {
   id: 'ship-1',
