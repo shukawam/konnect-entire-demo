@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
-import type { Product } from '@prisma/client'
+import type { Product } from '../generated/prisma'
 import { prisma } from './db.js'
 
 function serializeProduct(product: Product) {

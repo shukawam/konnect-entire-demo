@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import type { Order, OrderItem } from '@prisma/client'
+import type { Order, OrderItem } from '../generated/prisma'
 import { context, propagation } from '@opentelemetry/api'
 import type { Context } from 'hono'
 import { createLogger } from '@konnect-demo/shared'

@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import type { Shipment } from '@prisma/client'
+import type { Shipment } from '../generated/prisma'
 import type { Context } from 'hono'
 import { prisma } from './db.js'
 

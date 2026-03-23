@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
-import type { Cart, CartItem } from '@prisma/client'
+import type { Cart, CartItem } from '../generated/prisma'
 import type { Context } from 'hono'
 import { prisma } from './db.js'
 
@@ -132,6 +132,10 @@ const addItem = createRoute({
     },
     401: {
       description: '認証エラー',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    500: {
+      description: 'サーバーエラー',
       content: { 'application/json': { schema: ErrorSchema } },
     },
   },
