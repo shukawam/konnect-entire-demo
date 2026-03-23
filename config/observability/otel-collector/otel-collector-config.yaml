@@ -5,6 +5,14 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: kong-gateway
+          scrape_interval: 5s
+          static_configs:
+            - targets:
+                - kong:8100 # Status API
 
 processors:
   batch:
@@ -51,7 +59,7 @@ service:
       processors: [filter/traces, batch]
       exporters: [otlphttp/tempo]
     metrics:
-      receivers: [otlp]
+      receivers: [otlp, prometheus]
       processors: [batch]
       exporters: [prometheus]
     logs:
