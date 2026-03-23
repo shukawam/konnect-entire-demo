@@ -6,9 +6,9 @@ import {
   MCPConnectionError,
 } from '@volcano.dev/agent'
 import { HTTPException } from 'hono/http-exception'
-import pino from 'pino'
+import { createLogger } from '@konnect-demo/shared'
 
-const log = pino({ name: 'agent-service', level: process.env.LOG_LEVEL || 'info' })
+const log = createLogger('agent-service')
 
 const serviceName = process.env.OTEL_SERVICE_NAME || 'agent-service'
 const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318'
