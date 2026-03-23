@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { Cart, CartItem } from '@prisma/client'
+import type { Cart, CartItem } from '../../generated/prisma'
 
 vi.mock('../db.js', () => ({
   prisma: {

@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
-import type { Product } from '@prisma/client'
+import type { Product } from '../generated/prisma'
 import { prisma } from './db.js'
 
 function serializeProduct(product: Product) {
@@ -73,6 +73,10 @@ const listProducts = createRoute({
       description: '商品一覧',
       content: { 'application/json': { schema: ProductListSchema } },
     },
+    500: {
+      description: 'サーバーエラー',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -109,6 +113,10 @@ const getProduct = createRoute({
       description: '商品が見つかりません',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    500: {
+      description: 'サーバーエラー',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
   },
 })
 
@@ -132,6 +140,10 @@ const createProduct = createRoute({
     201: {
       description: '作成された商品',
       content: { 'application/json': { schema: ProductSchema } },
+    },
+    500: {
+      description: 'サーバーエラー',
+      content: { 'application/json': { schema: ErrorSchema } },
     },
   },
 })

@@ -1,0 +1,4 @@
+**/generated/
+**/coverage/
+**/.git/
+data/

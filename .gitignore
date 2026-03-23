@@ -9,3 +9,4 @@ data/
 certs/
 mise.toml
 coverage/
+generated/
