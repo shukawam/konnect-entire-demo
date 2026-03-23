@@ -199,8 +199,8 @@ services:
     protocol: http
     retries: 3
     connect_timeout: 5000
-    read_timeout: 15000
-    write_timeout: 10000
+    read_timeout: 60000
+    write_timeout: 60000
     routes:
       - name: agent-route
         paths:

@@ -1,4 +1,4 @@
-**/generated/
+services/*/generated/
 **/coverage/
-**/.git/
+.git/
 data/
