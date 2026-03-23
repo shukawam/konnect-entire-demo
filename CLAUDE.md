@@ -46,7 +46,7 @@ npm run db:seed        # tsx prisma/seed.ts（catalog, user のみ）
 
 ## アーキテクチャ
 
-```
+```sh
 ブラウザ :3000 (Next.js 15)
     → Kong Gateway :8000 (宣言型設定、DB レスモード)
         → /api/products  → Catalog Service :3001 (プロキシキャッシュ有効)
@@ -94,7 +94,14 @@ services/<名前>/src/
 - 設定ファイルは `config/<ツール名>/` に配置（例: `config/observability/tempo/`）
 - OpenAPI 仕様は Zod スキーマから自動生成する（手書き禁止）
 - OTel 計装は NODE_OPTIONS によるゼロコード方式を優先する
-- Kong の設定は `config/kong/kong.yml` の宣言型 YAML
+- Kong の設定は `config/kong/kong.yaml` の宣言型 YAML を使用し、decK を用いて管理する
+- 実装は必ず適切なブランチを作成し、プルリクエストを通じてマージする（main ブランチへの直接コミット禁止）
+- 新機能などの実装後は、必ずテストを追加する
+- コードスタイルはプロジェクトの ESLint 設定に従う（Prettier も併用）
+- README.md にはプロジェクトの概要とセットアップ手順を記載し、CLAUDE.md には開発者向けの詳細なガイドラインを記載する（追記するべき内容があれば追記する）
+- コミットメッセージはセマンティックコミット規約に従う（例: `feat: add new API endpoint for products`、`fix: resolve issue with user authentication`）
+- ブランチ名もセマンティックに決定する（例: `feature/add-product-endpoint`、`bugfix/user-authentication-issue`）
+- ローカルでの実装後に必ず、コードレビューを行い、その指摘が妥当であれば修正を行う
 
 ## デモデータ
 

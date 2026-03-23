@@ -189,6 +189,7 @@ services:
       - ./config/kong/kong.yaml:/files/kong.yaml
     environment:
       DECK_KONNECT_CONTROL_PLANE_NAME: ${DECK_KONNECT_CONTROL_PLANE_NAME:-}
+      DECK_KONNECT_TOKEN: ${DECK_KONNECT_TOKEN:-}
       DECK_OPENAI_API_KEY: ${DECK_OPENAI_API_KEY:-}
     command: ['gateway', 'sync', 'kong.yaml']
     depends_on:
