@@ -1,7 +1,7 @@
 import { serve } from '@hono/node-server'
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { logger } from 'hono/logger'
-import { createLogger } from '@konnect-demo/shared'
+import { createLogger, createErrorHandler, createNotFoundHandler } from '@konnect-demo/shared'
 import userRoutes from './routes.js'
 
 const log = createLogger('user-service')
@@ -11,6 +11,9 @@ app.use(
   '*',
   logger((message) => log.info(message)),
 )
+app.onError(createErrorHandler(log))
+app.notFound(createNotFoundHandler(log))
+
 app.get('/health', (c) => c.json({ status: 'ok' }))
 app.route('/api/users', userRoutes)
 
