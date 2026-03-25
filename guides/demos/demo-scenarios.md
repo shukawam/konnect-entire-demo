@@ -49,4 +49,4 @@ docker compose ps
 | ゴリラ太郎           | `user@example.com`  | `password123` | `demo-api-key`  |
 | シルバーバック管理者 | `admin@example.com` | `password123` | `admin-api-key` |
 
-詳しい起動手順は [はじめに](getting-started.md) を参照してください。
+詳しい起動手順は [はじめに](../getting-started.md) を参照してください。

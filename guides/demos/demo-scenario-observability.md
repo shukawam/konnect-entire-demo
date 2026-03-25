@@ -213,7 +213,8 @@ curl -X POST http://localhost:8000/api/orders \
 
 ### 5-3. トレースの仕組み
 
-```shService Shipping Service
+```
+Order Service                    Shipping Service
      │                                │
      │  W3C traceparent を             │
      │  Kafka ヘッダーに埋め込み        │

@@ -214,10 +214,10 @@ docker compose logs -f shipping-service
 
 Kong Event Gateway は 2 つのインスタンスで構成されています:
 
-| ポート | 用途        | ACL                                                 |
-| ------ | ----------- | --------------------------------------------------- |
-| 19092  | Producer 側 | Order Service: `order.created` のみ publish 可能    |
-| 19093  | Consumer 側 | Shipping Service: `order.created` のみ consume 可能 |
+| ポート | 用途        | ACL                                                                                                          |
+| ------ | ----------- | ------------------------------------------------------------------------------------------------------------ |
+| 19092  | Producer 側 | Order Service: `order.created` のみ publish 可能、Shipping Service: `order.status-updated` のみ publish 可能 |
+| 19093  | Consumer 側 | Shipping Service: `order.created` のみ consume 可能、Order Service: `order.status-updated` のみ consume 可能 |
 
 ### 5-2. ACL の効果
 
