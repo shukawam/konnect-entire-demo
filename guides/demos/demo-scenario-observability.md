@@ -153,7 +153,7 @@ curl -X POST http://localhost:8000/api/orders \
 
 ### 4-1. Kong Gateway のメトリクス
 
-OTel Collector が Kong の Prometheus メトリクスをスクレイプしています。
+Kong Gateway の `opentelemetry` プラグインが OTel Collector（`:4318/v1/metrics`）に 5 秒ごとにメトリクスをプッシュしています。
 
 ```promql
 # Kong のリクエスト数（サービス別）
