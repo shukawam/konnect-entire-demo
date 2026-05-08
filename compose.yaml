@@ -105,7 +105,7 @@ services:
   kong:
     <<: *default
     container_name: kong
-    image: kong/kong-gateway:3.13
+    image: kong/kong-gateway:3.14.0.1
     environment:
       KONG_ROLE: data_plane
       KONG_DATABASE: off
