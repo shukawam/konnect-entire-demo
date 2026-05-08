@@ -205,9 +205,7 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
     ports:
-      - '3010:3000'
-      - '4317:4317'
-      - '4318:4318'
+      - 3010:3000 # Grafana
     volumes:
       - ./config/observability/grafana/dashboards/default:/grafana-dashboards
       - ./config/observability/grafana/dashboard.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/custom-dashboards.yaml
