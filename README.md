@@ -75,7 +75,19 @@ docker compose down
 docker compose down -v
 ```
 
-> アプリケーションサービスのコンテナイメージは GitHub Actions により main ブランチへの push 時に自動ビルドされ、`ghcr.io/shukawam/konnect-entire-demo/<service>:latest` として GHCR に push されます。`compose.yaml` には `build:` も併記しているため、ローカルで再ビルドしたい場合は `docker compose up -d --build` を使用してください。
+> アプリケーションサービスのコンテナイメージは GitHub Actions により **GitHub Release が公開されたタイミング** で自動ビルドされ、`ghcr.io/shukawam/konnect-entire-demo/<service>` に semver タグ (`1.2.3` / `1.2` / `1` / `latest`) で push されます。
+>
+> 使用するイメージは環境変数 `IMAGE_REGISTRY` / `IMAGE_TAG` で切り替えられます (既定: `ghcr.io/shukawam/konnect-entire-demo` / `latest`):
+>
+> ```bash
+> # 特定リリースを使う
+> IMAGE_TAG=1.2.3 docker compose pull
+> IMAGE_TAG=1.2.3 docker compose up -d
+>
+> # ローカルでビルドして使う
+> IMAGE_REGISTRY=local IMAGE_TAG=dev docker compose build
+> IMAGE_REGISTRY=local IMAGE_TAG=dev docker compose up -d
+> ```
 
 ## アクセス先一覧
 

@@ -75,7 +75,19 @@ docker compose down
 docker compose down -v
 ```
 
-> Application service container images are built automatically by GitHub Actions on push to `main` and pushed to `ghcr.io/shukawam/konnect-entire-demo/<service>:latest`. The `compose.yaml` retains `build:` directives so you can rebuild locally with `docker compose up -d --build` if needed.
+> Application service container images are built automatically by GitHub Actions **when a GitHub Release is published**, and pushed to `ghcr.io/shukawam/konnect-entire-demo/<service>` with semver tags (`1.2.3` / `1.2` / `1` / `latest`).
+>
+> Image source can be overridden via the `IMAGE_REGISTRY` / `IMAGE_TAG` environment variables (defaults: `ghcr.io/shukawam/konnect-entire-demo` / `latest`):
+>
+> ```bash
+> # Use a specific release
+> IMAGE_TAG=1.2.3 docker compose pull
+> IMAGE_TAG=1.2.3 docker compose up -d
+>
+> # Build and use locally
+> IMAGE_REGISTRY=local IMAGE_TAG=dev docker compose build
+> IMAGE_REGISTRY=local IMAGE_TAG=dev docker compose up -d
+> ```
 
 ## Access Points
 

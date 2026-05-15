@@ -15,7 +15,18 @@ docker compose pull   # GHCR から事前ビルド済みイメージを取得
 docker compose up -d
 ```
 
-> アプリケーションサービス (catalog/cart/order/shipping/user/agent/frontend) のイメージは GitHub Actions により main ブランチ更新時に自動ビルドされ、`ghcr.io/shukawam/konnect-entire-demo/<service>:latest` として GHCR に push される。`compose.yaml` には `build:` も併記してあるため、ローカルで再ビルドしたい場合のみ `docker compose build` または `docker compose up -d --build` を使用する。
+> アプリケーションサービス (catalog/cart/order/shipping/user/agent/frontend) のイメージは GitHub Actions により **GitHub Release が公開されたタイミング** で自動ビルドされ、`ghcr.io/shukawam/konnect-entire-demo/<service>` に semver タグ (`1.2.3` / `1.2` / `1` / `latest`) で push される。`workflow_dispatch` で手動ビルドも可能。
+>
+> 使用するイメージは環境変数 `IMAGE_REGISTRY` (既定: `ghcr.io/shukawam/konnect-entire-demo`) と `IMAGE_TAG` (既定: `latest`) で切り替え可能:
+>
+> ```bash
+> # 特定リリースを使う
+> IMAGE_TAG=1.2.3 docker compose pull && IMAGE_TAG=1.2.3 docker compose up -d
+>
+> # ローカルでビルドした image を使う
+> IMAGE_REGISTRY=local IMAGE_TAG=dev docker compose build
+> IMAGE_REGISTRY=local IMAGE_TAG=dev docker compose up -d
+> ```
 
 ### 個別サービスをローカルで起動
 
