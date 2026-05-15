@@ -11,10 +11,15 @@ Kong Konnect デモ用 EC サイト。ゴリラをテーマにした e コマー
 ### 全サービス起動
 
 ```bash
-docker compose up -d --build
+docker compose pull   # GHCR から事前ビルド済みイメージを取得
+docker compose up -d
 ```
 
+> アプリケーションサービス (catalog/cart/order/shipping/user/agent/frontend) のイメージは GitHub Actions により main ブランチ更新時に自動ビルドされ、`ghcr.io/shukawam/konnect-entire-demo/<service>:latest` として GHCR に push される。`compose.yaml` には `build:` も併記してあるため、ローカルで再ビルドしたい場合のみ `docker compose build` または `docker compose up -d --build` を使用する。
+
 ### 個別サービスをローカルで起動
+
+ホットリロードが必要な開発時は、Docker 経由ではなくホスト上で直接起動する:
 
 ```bash
 npm run dev:catalog    # port 3001

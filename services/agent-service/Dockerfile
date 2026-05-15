@@ -14,5 +14,6 @@ RUN npm install --workspace=services/agent-service --workspace=packages/shared -
 COPY packages/shared/ ./packages/shared/
 COPY services/agent-service/ ./services/agent-service/
 WORKDIR /app/services/agent-service
+RUN npx tsc
 EXPOSE 3006
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["node", "dist/index.js"]

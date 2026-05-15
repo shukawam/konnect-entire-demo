@@ -59,8 +59,11 @@ Place your Konnect control plane cluster certificates in the `certs/` directory.
 ## Quick Start
 
 ```bash
-# Start all services (first build takes a few minutes)
-docker compose up -d --build
+# Pull pre-built images from GHCR (first run or on update)
+docker compose pull
+
+# Start all services
+docker compose up -d
 
 # Check status
 docker compose ps
@@ -71,6 +74,8 @@ docker compose down
 # Stop + delete volumes (full reset)
 docker compose down -v
 ```
+
+> Application service container images are built automatically by GitHub Actions on push to `main` and pushed to `ghcr.io/shukawam/konnect-entire-demo/<service>:latest`. The `compose.yaml` retains `build:` directives so you can rebuild locally with `docker compose up -d --build` if needed.
 
 ## Access Points
 
@@ -315,15 +320,9 @@ npm run test           # Run all service tests
 npm run test:coverage  # Run tests with coverage
 ```
 
-### Docker Compose Watch (hot reload)
+### Hot Reload
 
-Auto-sync source code changes during development:
-
-```bash
-docker compose watch
-```
-
-Changes under each service's `src/` are auto-synced to containers. Changes to `package.json` or `prisma/schema.prisma` trigger an automatic rebuild.
+For instant feedback on source changes during development, run `npm run dev:*` directly on the host instead of going through Docker (each service starts via tsx watch / next dev). Services launched via Docker Compose use pre-built images and do not support hot reload.
 
 ## Troubleshooting
 
