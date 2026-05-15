@@ -221,15 +221,10 @@ services:
   catalog-service:
     <<: *default
     container_name: catalog-service
+    image: ${IMAGE_REGISTRY:-ghcr.io/shukawam/konnect-entire-demo}/catalog-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: services/catalog-service/Dockerfile
-    command:
-      [
-        'sh',
-        '-c',
-        'npx prisma db push --skip-generate && npx tsx prisma/seed.ts && npx tsx watch src/index.ts',
-      ]
     ports:
       - '3001:3001'
     environment:
@@ -249,23 +244,14 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: ./services/catalog-service/src
-          target: /app/services/catalog-service/src
-        - action: rebuild
-          path: ./services/catalog-service/package.json
-        - action: rebuild
-          path: ./services/catalog-service/prisma/schema.prisma
 
   cart-service:
     <<: *default
     container_name: cart-service
+    image: ${IMAGE_REGISTRY:-ghcr.io/shukawam/konnect-entire-demo}/cart-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: services/cart-service/Dockerfile
-    command: ['sh', '-c', 'npx prisma db push --skip-generate && npx tsx watch src/index.ts']
     ports:
       - '3002:3002'
     environment:
@@ -285,23 +271,14 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: ./services/cart-service/src
-          target: /app/services/cart-service/src
-        - action: rebuild
-          path: ./services/cart-service/package.json
-        - action: rebuild
-          path: ./services/cart-service/prisma/schema.prisma
 
   order-service:
     <<: *default
     container_name: order-service
+    image: ${IMAGE_REGISTRY:-ghcr.io/shukawam/konnect-entire-demo}/order-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: services/order-service/Dockerfile
-    command: ['sh', '-c', 'npx prisma db push --skip-generate && npx tsx watch src/index.ts']
     ports:
       - '3003:3003'
     environment:
@@ -326,23 +303,14 @@ services:
         condition: service_healthy
       event-gateway:
         condition: service_started
-    develop:
-      watch:
-        - action: sync
-          path: ./services/order-service/src
-          target: /app/services/order-service/src
-        - action: rebuild
-          path: ./services/order-service/package.json
-        - action: rebuild
-          path: ./services/order-service/prisma/schema.prisma
 
   shipping-service:
     <<: *default
     container_name: shipping-service
+    image: ${IMAGE_REGISTRY:-ghcr.io/shukawam/konnect-entire-demo}/shipping-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: services/shipping-service/Dockerfile
-    command: ['sh', '-c', 'npx prisma db push --skip-generate && npx tsx watch src/index.ts']
     ports:
       - '3004:3004'
     environment:
@@ -365,28 +333,14 @@ services:
         condition: service_healthy
       event-gateway:
         condition: service_started
-    develop:
-      watch:
-        - action: sync
-          path: ./services/shipping-service/src
-          target: /app/services/shipping-service/src
-        - action: rebuild
-          path: ./services/shipping-service/package.json
-        - action: rebuild
-          path: ./services/shipping-service/prisma/schema.prisma
 
   user-service:
     <<: *default
     container_name: user-service
+    image: ${IMAGE_REGISTRY:-ghcr.io/shukawam/konnect-entire-demo}/user-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: services/user-service/Dockerfile
-    command:
-      [
-        'sh',
-        '-c',
-        'npx prisma db push --skip-generate && npx tsx prisma/seed.ts && npx tsx watch src/index.ts',
-      ]
     ports:
       - '3005:3005'
     environment:
@@ -406,23 +360,14 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: ./services/user-service/src
-          target: /app/services/user-service/src
-        - action: rebuild
-          path: ./services/user-service/package.json
-        - action: rebuild
-          path: ./services/user-service/prisma/schema.prisma
 
   agent-service:
     <<: *default
     container_name: agent-service
+    image: ${IMAGE_REGISTRY:-ghcr.io/shukawam/konnect-entire-demo}/agent-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: services/agent-service/Dockerfile
-    command: ['npx', 'tsx', 'watch', 'src/index.ts']
     ports:
       - '3006:3006'
     environment:
@@ -442,21 +387,14 @@ services:
     depends_on:
       kong:
         condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: ./services/agent-service/src
-          target: /app/services/agent-service/src
-        - action: rebuild
-          path: ./services/agent-service/package.json
 
   frontend:
     <<: *default
     container_name: frontend
+    image: ${IMAGE_REGISTRY:-ghcr.io/shukawam/konnect-entire-demo}/frontend:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: services/frontend/Dockerfile
-    command: ['npx', 'next', 'dev', '--port', '3000']
     ports:
       - '3000:3000'
     environment:
@@ -471,13 +409,3 @@ services:
       retries: 5
     depends_on:
       - kong
-    develop:
-      watch:
-        - action: sync
-          path: ./services/frontend/src
-          target: /app/services/frontend/src
-        - action: sync
-          path: ./services/frontend/public
-          target: /app/services/frontend/public
-        - action: rebuild
-          path: ./services/frontend/package.json
