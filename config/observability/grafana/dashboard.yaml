@@ -9,4 +9,4 @@ providers:
     allowUiUpdates: true
     editable: false
     options:
-      path: /var/lib/grafana/dashboards/default
+      path: /grafana-dashboards

@@ -145,6 +145,9 @@ services:
       - name: catalog-route
         paths:
           - /api/products
+        protocols:
+          - http
+          - https
         strip_path: false
   - name: cart-service
     host: cart-service.upstream
@@ -157,6 +160,9 @@ services:
       - name: cart-route
         paths:
           - /api/carts
+        protocols:
+          - http
+          - https
         strip_path: false
   - name: order-service
     host: order-service.upstream
@@ -169,6 +175,9 @@ services:
       - name: order-route
         paths:
           - /api/orders
+        protocols:
+          - http
+          - https
         strip_path: false
   - name: shipping-service
     host: shipping-service.upstream
@@ -181,6 +190,9 @@ services:
       - name: shipping-route
         paths:
           - /api/shipments
+        protocols:
+          - http
+          - https
         strip_path: false
   - name: user-service
     host: user-service.upstream
@@ -193,6 +205,9 @@ services:
       - name: user-route
         paths:
           - /api/users
+        protocols:
+          - http
+          - https
         strip_path: false
   - name: agent-service
     host: agent-service.upstream
@@ -205,6 +220,9 @@ services:
       - name: agent-route
         paths:
           - /api/agent
+        protocols:
+          - http
+          - https
         strip_path: false
 
   # AI Proxy (LLM Gateway)
@@ -214,6 +232,9 @@ services:
       - name: openai-route
         paths:
           - /ai/v1
+        protocols:
+          - http
+          - https
         strip_path: true
 
   # MCP Proxy — Catalog API
@@ -226,6 +247,9 @@ services:
       - name: mcp-catalog-route
         paths:
           - /mcp/products
+        protocols:
+          - http
+          - https
         strip_path: true
 
   # MCP Proxy — Cart API
@@ -235,6 +259,9 @@ services:
       - name: mcp-cart-route
         paths:
           - /mcp/carts
+        protocols:
+          - http
+          - https
         strip_path: true
 
   # MCP Proxy — Order API
@@ -244,6 +271,9 @@ services:
       - name: mcp-order-route
         paths:
           - /mcp/orders
+        protocols:
+          - http
+          - https
         strip_path: true
 
 consumers:
@@ -317,12 +347,13 @@ plugins:
       generator: uuid
   - name: opentelemetry
     config:
-      traces_endpoint: http://otel-collector:4318/v1/traces
-      logs_endpoint: http://otel-collector:4318/v1/logs
-      access_logs_endpoint: http://otel-collector:4318/v1/logs
+      traces_endpoint: http://otel-lgtm:4318/v1/traces
+      logs_endpoint: http://otel-lgtm:4318/v1/logs
+      access_logs_endpoint: http://otel-lgtm:4318/v1/logs
       metrics:
-        endpoint: http://otel-collector:4318/v1/metrics
+        endpoint: http://otel-lgtm:4318/v1/metrics
         push_interval: 5
+        enable_ai_metrics: true
         enable_bandwidth_metrics: true
         enable_consumer_attribute: true
         enable_latency_metrics: true

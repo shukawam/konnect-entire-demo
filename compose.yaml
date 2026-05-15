@@ -5,7 +5,7 @@ x-default: &default
 x-otel-env: &otel-env
   OTEL_TRACES_EXPORTER: otlp
   OTEL_LOGS_EXPORTER: otlp
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
   OTEL_NODE_RESOURCE_DETECTORS: env,host,os
   NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register
 
@@ -14,8 +14,6 @@ networks:
 
 volumes:
   mysql_data:
-  tempo_data:
-  loki_data:
 
 services:
   # ============================================================
@@ -107,7 +105,7 @@ services:
   kong:
     <<: *default
     container_name: kong
-    image: kong/kong-gateway:3.13
+    image: kong/kong-gateway:3.14.0.1
     environment:
       KONG_ROLE: data_plane
       KONG_DATABASE: off
@@ -168,7 +166,7 @@ services:
       KEG__OBSERVABILITY__METRICS_ROLLUP_ALLOW_MAP: 'api_kind=produce,fetch'
       KEG__OBSERVABILITY__OTLP__TRACING__ENABLED: true
       OTEL_SERVICE_NAME: event-gateway
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
     ports:
       - 19091:19091
       - 19092:19092
@@ -198,108 +196,24 @@ services:
   # ============================================================
   # Observability
   # ============================================================
-  tempo-init:
+  otel-lgtm:
     <<: *default
-    container_name: tempo-init
-    image: grafana/tempo:2.8.0
-    user: root
-    entrypoint:
-      - 'chown'
-      - '10001:10001'
-      - '/var/tempo'
-    volumes:
-      - tempo_data:/var/tempo
-
-  memcached:
-    <<: *default
-    container_name: memcached
-    image: memcached:1.6.38
-    ports:
-      - '11211:11211'
-    environment:
-      - MEMCACHED_MAX_MEMORY=64m
-      - MEMCACHED_THREADS=4
-
-  tempo:
-    <<: *default
-    container_name: tempo
-    image: grafana/tempo:2.8.0
-    command: ['-config.file=/etc/tempo.yaml']
-    volumes:
-      - ./config/observability/tempo/tempo.yaml:/etc/tempo.yaml
-      - tempo_data:/var/tempo
-    ports:
-      - '3200:3200'
-    depends_on:
-      - tempo-init
-
-  prometheus:
-    <<: *default
-    container_name: prometheus
-    image: prom/prometheus:v3.4.1
-    command:
-      - --config.file=/etc/prometheus.yaml
-      - --web.enable-remote-write-receiver
-      - --enable-feature=exemplar-storage
-      - --enable-feature=native-histograms
-    volumes:
-      - ./config/observability/prometheus/prometheus.yaml:/etc/prometheus.yaml
-
-  loki-init:
-    <<: *default
-    container_name: loki-init
-    image: grafana/loki:3.5.1
-    user: root
-    entrypoint:
-      - 'chown'
-      - '10001:10001'
-      - '/tmp/loki'
-    volumes:
-      - loki_data:/tmp/loki
-
-  loki:
-    <<: *default
-    container_name: loki
-    image: grafana/loki:3.5.1
-    command: '-config.file=/etc/loki/loki.yaml'
-    environment:
-      LOG_CLUSTER_DEPTH: '8'
-      LOG_SIM_TH: '0.3'
-    volumes:
-      - ./config/observability/loki/loki.yaml:/etc/loki/loki.yaml
-      - loki_data:/tmp/loki
-    ports:
-      - '3100:3100'
-    depends_on:
-      - loki-init
-
-  otel-collector:
-    <<: *default
-    container_name: otel-collector
-    image: otel/opentelemetry-collector-contrib:0.128.0
-    volumes:
-      - ./config/observability/otel-collector/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
-    ports:
-      - '4317:4317'
-      - '4318:4318'
-      - '8888:8888'
-      - '8889:8889'
-
-  grafana:
-    <<: *default
-    container_name: grafana
-    image: grafana/grafana:12.0.1
-    volumes:
-      - ./config/observability/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
-      - ./config/observability/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
-      - ./config/observability/grafana/dashboards:/var/lib/grafana/dashboards
+    container_name: otel-lgtm
+    image: grafana/otel-lgtm:0.25.0
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: true
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
-      GF_SERVER_HTTP_PORT: 3010
     ports:
-      - '3010:3010'
+      - 3010:3000 # Grafana
+    volumes:
+      - ./config/observability/grafana/dashboards/default:/grafana-dashboards
+      - ./config/observability/grafana/dashboard.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/custom-dashboards.yaml
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   # ============================================================
   # Application Services
@@ -514,7 +428,7 @@ services:
     environment:
       PORT: 3006
       OTEL_SERVICE_NAME: agent-service
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       GATEWAY_ENDPOINT: http://kong:8000
     healthcheck:
       test:
@@ -547,7 +461,7 @@ services:
       - '3000:3000'
     environment:
       BACKEND_URL: http://kong:8000
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       OTEL_SERVICE_NAME: frontend
       NEXT_OTEL_VERBOSE: 1
     healthcheck:
