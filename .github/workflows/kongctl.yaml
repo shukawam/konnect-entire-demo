@@ -16,7 +16,7 @@ jobs:
       - name: Setup kongctl
         uses: kong/setup-kongctl@v1
         with:
-          kongctl-version: 0.3.8
+          kongctl-version: 1.2.1
       - name: Plan Konnect settings
         run: |
           kongctl plan \
