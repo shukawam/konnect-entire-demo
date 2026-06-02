@@ -5,12 +5,14 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { getStoredUser, clearUser, type AuthUser } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
+import GrafanaIcon from '@/components/GrafanaIcon'
 
 export default function Nav() {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<AuthUser | null>(null)
   const [cartCount, setCartCount] = useState(0)
+  const grafanaUrl = process.env.NEXT_PUBLIC_GRAFANA_URL ?? 'http://localhost:3010'
 
   const fetchCartCount = useCallback(async () => {
     const u = getStoredUser()
@@ -59,6 +61,15 @@ export default function Nav() {
           <Link href="/orders" className={pathname.startsWith('/orders') ? 'nav-active' : ''}>
             📦注文履歴
           </Link>
+          <a
+            href={grafanaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+          >
+            <GrafanaIcon />
+            Grafana
+          </a>
           {user ? (
             <>
               <span

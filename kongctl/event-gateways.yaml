@@ -28,8 +28,7 @@ event_gateways:
         authentication:
           - type: anonymous
         dns_label: order-service
-        # acl_mode: enforce_on_gateway  # TODO: kongctl が cluster_policies を同期できるようになったら戻す
-        acl_mode: passthrough
+        acl_mode: enforce_on_gateway
         cluster_policies:
           - ref: order-service-acl
             type: acls
@@ -73,8 +72,7 @@ event_gateways:
         authentication:
           - type: anonymous
         dns_label: shipping-service
-        # acl_mode: enforce_on_gateway  # TODO: kongctl が cluster_policies を同期できるようになったら戻す
-        acl_mode: passthrough
+        acl_mode: enforce_on_gateway
         cluster_policies:
           - ref: shipping-service-acl
             type: acls

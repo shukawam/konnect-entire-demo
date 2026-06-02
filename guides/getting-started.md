@@ -31,13 +31,12 @@ docker compose down -v
 
 ## アクセス先一覧
 
-| サービス             | URL                                                  | 用途                           |
-| -------------------- | ---------------------------------------------------- | ------------------------------ |
-| フロントエンド       | [http://localhost:3000](http://localhost:3000)       | EC サイト画面                  |
-| Kong Gateway (Proxy) | [http://localhost:8000](http://localhost:8000)       | 全 API のエントリーポイント    |
-| Konnect              | [https://cloud.konghq.com](https://cloud.konghq.com) | コントロールプレーン（SaaS）   |
-| Grafana              | [http://localhost:3010](http://localhost:3010)       | ダッシュボード（ログイン不要） |
-| Tempo                | [http://localhost:3200](http://localhost:3200)       | トレース確認                   |
+| サービス             | URL                                                  | 用途                                                                        |
+| -------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------- |
+| フロントエンド       | [http://localhost:3000](http://localhost:3000)       | EC サイト画面                                                               |
+| Kong Gateway (Proxy) | [http://localhost:8000](http://localhost:8000)       | 全 API のエントリーポイント                                                 |
+| Konnect              | [https://cloud.konghq.com](https://cloud.konghq.com) | コントロールプレーン（SaaS）                                                |
+| Grafana              | [http://localhost:3010](http://localhost:3010)       | ダッシュボード（ログイン不要）。トレース/ログ/メトリクスは Explore から確認 |
 
 > **Note:** Kong の管理（ルーティング・プラグイン設定等）は Konnect SaaS のコントロールプレーンから行います。
 > ローカルの Kong Gateway は Data Plane として動作します。
@@ -197,7 +196,7 @@ curl -i http://localhost:8000/api/products 2>&1 | grep -i x-request-id
 
 ### OpenTelemetry（トレーシング）
 
-Kong Gateway は全リクエストのトレースを OTel Collector 経由で Tempo に送信しています。
+Kong Gateway は全リクエストのトレースを otel-lgtm（内蔵 OTel Collector）経由で Tempo に送信しています。
 Grafana の Tempo データソースからリクエストフロー（Kong → バックエンド → MySQL）を可視化できます。
 
 ### Kong Konnect での管理
@@ -309,7 +308,7 @@ Browser (:3000)
 [Shipping Svc]  ──publish──> [Kafka] ──consume──> [Order Service]
 
 全サービス ──> [MySQL 8.0] (サービスごとに DB 分離)
-全サービス ──> [OTel Collector] ──> Tempo (traces) / Prometheus (metrics) / Loki (logs)
+全サービス ──> [otel-lgtm] (OTel Collector + Tempo / Prometheus / Loki + Grafana を 1 コンテナに集約)
 ```
 
 ---

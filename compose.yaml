@@ -196,6 +196,8 @@ services:
   # ============================================================
   # Observability
   # ============================================================
+  # Collector + Tempo + Prometheus + Loki + Grafana を 1 コンテナに集約。
+  # Collector 設定のみ上書きして既存の filter/traces フィルタを保持する。
   otel-lgtm:
     <<: *default
     container_name: otel-lgtm
@@ -204,11 +206,10 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: true
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
-    ports:
-      - 3010:3000 # Grafana
     volumes:
-      - ./config/observability/grafana/dashboards/default:/grafana-dashboards
-      - ./config/observability/grafana/dashboard.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/custom-dashboards.yaml
+      - ./config/observability/otel-lgtm/otelcol-config.yaml:/otel-lgtm/otelcol-config.yaml
+    ports:
+      - 3010:3000 # Grafana UI（host 3010 を維持）
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/health || exit 1']
       interval: 10s
@@ -456,11 +457,14 @@ services:
     build:
       context: .
       dockerfile: services/frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_GRAFANA_URL: ${NEXT_PUBLIC_GRAFANA_URL:-http://localhost:3010}
     command: ['npx', 'next', 'dev', '--port', '3000']
     ports:
       - '3000:3000'
     environment:
       BACKEND_URL: http://kong:8000
+      NEXT_PUBLIC_GRAFANA_URL: ${NEXT_PUBLIC_GRAFANA_URL:-http://localhost:3010}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       OTEL_SERVICE_NAME: frontend
       NEXT_OTEL_VERBOSE: 1

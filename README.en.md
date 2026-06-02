@@ -13,19 +13,19 @@ Built with gorilla-themed product data, it demonstrates API Gateway capabilities
 
 ## Tech Stack
 
-| Layer             | Technology                                       |
-| ----------------- | ------------------------------------------------ |
-| Frontend          | Next.js 15, React 19, @vercel/otel               |
-| Backend           | Hono, @hono/zod-openapi, Prisma, KafkaJS         |
-| AI Agent          | @volcano.dev/agent, Kong AI Proxy + MCP Proxy    |
-| API Gateway       | Kong Gateway 3.13 (Konnect hybrid mode)          |
-| Event Gateway     | Kong Event Gateway (Kafka proxy with ACL)        |
-| Database          | MySQL 8.0                                        |
-| Cache             | Redis 8.0 (vector DB for AI Prompt Guard)        |
-| Messaging         | Apache Kafka 3.7.0                               |
-| Observability     | Grafana, Tempo, Prometheus, Loki, OTel Collector |
-| Config Management | Deck (Kong declarative config sync)              |
-| Monorepo          | npm workspaces (`packages/*`, `services/*`)      |
+| Layer             | Technology                                                   |
+| ----------------- | ------------------------------------------------------------ |
+| Frontend          | Next.js 15, React 19, @vercel/otel                           |
+| Backend           | Hono, @hono/zod-openapi, Prisma, KafkaJS                     |
+| AI Agent          | @volcano.dev/agent, Kong AI Proxy + MCP Proxy                |
+| API Gateway       | Kong Gateway 3.13 (Konnect hybrid mode)                      |
+| Event Gateway     | Kong Event Gateway (Kafka proxy with ACL)                    |
+| Database          | MySQL 8.0                                                    |
+| Cache             | Redis 8.0 (vector DB for AI Prompt Guard)                    |
+| Messaging         | Apache Kafka 3.7.0                                           |
+| Observability     | otel-lgtm (Grafana, Tempo, Prometheus, Loki, OTel Collector) |
+| Config Management | Deck (Kong declarative config sync)                          |
+| Monorepo          | npm workspaces (`packages/*`, `services/*`)                  |
 
 ## Prerequisites
 
@@ -226,7 +226,7 @@ Monitor message flow via Kafka UI at http://localhost:8080.
 
 ## Observability
 
-All services send telemetry via OTel Collector to Tempo (traces), Prometheus (metrics), and Loki (logs). Kong Gateway itself also sends traces, logs, and metrics via the `opentelemetry` plugin.
+All services send telemetry via [otel-lgtm](https://github.com/grafana/docker-otel-lgtm) (OTel Collector + Tempo + Prometheus + Loki + Grafana bundled in a single container). Kong Gateway itself also sends traces, logs, and metrics via the `opentelemetry` plugin. The bundled Collector config is overridden at `config/observability/otel-lgtm/otelcol-config.yaml`, preserving the noise-reduction filter and the Kong AI metrics scrape.
 
 ### Viewing Traces
 
@@ -281,7 +281,7 @@ See the `guides/` directory for detailed API references for each service.
 ├── config/
 │   ├── kong/                # Kong Gateway declarative config
 │   ├── mysql/               # DB initialization SQL
-│   └── observability/       # Grafana, Tempo, Prometheus, Loki, OTel Collector config
+│   └── observability/       # otel-lgtm (bundled OTel Collector) config
 ├── kongctl/                 # Konnect resource configuration management
 ├── guides/                  # API reference guides
 └── certs/                   # Kong cluster certificates

@@ -1,0 +1,90 @@
+# otel-lgtm の内蔵 OpenTelemetry Collector 設定を上書きする。
+# デフォルト設定をベースに、既存の filter/traces フィルタと
+# Kong AI メトリクス用の Prometheus スクレイプ (kong:8100) を追加している。
+# exporter は otel-lgtm コンテナ内部のバックエンド (localhost) を指す。
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - http://*
+  prometheus/collector:
+    config:
+      scrape_configs:
+        - job_name: 'opentelemetry-collector'
+          scrape_interval: 1s
+          static_configs:
+            - targets: ['127.0.0.1:8888']
+        - job_name: kong-gateway # Kong Status API（AI メトリクス取得用）
+          scrape_interval: 5s
+          static_configs:
+            - targets:
+                - kong:8100
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: '/ready'
+
+processors:
+  batch:
+  filter/traces:
+    error_mode: ignore
+    traces:
+      span:
+        - 'name == "ipc.connect"'
+        - 'name == "tcp.connect"'
+        - 'name == "prisma:client:load_engine"'
+        - 'name == "prisma:client:detect_platform"'
+        - 'attributes["url.path"] == "/health"'
+        - 'attributes["http.target"] == "/health"'
+        - 'attributes["http.target"] == "/"'
+        - 'attributes["api_kind"] == "heartbeat"'
+        - 'attributes["api_kind"] == "list_offsets"'
+        - 'attributes["api_kind"] == "offset_fetch"'
+        - 'attributes["api_kind"] == "metadata"'
+        - 'attributes["api_kind"] == "sync_group"'
+        - 'attributes["api_kind"] == "join_group"'
+        - 'attributes["api_kind"] == "find_coordinator"'
+        - 'attributes["api_kind"] == "APIVersion(6)"'
+
+exporters:
+  otlp_http/metrics:
+    endpoint: http://127.0.0.1:9090/api/v1/otlp
+    tls:
+      insecure: true
+  otlp_http/traces:
+    endpoint: http://127.0.0.1:4418
+    tls:
+      insecure: true
+  otlp_http/logs:
+    endpoint: http://127.0.0.1:3100/otlp
+    tls:
+      insecure: true
+  otlp_grpc/profiles:
+    endpoint: http://127.0.0.1:4040
+    tls:
+      insecure: true
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [filter/traces, batch]
+      exporters: [otlp_http/traces]
+    metrics:
+      receivers: [otlp, prometheus/collector]
+      processors: [batch]
+      exporters: [otlp_http/metrics]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_http/logs]
+    profiles:
+      receivers: [otlp]
+      exporters: [otlp_grpc/profiles]
