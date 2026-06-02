@@ -15,8 +15,9 @@ Kong Konnect の各機能をフル活用したマイクロサービス構成の 
 
 | レイヤー           | 技術                                                                     |
 | ------------------ | ------------------------------------------------------------------------ |
-| フロントエンド     | Next.js 15.3, React 19, @vercel/otel                                     |
+| フロントエンド     | Next.js 15.3, React 19, @vercel/otel, NextAuth (Auth.js v5)              |
 | バックエンド       | Hono, @hono/zod-openapi, Prisma, KafkaJS                                 |
+| 認証 (SSO)         | Keycloak (OpenID Connect IdP) + Kong `openid-connect` プラグイン         |
 | AI エージェント    | @volcano.dev/agent, Kong AI Proxy + MCP Proxy                            |
 | API Gateway        | Kong Gateway 3.14 (Konnect ハイブリッドモード)                           |
 | Event Gateway      | Kong Event Gateway (Kafka プロキシ、ACL 制御)                            |
@@ -43,18 +44,35 @@ cp .env.example .env
 
 `.env` を開き、以下の値を自分の環境に合わせて設定してください:
 
-| 変数名                            | 説明                                          | 例                  |
-| --------------------------------- | --------------------------------------------- | ------------------- |
-| `CONTROL_PLANE_ID`                | Konnect コントロールプレーン ID               | `xxxxxxxx-xxxx-...` |
-| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway コントロールプレーン ID | `xxxxxxxx-xxxx-...` |
-| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect コントロールプレーン名                | `my-control-plane`  |
-| `DECK_OPENAI_API_KEY`             | OpenAI API キー（AI Gateway 用）              | `sk-...`            |
+| 変数名                            | 説明                                          | 例                               |
+| --------------------------------- | --------------------------------------------- | -------------------------------- |
+| `CONTROL_PLANE_ID`                | Konnect コントロールプレーン ID               | `xxxxxxxx-xxxx-...`              |
+| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway コントロールプレーン ID | `xxxxxxxx-xxxx-...`              |
+| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect コントロールプレーン名                | `my-control-plane`               |
+| `DECK_OPENAI_API_KEY`             | OpenAI API キー（AI Gateway 用）              | `sk-...`                         |
+| `AUTH_SECRET`                     | NextAuth のセッション暗号鍵                   | `openssl rand -base64 32` で生成 |
+| `AUTH_KEYCLOAK_ID`                | Keycloak クライアント ID                      | `jungle-store-frontend`          |
+| `AUTH_KEYCLOAK_SECRET`            | Keycloak クライアントシークレット             | （Keycloak で発行）              |
 
-その他の変数（MySQL, Kafka, サービス URL 等）はデフォルト値のままで動作します。
+その他の変数（MySQL, Kafka, サービス URL, Keycloak の URL/realm 等）はデフォルト値のままで動作します。
 
 ### Kong Konnect 証明書
 
 Konnect コントロールプレーンのクラスタ証明書を `certs/` ディレクトリに配置してください。
+
+### Keycloak（エンドユーザー認証）
+
+エンドユーザー認証は Keycloak を IdP とした SSO（OpenID Connect）です。
+Keycloak の realm（クライアント・ユーザー）は **自分で作成してエクスポート** し、
+`config/keycloak/<realm>-realm.json` に配置すると起動時に自動インポートされます。
+
+1. 一度 `docker compose up -d keycloak` で Keycloak を起動し、`http://localhost:8081`
+   （管理者は `.env` の `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD`）にログイン
+2. realm `jungle-store`、NextAuth 用クライアント、デモユーザーを作成
+   （リダイレクト URI 等の要件は [`config/keycloak/README.md`](config/keycloak/README.md) 参照）
+3. クライアントの secret を `.env` の `AUTH_KEYCLOAK_SECRET` に設定
+4. realm をエクスポートして `config/keycloak/jungle-store-realm.json` として保存
+5. 以降は `docker compose up -d --build` で realm が自動インポートされます
 
 ## クイックスタート
 
@@ -81,81 +99,92 @@ docker compose down -v
 | Konnect        | [https://cloud.konghq.com](https://cloud.konghq.com) | コントロールプレーン（SaaS）   |
 | Grafana        | [http://localhost:3010](http://localhost:3010)       | ダッシュボード（ログイン不要） |
 | Kafka UI       | [http://localhost:8080](http://localhost:8080)       | Kafka トピック・メッセージ確認 |
+| Keycloak       | [http://localhost:8081](http://localhost:8081)       | 認証 IdP / 管理コンソール      |
 
 各バックエンドサービスは `/openapi.json` で OAS 3.1.0 を自動配信しています（例: [http://localhost:3001/openapi.json](http://localhost:3001/openapi.json)）。
 
 ## デモユーザー
 
-起動時に以下のユーザーが自動作成されます。
+ユーザーは Keycloak の realm 側で作成・管理します（[`config/keycloak/README.md`](config/keycloak/README.md) 参照）。
+例として以下のユーザーを作成しておくと便利です。
 
-| 名前                 | メール              | パスワード    | API Key         |
-| -------------------- | ------------------- | ------------- | --------------- |
-| ゴリラ太郎           | `user@example.com`  | `password123` | `demo-api-key`  |
-| シルバーバック管理者 | `admin@example.com` | `password123` | `admin-api-key` |
+| 名前                 | メール              | パスワード    |
+| -------------------- | ------------------- | ------------- |
+| ゴリラ太郎           | `user@example.com`  | `password123` |
+| シルバーバック管理者 | `admin@example.com` | `password123` |
+
+ログイン後はアクセストークン(JWT)の `sub` クレームが `X-User-Id` として各サービスへ渡ります。
 
 ## 基本操作フロー
 
 ### ブラウザから
 
 1. [http://localhost:3000](http://localhost:3000) を開く
-2. `user@example.com` / `password123` でログイン
+2. 「ログイン」→ Keycloak の画面にリダイレクト → デモユーザーで SSO ログイン
 3. 商品一覧からカートに追加 → 注文確定
 4. 注文ステータスの変化を確認: `PENDING` → `CONFIRMED` → `SHIPPED`
 
 ### curl で API を直接叩く
 
+保護された API は Keycloak のアクセストークンを `Authorization: Bearer` で渡します。
+（トークン取得には Keycloak クライアントで Direct Access Grants を有効化しておきます）
+
 ```bash
 # 商品一覧（認証不要）
 curl http://localhost:8000/api/products
 
-# ログイン
-curl -X POST http://localhost:8000/api/users/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123"}'
+# Keycloak からアクセストークンを取得
+TOKEN=$(curl -s -X POST \
+  http://localhost:8081/realms/jungle-store/protocol/openid-connect/token \
+  -d "grant_type=password" \
+  -d "client_id=jungle-store-frontend" \
+  -d "client_secret=${AUTH_KEYCLOAK_SECRET}" \
+  -d "username=user@example.com" \
+  -d "password=password123" | jq -r .access_token)
 
-# カートに商品追加（API Key 認証必須）
+# カートに商品追加（OIDC 認証必須。X-User-Id は Kong が token の sub から注入する）
 curl -X POST http://localhost:8000/api/carts/items \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001" \
+  -H "Authorization: Bearer ${TOKEN}" \
   -d '{"productId":"prod-001","quantity":2,"price":1980}'
 
 # 注文作成（Kafka → 発送自動作成）
 curl -X POST http://localhost:8000/api/orders \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+  -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ## Kong Konnect 機能デモ
 
 ### Kong プラグイン一覧
 
-| プラグイン                 | スコープ              | 説明                                                          |
-| -------------------------- | --------------------- | ------------------------------------------------------------- |
-| `cors`                     | グローバル            | CORS ヘッダー制御                                             |
-| `rate-limiting-advanced`   | グローバル            | 60 req/min                                                    |
-| `correlation-id`           | グローバル            | `X-Request-Id` 自動付与                                       |
-| `opentelemetry`            | グローバル            | トレース・ログ・メトリクスを otel-lgtm へ送信                 |
-| `key-auth`                 | Cart, Order, Shipping | API キー認証                                                  |
-| `rate-limiting`            | Order                 | 10 req/min（厳格制限）                                        |
-| `proxy-cache`              | Catalog               | GET レスポンスを 30 秒キャッシュ                              |
-| `ai-semantic-prompt-guard` | AI Gateway            | 許可/拒否ルールによる入力バリデーション（Redis + Embeddings） |
-| `ai-prompt-decorator`      | AI Gateway            | ゴリラキャラ「ゴリ助」のシステムプロンプト自動注入            |
-| `ai-proxy-advanced`        | AI Gateway            | OpenAI GPT-4o-mini への LLM プロキシ                          |
-| `ai-mcp-proxy`             | MCP (3 ルート)        | Model Context Protocol によるツール提供                       |
+| プラグイン                 | スコープ                    | 説明                                                          |
+| -------------------------- | --------------------------- | ------------------------------------------------------------- |
+| `cors`                     | グローバル                  | CORS ヘッダー制御                                             |
+| `rate-limiting-advanced`   | グローバル                  | 60 req/min                                                    |
+| `correlation-id`           | グローバル                  | `X-Request-Id` 自動付与                                       |
+| `opentelemetry`            | グローバル                  | トレース・ログ・メトリクスを otel-lgtm へ送信                 |
+| `openid-connect`           | Cart, Order, Shipping, User | Keycloak の JWT を検証し claim を upstream ヘッダーへ注入     |
+| `rate-limiting`            | Order                       | 10 req/min（厳格制限）                                        |
+| `proxy-cache`              | Catalog                     | GET レスポンスを 30 秒キャッシュ                              |
+| `ai-semantic-prompt-guard` | AI Gateway                  | 許可/拒否ルールによる入力バリデーション（Redis + Embeddings） |
+| `ai-prompt-decorator`      | AI Gateway                  | ゴリラキャラ「ゴリ助」のシステムプロンプト自動注入            |
+| `ai-proxy-advanced`        | AI Gateway                  | OpenAI GPT-4o-mini への LLM プロキシ                          |
+| `ai-mcp-proxy`             | MCP (3 ルート)              | Model Context Protocol によるツール提供                       |
 
-### Key-Auth 認証
+### OpenID Connect 認証
 
 ```bash
-# API Key なし → 401
+# トークンなし → 401
 curl -i http://localhost:8000/api/carts
 
-# API Key あり → 200
+# Bearer トークンあり → 200（${TOKEN} は前述の手順で取得）
 curl -i http://localhost:8000/api/carts \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+  -H "Authorization: Bearer ${TOKEN}"
 ```
+
+Kong の `openid-connect` プラグインが JWT を検証し、`sub`/`email`/`preferred_username`
+クレームを `X-User-Id`/`X-User-Email`/`X-User-Name` ヘッダーとして upstream へ注入します。
 
 ### Rate Limiting
 
@@ -165,8 +194,7 @@ for i in $(seq 1 15); do
   curl -s -o /dev/null -w "%{http_code}\n" \
     -X POST http://localhost:8000/api/orders \
     -H "Content-Type: application/json" \
-    -H "apikey: demo-api-key" \
-    -H "X-User-Id: user-001"
+    -H "Authorization: Bearer ${TOKEN}"
 done
 ```
 

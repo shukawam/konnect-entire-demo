@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import { apiFetch } from '@/lib/api'
-import { getStoredUser } from '@/lib/auth'
+import { useAuthUser } from '@/lib/auth'
 
 interface Product {
   id: string
@@ -17,6 +17,7 @@ interface Product {
 
 export default function HomePage() {
   const router = useRouter()
+  const { user, status } = useAuthUser()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -44,7 +45,8 @@ export default function HomePage() {
   }
 
   async function addToCart(product: Product) {
-    const user = getStoredUser()
+    // セッション読み込み中は判定を保留（誤って未ログイン扱いにしない）
+    if (status === 'loading') return
     if (!user) {
       router.push('/login')
       return
@@ -54,8 +56,6 @@ export default function HomePage() {
       setAddingToCart(product.id)
       await apiFetch('/api/carts/items', {
         method: 'POST',
-        apiKey: user.apiKey,
-        userId: user.id,
         body: JSON.stringify({ productId: product.id, quantity: 1, price: product.price }),
       })
       window.dispatchEvent(new Event('cart-updated'))
