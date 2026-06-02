@@ -317,11 +317,11 @@ plugins:
       generator: uuid
   - name: opentelemetry
     config:
-      traces_endpoint: http://otel-collector:4318/v1/traces
-      logs_endpoint: http://otel-collector:4318/v1/logs
-      access_logs_endpoint: http://otel-collector:4318/v1/logs
+      traces_endpoint: http://otel-lgtm:4318/v1/traces
+      logs_endpoint: http://otel-lgtm:4318/v1/logs
+      access_logs_endpoint: http://otel-lgtm:4318/v1/logs
       metrics:
-        endpoint: http://otel-collector:4318/v1/metrics
+        endpoint: http://otel-lgtm:4318/v1/metrics
         push_interval: 5
         enable_bandwidth_metrics: true
         enable_consumer_attribute: true

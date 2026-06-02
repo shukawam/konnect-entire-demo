@@ -17,6 +17,8 @@ COPY packages/shared/ ./packages/shared/
 COPY services/frontend/ ./services/frontend/
 
 WORKDIR /app/services/frontend
+ARG NEXT_PUBLIC_GRAFANA_URL=http://localhost:3010
+ENV NEXT_PUBLIC_GRAFANA_URL=$NEXT_PUBLIC_GRAFANA_URL
 RUN npm run build
 
 EXPOSE 3000

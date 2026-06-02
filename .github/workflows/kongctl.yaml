@@ -1,0 +1,30 @@
+name: Sync Konnect setting using kongctl
+
+on:
+  push:
+    paths:
+      - kongctl/*.yaml
+      - .github/workflows/kongctl.yaml
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+      - name: Setup kongctl
+        uses: kong/setup-kongctl@v1
+        with:
+          kongctl-version: 0.3.8
+      - name: Plan Konnect settings
+        run: |
+          kongctl plan \
+            -f kongctl \
+            --pat ${{ secrets.KONNECT_TOKEN }}
+      - name: Sync Konnect settings
+        run: |
+          kongctl sync \
+            -f kongctl \
+            --pat ${{ secrets.KONNECT_TOKEN }} \
+            --auto-approve
