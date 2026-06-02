@@ -29,7 +29,17 @@ Keycloak 管理コンソール（http://localhost:8081 / 初期管理者は `.en
 ### 1. Realm
 
 - 名前: **`jungle-store`**（`.env` の `KEYCLOAK_REALM` と一致させる）
+- **Require SSL: `None`**（Realm settings → General/Login）。
+  デモは HTTP で動かすため必須。これを `external`（既定）のままにすると、
+  localhost / プライベート IP 以外からの HTTP アクセスで **「HTTPS required」** エラーになる。
+  この設定は realm に保存されるのでエクスポートに含まれる。
 - 必要に応じて「User registration」を有効化（セルフ登録を使う場合）
+
+> **補足（master realm の「HTTPS required」）**: 管理コンソールに localhost 以外
+> （LAN IP やホスト名）でアクセスすると `master` realm でも同じエラーが出る。
+> その場合は realm セレクタで `master` を選び、同様に Require SSL を `None` にする。
+> `master` はエクスポート対象外なので、コンテナを作り直すたびに再設定が必要
+> （`http://localhost:8081` でアクセスすれば localhost 例外で回避できる）。
 
 ### 2. Client（NextAuth 用）
 
