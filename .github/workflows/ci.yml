@@ -53,7 +53,7 @@ jobs:
           persist-credentials: false
       # fix: false で検証専用（SHA 固定漏れがあれば CI 失敗、ファイルは変更しない）
       # verify: true で SHA とバージョンコメントの対応が正しいかも検証する
-      - uses: suzuki-shunsuke/pinact-action@3132770ecce73073bcd618342c7f4092ed2f994c # v3.0.0
+      - uses: suzuki-shunsuke/pinact-action@896d595f299e71d65b9d28349d6956abe144390a # v3.0.0
         with:
           fix: 'false'
           verify: 'true'
