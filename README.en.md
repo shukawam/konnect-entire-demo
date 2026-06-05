@@ -63,15 +63,26 @@ Place your Konnect control plane cluster certificates in the `certs/` directory.
 ### Keycloak (end-user authentication)
 
 End-user authentication uses Keycloak as an OpenID Connect IdP (SSO).
-You create and **export the Keycloak realm (client + users) yourself**, then place it at
-`config/keycloak/<realm>-realm.json` so it is auto-imported on startup.
+The Keycloak realm (client + users) ships in `config/keycloak/realm-export.json` and is
+auto-imported on startup (includes `sslRequired: none`, two demo users, and the client config).
 
-1. Start Keycloak once with `docker compose up -d keycloak` and log in to `http://localhost:8081`
+> **No `/etc/hosts` edit required.**
+> The browser reaches Keycloak at `localhost:8081` while containers use `keycloak:8081`.
+> Keycloak's `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` plus Auth.js `customFetch` split the URLs:
+> front-channel (iss / authorization) → `localhost:8081`, back-channel (discovery / token / jwks)
+> → `keycloak:8081` (see [`config/keycloak/README.md`](config/keycloak/README.md)).
+
+To use the bundled realm as-is, just make `.env`'s `AUTH_KEYCLOAK_SECRET` match the client
+`secret` in `realm-export.json` (defaults are already set).
+
+To rebuild the realm yourself:
+
+1. Start Keycloak once with `docker compose up -d keycloak` and log in to **`http://localhost:8081`**
    (admin credentials from `.env`: `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD`)
-2. Create the `jungle-store` realm, a client for NextAuth, and demo users
+2. Create the `jungle-store` realm (Require SSL = None), a client for NextAuth, and demo users
    (see [`config/keycloak/README.md`](config/keycloak/README.md) for redirect URI requirements)
-3. Set the client secret in `.env` as `AUTH_KEYCLOAK_SECRET`
-4. Export the realm and save it as `config/keycloak/jungle-store-realm.json`
+3. Make the client secret match `.env`'s `AUTH_KEYCLOAK_SECRET`
+4. Export the realm and save it as `config/keycloak/realm-export.json`
 5. From then on, `docker compose up -d --build` auto-imports the realm
 
 ## Quick Start

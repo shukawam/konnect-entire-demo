@@ -102,12 +102,11 @@ services:
       timeout: 5s
       retries: 5
 
-  # Keycloak — エンドユーザー認証用 IdP（OpenID Connect）
-  # dev モード（H2）で起動し、config/keycloak/ の realm エクスポートを自動インポートする。
-  # ブラウザは http://localhost:8081、コンテナ間は http://keycloak:8080 で到達する。
-  # KC_HOSTNAME を public URL に固定しつつ KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true にすることで、
-  # token の iss は localhost:8081、jwks/token エンドポイントは keycloak:8080 となり、
-  # Kong / NextAuth のサーバー間検証とブラウザリダイレクトが両立する。
+  # フロントチャネル（ブラウザ）とバックチャネル（コンテナ）で到達 URL を分離する構成。
+  #   - KC_HOSTNAME=http://localhost:8081 … iss / 認可エンドポイント等のフロント URL（ブラウザは公開ポートで到達、/etc/hosts 不要）
+  #   - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true … token / jwks / userinfo はリクエストホスト（keycloak:8081）を動的採用
+  # これにより frontend / Kong はコンテナ内 keycloak:8081 で discovery・token・jwks を取得でき、
+  # ブラウザは localhost:8081 へ認可リダイレクトされる。コンテナ内ポートも 8081 に揃える（KC_HTTP_PORT）。
   keycloak:
     <<: *default
     container_name: keycloak
@@ -120,25 +119,36 @@ services:
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: 'true'
       KC_HOSTNAME_STRICT: 'false'
       KC_HTTP_ENABLED: 'true'
-      KC_HEALTH_ENABLED: 'true'
+      KC_HTTP_PORT: '8081'
     ports:
-      - '8081:8080' # 8080 は kafka-ui が使用中のため 8081 を割り当てる
+      - 8081:8081
     volumes:
       - ./config/keycloak:/opt/keycloak/data/import
-    healthcheck:
-      # KC26 はヘルスを管理ポート 9000(/health/ready) で公開し curl/wget を含まないため、
-      # bash の /dev/tcp で疎通確認する（kc.sh が bash 前提のためイメージに bash あり）。
-      # 応答 JSON 中の "UP" を緩く判定する。dependents は service_started で待つため、
-      # 仮にこのヘルスチェックが環境差で失敗しても起動はブロックしない。
-      test:
-        [
-          'CMD-SHELL',
-          'exec 3<>/dev/tcp/localhost/9000; echo -e "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3; cat <&3 | grep -q UP',
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 30s
+
+  # master realm の sslRequired は realm 単位の DB 属性で、エクスポート対象外かつ env では
+  # 設定できない。既定の `external` のままだと管理コンソール(localhost)で「HTTPS required」に
+  # なるため、起動のたびに kcadm で master を NONE に更新する（kafka-init と同じ init パターン）。
+  keycloak-init:
+    <<: *default
+    container_name: keycloak-init
+    image: quay.io/keycloak/keycloak:26.4
+    depends_on:
+      keycloak:
+        condition: service_started
+    entrypoint: ['/bin/bash', '-c']
+    command:
+      - |
+        KC=http://keycloak:8081
+        echo "waiting for keycloak admin ..."
+        until /opt/keycloak/bin/kcadm.sh config credentials --server $$KC --realm master \
+          --user "$${KEYCLOAK_ADMIN}" --password "$${KEYCLOAK_ADMIN_PASSWORD}" >/dev/null 2>&1; do
+          sleep 3
+        done
+        /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
+        echo "master realm sslRequired=NONE applied."
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
 
   kong:
     <<: *default
@@ -231,7 +241,7 @@ services:
       DECK_KONNECT_CONTROL_PLANE_NAME: ${DECK_KONNECT_CONTROL_PLANE_NAME:-}
       DECK_KONNECT_TOKEN: ${DECK_KONNECT_TOKEN:-}
       DECK_OPENAI_API_KEY: ${DECK_OPENAI_API_KEY:-}
-      DECK_KEYCLOAK_ISSUER: ${DECK_KEYCLOAK_ISSUER:-http://keycloak:8080/realms/jungle-store/.well-known/openid-configuration}
+      DECK_KEYCLOAK_ISSUER: ${DECK_KEYCLOAK_ISSUER:-http://keycloak:8081/realms/jungle-store/.well-known/openid-configuration}
     command: ['gateway', 'sync', 'kong.yaml']
     depends_on:
       - kong
@@ -518,8 +528,10 @@ services:
       AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-}
       AUTH_KEYCLOAK_SECRET: ${AUTH_KEYCLOAK_SECRET:-}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-jungle-store}
-      KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081} # ブラウザリダイレクト用
-      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080} # サーバー間(token/jwks)用
+      # ブラウザが到達するフロントチャネル URL（iss / 認可エンドポイント）
+      KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}
+      # コンテナが到達するバックチャネル URL（discovery / token / jwks の取得先）
+      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8081}
     healthcheck:
       test: ['CMD-SHELL', 'node -e "fetch(''http://localhost:3000'').then(r=>{if(!r.ok)throw r})"']
       interval: 10s

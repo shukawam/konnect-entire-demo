@@ -64,8 +64,8 @@ npm run db:seed        # tsx prisma/seed.ts（catalog, user のみ）
 
 - フロントエンドは **NextAuth (Auth.js v5)** の Keycloak provider でリダイレクト型ログイン（`services/frontend/src/auth.ts`）。アクセストークンはセッションに保持し、`/api/proxy` がサーバー側で `Authorization: Bearer` を付与して Kong へ送る（クライアントはトークンを扱わない）。
 - Kong は **`openid-connect` プラグイン**（`auth_methods: [bearer]`）で JWT を検証し、claim を upstream ヘッダーへ注入する: `sub → X-User-Id`, `email → X-User-Email`, `preferred_username → X-User-Name`。各バックエンドは従来どおり `X-User-Id` でユーザーを識別する。
-- **Docker の URL 二重化に注意**: ブラウザは `http://localhost:8081`、コンテナ間は `http://keycloak:8080`。Keycloak は `KC_HOSTNAME`(public) + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` で「iss=public / jwks・token=internal」を成立させる。NextAuth の provider も authorization=public、token/userinfo/jwks=internal を明示指定している。
-- Keycloak の realm はユーザーが作成・エクスポートし、`config/keycloak/<realm>-realm.json` に配置すると起動時（`--import-realm`）に自動取り込みされる（手順は `config/keycloak/README.md`）。
+- **ブラウザとコンテナで到達 URL を分離する（`/etc/hosts` 不要）**: ブラウザは `localhost:8081`、コンテナ間は `keycloak:8081` で Keycloak に到達する。橋渡しは 2 点。① Keycloak に `KC_HOSTNAME=http://localhost:8081` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` を設定し、フロントチャネル（iss / 認可エンドポイント）は `localhost:8081` 固定、バックチャネル（token / jwks / userinfo）はリクエストホスト（コンテナからは `keycloak:8081`）を動的採用する。② Auth.js は `getAuthorizationUrl` が `wellKnown` を無視し `issuer` からサーバー側で discovery を fetch するため、`issuer` をブラウザ用 `localhost:8081` に保ったまま `customFetch`（`services/frontend/src/auth.ts`）でサーバー側 fetch 先だけを `keycloak:8081` に書き換える。これで token の `iss` は `localhost:8081`、Kong の JWKS 取得は `keycloak:8081` となり矛盾しない。
+- Keycloak の realm はユーザーが作成・エクスポートし、`config/keycloak/realm-export.json` に配置すると起動時（`--import-realm`）に自動取り込みされる。realm 側 client の `secret` は `.env` の `AUTH_KEYCLOAK_SECRET` と完全一致させること（手順は `config/keycloak/README.md`）。
 
 ### 非同期フロー（Kafka + Event Gateway）
 
