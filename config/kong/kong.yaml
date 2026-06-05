@@ -276,14 +276,6 @@ services:
           - https
         strip_path: true
 
-consumers:
-  - username: demo-user
-    keyauth_credentials:
-      - key: demo-api-key
-  - username: admin-user
-    keyauth_credentials:
-      - key: admin-api-key
-
 plugins:
   - name: cors
     config:
@@ -371,26 +363,77 @@ plugins:
     config:
       ai_metrics: true
 
-  # Key-Auth on Cart
-  - name: key-auth
+  # OpenID Connect — Keycloak のアクセストークン(JWT)を検証してエンドユーザーを認証する。
+  # NextAuth(Auth.js) が取得した access_token を Authorization: Bearer で受け取り、
+  # 署名/有効期限/iss を検証したうえで claim を upstream ヘッダーへ注入する:
+  #   sub → X-User-Id, email → X-User-Email, preferred_username → X-User-Name
+  # 各バックエンドは従来どおり X-User-Id でユーザーを識別する。
+  - name: openid-connect
     service: cart-service
     config:
-      key_names:
-        - apikey
+      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
+      auth_methods:
+        - bearer
+      cache_tokens_salt: jungle-store-oidc
+      upstream_headers_claims:
+        - sub
+        - email
+        - preferred_username
+      upstream_headers_names:
+        - X-User-Id
+        - X-User-Email
+        - X-User-Name
 
-  # Key-Auth on Order
-  - name: key-auth
+  # OpenID Connect on Order
+  - name: openid-connect
     service: order-service
     config:
-      key_names:
-        - apikey
+      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
+      auth_methods:
+        - bearer
+      cache_tokens_salt: jungle-store-oidc
+      upstream_headers_claims:
+        - sub
+        - email
+        - preferred_username
+      upstream_headers_names:
+        - X-User-Id
+        - X-User-Email
+        - X-User-Name
 
-  # Key-Auth on Shipping
-  - name: key-auth
+  # OpenID Connect on Shipping
+  - name: openid-connect
     service: shipping-service
     config:
-      key_names:
-        - apikey
+      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
+      auth_methods:
+        - bearer
+      cache_tokens_salt: jungle-store-oidc
+      upstream_headers_claims:
+        - sub
+        - email
+        - preferred_username
+      upstream_headers_names:
+        - X-User-Id
+        - X-User-Email
+        - X-User-Name
+
+  # OpenID Connect on User（/api/users/me は本人のトークンが必須）
+  - name: openid-connect
+    service: user-service
+    config:
+      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
+      auth_methods:
+        - bearer
+      cache_tokens_salt: jungle-store-oidc
+      upstream_headers_claims:
+        - sub
+        - email
+        - preferred_username
+      upstream_headers_names:
+        - X-User-Id
+        - X-User-Email
+        - X-User-Name
 
   # Stricter Rate Limiting on Order
   - name: rate-limiting

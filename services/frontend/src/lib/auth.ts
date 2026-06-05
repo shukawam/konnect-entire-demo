@@ -1,24 +1,28 @@
 'use client'
 
-import { createContext, useContext } from 'react'
+import { useSession } from 'next-auth/react'
 
 export interface AuthUser {
   id: string
   email: string
   name: string
-  apiKey: string
 }
 
-export function getStoredUser(): AuthUser | null {
-  if (typeof window === 'undefined') return null
-  const data = localStorage.getItem('user')
-  return data ? JSON.parse(data) : null
-}
+export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
 
-export function storeUser(user: AuthUser) {
-  localStorage.setItem('user', JSON.stringify(user))
-}
-
-export function clearUser() {
-  localStorage.removeItem('user')
+/**
+ * Keycloak SSO のセッションから現在のユーザーを取得する。
+ * 認証は NextAuth(Auth.js) が管理し、バックエンドへの Bearer トークン付与は
+ * /api/proxy がサーバー側で行う（クライアントはトークンを扱わない）。
+ */
+export function useAuthUser(): { user: AuthUser | null; status: AuthStatus } {
+  const { data: session, status } = useSession()
+  const user = session?.user
+    ? {
+        id: session.user.id,
+        email: session.user.email ?? '',
+        name: session.user.name ?? '',
+      }
+    : null
+  return { user, status }
 }
