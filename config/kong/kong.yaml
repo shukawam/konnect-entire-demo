@@ -225,6 +225,79 @@ services:
           - https
         strip_path: false
 
+  # ============================================================
+  # /admin — curl / API クライアント向けの API キー認証経路
+  # ブラウザ経路（/api/...）は OIDC のまま。curl は JWT を取得せず apikey ヘッダーで叩ける。
+  # 各 admin サービスは host=既存 upstream・path=バックエンドのベースパスを持ち、ルートで
+  # `/admin/api/<name>` プレフィックスを strip_path する。例: /admin/api/carts/items を strip し
+  # 残り /items に service.path(/api/carts) を前置 → /api/carts/items として転送する。
+  # X-User-Id 等は request-transformer で固定値(curl-admin)を注入する（後段プラグイン参照）。
+  # ============================================================
+  - name: cart-admin-service
+    host: cart-service.upstream
+    path: /api/carts
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
+    routes:
+      - name: cart-admin-route
+        paths:
+          - /admin/api/carts
+        protocols:
+          - http
+          - https
+        strip_path: true
+  - name: order-admin-service
+    host: order-service.upstream
+    path: /api/orders
+    protocol: http
+    retries: 0
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
+    routes:
+      - name: order-admin-route
+        paths:
+          - /admin/api/orders
+        protocols:
+          - http
+          - https
+        strip_path: true
+  - name: shipping-admin-service
+    host: shipping-service.upstream
+    path: /api/shipments
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
+    routes:
+      - name: shipping-admin-route
+        paths:
+          - /admin/api/shipments
+        protocols:
+          - http
+          - https
+        strip_path: true
+  - name: user-admin-service
+    host: user-service.upstream
+    path: /api/users
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
+    routes:
+      - name: user-admin-route
+        paths:
+          - /admin/api/users
+        protocols:
+          - http
+          - https
+        strip_path: true
+
   # AI Proxy (LLM Gateway)
   - name: openai-service
     url: https://example.com
@@ -571,3 +644,93 @@ plugins:
           annotations:
             title: List orders
             read_only_hint: true
+
+  # ============================================================
+  # /admin 経路の認証: key-auth(apikey ヘッダー) + X-User-Id 注入
+  # ブラウザ経路(OIDC)は変更なし。admin サービスにのみ適用する。
+  # ============================================================
+  - name: key-auth
+    service: cart-admin-service
+    config:
+      key_names:
+        - apikey
+      hide_credentials: true
+  - name: key-auth
+    service: order-admin-service
+    config:
+      key_names:
+        - apikey
+      hide_credentials: true
+  - name: key-auth
+    service: shipping-admin-service
+    config:
+      key_names:
+        - apikey
+      hide_credentials: true
+  - name: key-auth
+    service: user-admin-service
+    config:
+      key_names:
+        - apikey
+      hide_credentials: true
+
+  # JWT が無いので X-User-Id 等を固定のデモ識別子で注入する。
+  # クライアントが詐称ヘッダーを送っても remove → add で確実に上書きする。
+  - name: request-transformer
+    service: cart-admin-service
+    config:
+      remove:
+        headers:
+          - X-User-Id
+          - X-User-Email
+          - X-User-Name
+      add:
+        headers:
+          - 'X-User-Id:curl-admin'
+          - 'X-User-Email:curl-admin@example.com'
+          - 'X-User-Name:curl-admin'
+  - name: request-transformer
+    service: order-admin-service
+    config:
+      remove:
+        headers:
+          - X-User-Id
+          - X-User-Email
+          - X-User-Name
+      add:
+        headers:
+          - 'X-User-Id:curl-admin'
+          - 'X-User-Email:curl-admin@example.com'
+          - 'X-User-Name:curl-admin'
+  - name: request-transformer
+    service: shipping-admin-service
+    config:
+      remove:
+        headers:
+          - X-User-Id
+          - X-User-Email
+          - X-User-Name
+      add:
+        headers:
+          - 'X-User-Id:curl-admin'
+          - 'X-User-Email:curl-admin@example.com'
+          - 'X-User-Name:curl-admin'
+  - name: request-transformer
+    service: user-admin-service
+    config:
+      remove:
+        headers:
+          - X-User-Id
+          - X-User-Email
+          - X-User-Name
+      add:
+        headers:
+          - 'X-User-Id:curl-admin'
+          - 'X-User-Email:curl-admin@example.com'
+          - 'X-User-Name:curl-admin'
+
+# /admin 経路を利用する API キーの所有者。apikey: jungle-store-demo-admin-key で認証する。
+consumers:
+  - username: curl-admin
+    keyauth_credentials:
+      - key: jungle-store-demo-admin-key

@@ -61,10 +61,11 @@ Keycloak 管理コンソール（**http://localhost:8081** / 初期管理者は 
 
 > このデモの `realm-export.json` は `sslRequired: "none"` を含むのでインポートだけで反映される。
 >
-> **補足（master realm の「HTTPS required」）**: 管理コンソールでこのエラーが出る場合は、
-> realm セレクタで `master` を選び、同様に Require SSL を `None` にする。`master` は
-> エクスポート対象外なので、コンテナを作り直すたびに再設定が必要。
-> UI に入れない場合はコンテナ内の kcadm で設定できる:
+> **master realm の「HTTPS required」は自動対応済み**: 管理コンソール（`http://localhost:8081`）が
+> 動く `master` realm はエクスポート対象外で、`sslRequired` を設定する環境変数も Keycloak 26 には
+> 無い。そこで `compose.yaml` の **`keycloak-init` コンテナ**が起動のたびに kcadm で
+> `master` を `sslRequired=NONE` に更新する（コンテナを作り直しても毎回自動適用）。
+> 手動で流す場合は `docker compose up keycloak-init`、または直接 kcadm:
 >
 > ```bash
 > docker exec keycloak /opt/keycloak/bin/kcadm.sh config credentials \

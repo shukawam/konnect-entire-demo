@@ -56,6 +56,7 @@ npm run db:seed        # tsx prisma/seed.ts（catalog, user のみ）
         → /api/shipments → Shipping Service :3004 (OIDC: JWT 検証)
         → /api/users     → User Service :3005 (OIDC: JWT 検証)
         → /api/agent     → Agent Service :3006
+        → /admin/api/*   → cart/order/shipping/user (key-auth: apikey 認証、curl 向け)
 ```
 
 ### エンドユーザー認証（Keycloak SSO + Kong OIDC）
@@ -66,6 +67,8 @@ npm run db:seed        # tsx prisma/seed.ts（catalog, user のみ）
 - Kong は **`openid-connect` プラグイン**（`auth_methods: [bearer]`）で JWT を検証し、claim を upstream ヘッダーへ注入する: `sub → X-User-Id`, `email → X-User-Email`, `preferred_username → X-User-Name`。各バックエンドは従来どおり `X-User-Id` でユーザーを識別する。
 - **ブラウザとコンテナで到達 URL を分離する（`/etc/hosts` 不要）**: ブラウザは `localhost:8081`、コンテナ間は `keycloak:8081` で Keycloak に到達する。橋渡しは 2 点。① Keycloak に `KC_HOSTNAME=http://localhost:8081` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` を設定し、フロントチャネル（iss / 認可エンドポイント）は `localhost:8081` 固定、バックチャネル（token / jwks / userinfo）はリクエストホスト（コンテナからは `keycloak:8081`）を動的採用する。② Auth.js は `getAuthorizationUrl` が `wellKnown` を無視し `issuer` からサーバー側で discovery を fetch するため、`issuer` をブラウザ用 `localhost:8081` に保ったまま `customFetch`（`services/frontend/src/auth.ts`）でサーバー側 fetch 先だけを `keycloak:8081` に書き換える。これで token の `iss` は `localhost:8081`、Kong の JWKS 取得は `keycloak:8081` となり矛盾しない。
 - Keycloak の realm はユーザーが作成・エクスポートし、`config/keycloak/realm-export.json` に配置すると起動時（`--import-realm`）に自動取り込みされる。realm 側 client の `secret` は `.env` の `AUTH_KEYCLOAK_SECRET` と完全一致させること（手順は `config/keycloak/README.md`）。
+- **`keycloak-init` コンテナ**（`kafka-init` と同じ init パターン）が起動のたびに kcadm で `master` realm の `sslRequired=NONE` を適用する。管理コンソール（`http://localhost:8081`）が動く `master` はエクスポート対象外で env でも設定できず、既定の `external` のままだと「HTTPS required」になるため。コンテナを作り直しても自動で再適用される。
+- **curl 向けの API キー経路 `/admin/api/*`**: JWT を取得しない CLI/API クライアント向けに、`key-auth`（`apikey` ヘッダー）で保護した別経路を用意する。各 `*-admin-service`（host=既存 upstream、path=バックエンドのベースパス）に対しルートが `/admin` プレフィックスを `strip_path` し、`request-transformer` が JWT の代わりに `X-User-Id: curl-admin` を固定注入する。consumer `curl-admin` の API キーは `config/kong/kong.yaml` で管理。ブラウザ経路（OIDC）には影響しない純粋な追加。
 
 ### 非同期フロー（Kafka + Event Gateway）
 

@@ -116,8 +116,8 @@ Each backend service auto-serves OAS 3.1.0 at `/openapi.json` (e.g., [http://loc
 
 ## Demo Users
 
-Users are created and managed in the Keycloak realm (see [`config/keycloak/README.md`](config/keycloak/README.md)).
-For example, creating the following users is convenient.
+The following demo users are bundled in `config/keycloak/realm-export.json` and auto-imported on
+startup (to rebuild the realm yourself, see [`config/keycloak/README.md`](config/keycloak/README.md)).
 
 | Name                 | Email               | Password      |
 | -------------------- | ------------------- | ------------- |
@@ -135,35 +135,39 @@ After login, the `sub` claim of the access token (JWT) is passed to each service
 3. Browse products, add to cart, and place an order
 4. Watch order status change: `PENDING` → `CONFIRMED` → `SHIPPED`
 
-### Using curl
+### Using curl (`/admin` API-key route)
 
-Protected APIs require a Keycloak access token passed as `Authorization: Bearer`.
-(Enable Direct Access Grants on the Keycloak client to fetch a token this way.)
+The browser route (`/api/...`) requires a Keycloak JWT (OIDC), but for curl there is an
+**API-key route at `/admin/api/...`**. You can call protected APIs with just an `apikey` header,
+no JWT needed. Kong validates it via `key-auth` and injects `X-User-Id: curl-admin` upstream.
+
+> The API key is set on the `curl-admin` consumer in `config/kong/kong.yaml`
+> (default: `jungle-store-demo-admin-key`). The `/admin` route covers the 4 protected services
+> (cart / order / shipping / user); products is unauthenticated already.
 
 ```bash
-# List products (no auth required)
+APIKEY=jungle-store-demo-admin-key
+
+# List products (no auth required; normal route)
 curl http://localhost:8000/api/products
 
-# Obtain an access token from Keycloak
-TOKEN=$(curl -s -X POST \
-  http://localhost:8081/realms/jungle-store/protocol/openid-connect/token \
-  -d "grant_type=password" \
-  -d "client_id=jungle-store-frontend" \
-  -d "client_secret=${AUTH_KEYCLOAK_SECRET}" \
-  -d "username=user@example.com" \
-  -d "password=password123" | jq -r .access_token)
+# Get cart (apikey auth; processed as X-User-Id=curl-admin)
+curl -H "apikey: ${APIKEY}" http://localhost:8000/admin/api/carts
 
-# Add item to cart (OIDC required; Kong injects X-User-Id from the token sub)
-curl -X POST http://localhost:8000/api/carts/items \
+# Add item to cart
+curl -X POST http://localhost:8000/admin/api/carts/items \
+  -H "apikey: ${APIKEY}" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ${TOKEN}" \
   -d '{"productId":"prod-001","quantity":2,"price":1980}'
 
 # Place an order (triggers Kafka → auto shipment creation)
-curl -X POST http://localhost:8000/api/orders \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ${TOKEN}"
+curl -X POST http://localhost:8000/admin/api/orders \
+  -H "apikey: ${APIKEY}" \
+  -H "Content-Type: application/json"
 ```
+
+> To call with a JWT like the browser does, enable Direct Access Grants on the Keycloak client,
+> fetch an access token via `grant_type=password`, and call `/api/...` with `Authorization: Bearer`.
 
 ## Kong Konnect Feature Demos
 
@@ -176,6 +180,8 @@ curl -X POST http://localhost:8000/api/orders \
 | `correlation-id`           | Global                      | Auto-assigns `X-Request-Id` header                            |
 | `opentelemetry`            | Global                      | Sends traces, logs, and metrics to OTel Collector             |
 | `openid-connect`           | Cart, Order, Shipping, User | Validates Keycloak JWT and injects claims as upstream headers |
+| `key-auth`                 | `/admin/api/*` (4 services) | API-key auth for curl (`apikey` header)                       |
+| `request-transformer`      | `/admin/api/*` (4 services) | Injects fixed `X-User-Id: curl-admin` on the API-key route    |
 | `rate-limiting`            | Order                       | 10 req/min (strict limit)                                     |
 | `proxy-cache`              | Catalog                     | Caches GET responses for 30 seconds                           |
 | `ai-semantic-prompt-guard` | AI Gateway                  | Input validation with allow/deny rules (Redis + Embeddings)   |
