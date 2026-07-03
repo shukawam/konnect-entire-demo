@@ -44,15 +44,15 @@ cp .env.example .env
 
 `.env` を開き、以下の値を自分の環境に合わせて設定してください:
 
-| 変数名                            | 説明                                          | 例                               |
-| --------------------------------- | --------------------------------------------- | -------------------------------- |
-| `PREFIX`                          | Konnect コントロールプレーン ID               | `xxxxxxxx-xxxx-...`              |
-| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway コントロールプレーン ID | `xxxxxxxx-xxxx-...`              |
-| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect コントロールプレーン名                | `my-control-plane`               |
-| `DECK_OPENAI_API_KEY`             | OpenAI API キー（AI Gateway 用）              | `sk-...`                         |
-| `AUTH_SECRET`                     | NextAuth のセッション暗号鍵                   | `openssl rand -base64 32` で生成 |
-| `AUTH_KEYCLOAK_ID`                | Keycloak クライアント ID                      | `jungle-store-frontend`          |
-| `AUTH_KEYCLOAK_SECRET`            | Keycloak クライアントシークレット             | （Keycloak で発行）              |
+| 変数名                            | 説明                                                                  | 例                               |
+| --------------------------------- | --------------------------------------------------------------------- | -------------------------------- |
+| `PREFIX`                          | Konnect エンドポイントのプレフィックス（`<prefix>.us.cp.konghq.com`） | `4fa752f311`                     |
+| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway コントロールプレーン ID                         | `xxxxxxxx-xxxx-...`              |
+| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect コントロールプレーン名                                        | `my-control-plane`               |
+| `DECK_OPENAI_API_KEY`             | OpenAI API キー（AI Gateway 用）                                      | `sk-...`                         |
+| `AUTH_SECRET`                     | NextAuth のセッション暗号鍵                                           | `openssl rand -base64 32` で生成 |
+| `AUTH_KEYCLOAK_ID`                | Keycloak クライアント ID                                              | `jungle-store-frontend`          |
+| `AUTH_KEYCLOAK_SECRET`            | Keycloak クライアントシークレット                                     | （Keycloak で発行）              |
 
 その他の変数（MySQL, Kafka, サービス URL, Keycloak の URL/realm 等）はデフォルト値のままで動作します。
 
