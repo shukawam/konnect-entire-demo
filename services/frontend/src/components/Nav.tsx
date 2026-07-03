@@ -46,13 +46,13 @@ export default function Nav() {
         </Link>
         <div className="nav-links">
           <Link href="/" className={pathname === '/' ? 'nav-active' : ''}>
-            🏠ホーム
+            ホーム
           </Link>
           <Link href="/cart" className={`cart-link${pathname === '/cart' ? ' nav-active' : ''}`}>
-            🛒カート{cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            カート{cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
           </Link>
           <Link href="/orders" className={pathname.startsWith('/orders') ? 'nav-active' : ''}>
-            📦注文履歴
+            注文履歴
           </Link>
           <a
             href={grafanaUrl}
