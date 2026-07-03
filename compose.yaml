@@ -11,6 +11,7 @@ x-otel-env: &otel-env
 
 networks:
   konnect-entire-demo-network:
+    driver: bridge
 
 volumes:
   mysql_data:
@@ -102,11 +103,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # フロントチャネル（ブラウザ）とバックチャネル（コンテナ）で到達 URL を分離する構成。
-  #   - KC_HOSTNAME=http://localhost:8081 … iss / 認可エンドポイント等のフロント URL（ブラウザは公開ポートで到達、/etc/hosts 不要）
-  #   - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true … token / jwks / userinfo はリクエストホスト（keycloak:8081）を動的採用
-  # これにより frontend / Kong はコンテナ内 keycloak:8081 で discovery・token・jwks を取得でき、
-  # ブラウザは localhost:8081 へ認可リダイレクトされる。コンテナ内ポートも 8081 に揃える（KC_HTTP_PORT）。
   keycloak:
     <<: *default
     container_name: keycloak
@@ -121,13 +117,10 @@ services:
       KC_HTTP_ENABLED: 'true'
       KC_HTTP_PORT: '8081'
     ports:
-      - 8081:8081
+      - '8081:8081'
     volumes:
       - ./config/keycloak:/opt/keycloak/data/import
 
-  # master realm の sslRequired は realm 単位の DB 属性で、エクスポート対象外かつ env では
-  # 設定できない。既定の `external` のままだと管理コンソール(localhost)で「HTTPS required」に
-  # なるため、起動のたびに kcadm で master を NONE に更新する（kafka-init と同じ init パターン）。
   keycloak-init:
     <<: *default
     container_name: keycloak-init
@@ -177,8 +170,8 @@ services:
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_ERROR_LOG: /dev/stderr
     ports:
-      - 8000:8000
-      - 8100:8100
+      - '8000:8000' # Proxy
+      - '8100:8100' # Status API
     volumes:
       - ./certs:/etc/kong/cluster-certs
     healthcheck:
@@ -198,8 +191,6 @@ services:
       user-service:
         condition: service_healthy
       keycloak:
-        # openid-connect は JWKS を遅延取得するため起動順だけ保証すれば十分。
-        # ヘルスチェックの環境差で全体がブロックしないよう service_started にする。
         condition: service_started
 
   event-gateway:
@@ -220,10 +211,10 @@ services:
       OTEL_SERVICE_NAME: event-gateway
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
     ports:
-      - 19091:19091
-      - 19092:19092
-      - 19093:19093
-      - 19094:19094
+      - '19091:19091'
+      - '19092:19092'
+      - '19093:19093'
+      - '19094:19094'
     volumes:
       - ./certs/event-gateway:/etc/kong/cluster-certs
     depends_on:
@@ -249,8 +240,6 @@ services:
   # ============================================================
   # Observability
   # ============================================================
-  # Collector + Tempo + Prometheus + Loki + Grafana を 1 コンテナに集約。
-  # Collector 設定のみ上書きして既存の filter/traces フィルタを保持する。
   otel-lgtm:
     <<: *default
     container_name: otel-lgtm
@@ -262,7 +251,7 @@ services:
     volumes:
       - ./config/observability/otel-lgtm/otelcol-config.yaml:/otel-lgtm/otelcol-config.yaml
     ports:
-      - 3010:3000 # Grafana UI（host 3010 を維持）
+      - '3010:3000' # Grafana UI
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/health || exit 1']
       interval: 10s
@@ -521,16 +510,13 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       OTEL_SERVICE_NAME: frontend
       NEXT_OTEL_VERBOSE: 1
-      # NextAuth (Auth.js) + Keycloak SSO
       AUTH_SECRET: ${AUTH_SECRET:-}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: 'true'
       AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-}
       AUTH_KEYCLOAK_SECRET: ${AUTH_KEYCLOAK_SECRET:-}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-jungle-store}
-      # ブラウザが到達するフロントチャネル URL（iss / 認可エンドポイント）
       KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}
-      # コンテナが到達するバックチャネル URL（discovery / token / jwks の取得先）
       KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8081}
     healthcheck:
       test: ['CMD-SHELL', 'node -e "fetch(''http://localhost:3000'').then(r=>{if(!r.ok)throw r})"']
@@ -541,7 +527,6 @@ services:
       kong:
         condition: service_healthy
       keycloak:
-        # NextAuth は discovery を初回ログイン時に取得するため起動順のみ保証する
         condition: service_started
     develop:
       watch:
