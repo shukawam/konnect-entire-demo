@@ -4,6 +4,7 @@ set -euo pipefail
 source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
 
 [ -f "$ENV_FILE" ] || { cp "$REPO_ROOT/.env.example" "$ENV_FILE"; log ".env を .env.example から作成"; }
+setup_konnect_pat
 
 prefix="${RESOURCE_PREFIX:-}"
 cp_name="jungle-store-gateway${prefix:+-$prefix}"

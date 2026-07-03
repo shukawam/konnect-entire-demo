@@ -29,3 +29,16 @@ env_set() {
   ' "$file" >"$tmp"
   mv "$tmp" "$file"
 }
+
+# Konnect PAT を deck / kongctl の双方へ供給する。
+# .env の DECK_KONNECT_TOKEN を単一の source of truth とし、
+# deck は環境変数 DECK_KONNECT_TOKEN（--konnect-token 相当）を、
+# kongctl は KONGCTL_DEFAULT_KONNECT_PAT（konnect.pat 相当）を読む。
+setup_konnect_pat() {
+  local tok; tok="$(env_get DECK_KONNECT_TOKEN)"
+  case "$tok" in
+    ""|"<your-konnect-pat>") die "DECK_KONNECT_TOKEN が .env に未設定です（有効な Konnect PAT を設定してください）" ;;
+  esac
+  export DECK_KONNECT_TOKEN="$tok"
+  export KONGCTL_DEFAULT_KONNECT_PAT="$tok"
+}

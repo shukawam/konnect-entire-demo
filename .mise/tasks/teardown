@@ -4,6 +4,7 @@ set -euo pipefail
 source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
 
 [ -n "${RESOURCE_PREFIX:-}" ] || die "teardown は RESOURCE_PREFIX を指定して実行してください（本番誤削除防止）"
+setup_konnect_pat
 
 cd "$REPO_ROOT"
 docker compose down -v || true

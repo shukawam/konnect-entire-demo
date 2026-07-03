@@ -2,6 +2,7 @@
 #MISE description="Konnect リソースを同期（自己署名証明書のピン留め含む）"
 set -euo pipefail
 source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
+setup_konnect_pat
 
 SRC="$(bash "$REPO_ROOT/.mise/lib/render-kongctl.sh")"
 log "kongctl source: $SRC"

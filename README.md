@@ -32,8 +32,8 @@ Kong Konnect の各機能をフル活用したマイクロサービス構成の 
 
 - Docker / Docker Compose
 - Node.js 20+（ローカル開発時）
-- Kong Konnect アカウント（`kongctl login` 済み、deck トークン設定済み: `~/.config/deck/.deck.yaml`）
-- `.env` に `DECK_OPENAI_API_KEY`（AI Gateway 用。唯一の外部シークレットで、他の動的値・秘密値は `mise run setup` が自動生成/自動抽出します）
+- Kong Konnect アカウント + Personal Access Token（`.env` の `DECK_KONNECT_TOKEN` に設定。deck と kongctl が共用し、mise が `.env` を読み込んで両ツールへ供給します。`kongctl login` や `~/.config/deck/.deck.yaml` は不要）
+- `.env` に `DECK_OPENAI_API_KEY`（AI Gateway 用。`DECK_KONNECT_TOKEN` と並ぶ外部シークレットで、他の動的値・秘密値は `mise run setup` が自動生成/自動抽出します）
 
 > クラスタ証明書の事前取得・配置は不要です。`mise run certs:gen`（`mise run setup` に含まれます）が自己署名証明書を自動生成し、Konnect 側への宣言的なピン留めまで行います。詳細は [クイックスタート](#クイックスタート) を参照してください。
 
@@ -96,7 +96,7 @@ Keycloak の realm（クライアント・ユーザー）は `config/keycloak/re
 
 ### 1コマンドセットアップ（推奨）
 
-前提: `.env` に `DECK_OPENAI_API_KEY` を記入 / `kongctl login` 済み / deck トークン設定済み。
+前提: `.env` に `DECK_KONNECT_TOKEN`（Konnect PAT）と `DECK_OPENAI_API_KEY` を記入。`kongctl login` / `~/.config/deck/.deck.yaml` は不要（mise が `.env` を読み込み、deck・kongctl 双方へ PAT を供給します）。
 
 ```bash
 mise run setup

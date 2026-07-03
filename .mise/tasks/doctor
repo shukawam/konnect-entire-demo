@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="セットアップ前提を検証（OPENAI キー / kongctl / deck / Docker）"
+#MISE description="セットアップ前提を検証（OPENAI キー / Konnect PAT / Docker）"
 set -euo pipefail
 source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
 
@@ -14,8 +14,12 @@ case "$openai" in
   *) log "OK: DECK_OPENAI_API_KEY";;
 esac
 
-check "kongctl ログイン" "kongctl get me" "kongctl login を実行"
-check "deck Konnect 認証" "test -f $HOME/.config/deck/.deck.yaml" "deck の Konnect トークンを ~/.config/deck/.deck.yaml に設定"
+token="$(env_get DECK_KONNECT_TOKEN)"
+case "$token" in
+  ""|"<your-konnect-pat>") warn "NG: DECK_KONNECT_TOKEN 未設定 → .env に有効な Konnect PAT を記入"; ok=0;;
+  *) export KONGCTL_DEFAULT_KONNECT_PAT="$token"
+     check "Konnect PAT 有効性" "kongctl get me" "PAT が失効/無効。Konnect で新しい PAT を発行し .env の DECK_KONNECT_TOKEN を更新";;
+esac
 check "Docker 起動" "docker info" "Docker Desktop を起動"
 
 [ "$ok" = 1 ] || die "前提が未充足です。上記を解消して再実行してください。"

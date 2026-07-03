@@ -67,7 +67,7 @@ cd kongctl && kongctl sync konnect # API / Portal / Event Gateway 等の Konnect
 
 ### 1コマンドセットアップ（`mise run setup`）
 
-前提を「`.env` に `DECK_OPENAI_API_KEY` を記入」「`kongctl login` 済み + deck トークン設定済み（`~/.config/deck/.deck.yaml`）」の 2 点まで縮小し、Konnect 同期から起動までを一括実行するオーケストレータ。`.mise/tasks/` 配下のファイルベースタスクとして実装されている（`mise.toml` は編集禁止のため触れない。サブディレクトリは `:` で名前空間化され、例えば `.mise/tasks/certs/gen` は `mise run certs:gen` になる）。
+前提を「`.env` に `DECK_KONNECT_TOKEN`（Konnect PAT）を記入」「`.env` に `DECK_OPENAI_API_KEY` を記入」の 2 点まで縮小し、Konnect 同期から起動までを一括実行するオーケストレータ。認証は `.env` の `DECK_KONNECT_TOKEN` を単一 source of truth とし、mise が `.env` を読み込んで deck には環境変数 `DECK_KONNECT_TOKEN`、kongctl には `KONGCTL_DEFAULT_KONNECT_PAT` として供給する（`kongctl login` や `~/.config/deck/.deck.yaml` は不要。共有ヘルパ `setup_konnect_pat` が担う）。`.mise/tasks/` 配下のファイルベースタスクとして実装されている（`mise.toml` は編集禁止のため触れない。サブディレクトリは `:` で名前空間化され、例えば `.mise/tasks/certs/gen` は `mise run certs:gen` になる）。
 
 ```bash
 mise run setup                        # doctor → certs:gen → konnect:sync → env:patch → gateway:sync → up を一括実行
@@ -77,7 +77,7 @@ RESOURCE_PREFIX=e2e mise run teardown # 分離環境の後始末（namespace 削
 
 各サブタスクは単体実行もでき、`setup` はその順次呼び出し:
 
-- `doctor` — 前提チェック（`DECK_OPENAI_API_KEY` / kongctl ログイン / deck トークン / Docker 起動）。不足があれば対処コマンドを提示して非 0 終了
+- `doctor` — 前提チェック（`DECK_OPENAI_API_KEY` / `DECK_KONNECT_TOKEN` の設定と有効性を `kongctl get me` で検証 / Docker 起動）。不足があれば対処コマンドを提示して非 0 終了
 - `certs:gen` — `certs/kong-gateway/` `certs/event-gateway/` に自己署名クラスタ証明書を生成（既存ファイルがあれば流用）
 - `konnect:sync` — `kongctl sync` で Konnect リソース（CP / Event Gateway / API / Portal 等）を同期。証明書のピン留め（`data_plane_certificates`）を含む
 - `env:patch` — `.env` の該当行のみを in-place で書き換え、`PREFIX` / `EVENT_GATEWAY_CP_ID` / `AUTH_SECRET` / `AUTH_KEYCLOAK_SECRET` 等の動的値・秘密値を反映する（他の行・コメントは保持）
