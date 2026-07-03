@@ -1,38 +1,33 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
-import { getStoredUser, clearUser, type AuthUser } from '@/lib/auth'
+import { signOut } from 'next-auth/react'
+import { useAuthUser } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
 import GrafanaIcon from '@/components/GrafanaIcon'
 
 export default function Nav() {
-  const router = useRouter()
   const pathname = usePathname()
-  const [user, setUser] = useState<AuthUser | null>(null)
+  const { user } = useAuthUser()
   const [cartCount, setCartCount] = useState(0)
   const grafanaUrl = process.env.NEXT_PUBLIC_GRAFANA_URL ?? 'http://localhost:3010'
 
   const fetchCartCount = useCallback(async () => {
-    const u = getStoredUser()
-    if (!u) {
+    if (!user) {
       setCartCount(0)
       return
     }
     try {
-      const cart = await apiFetch<{ items: { quantity: number }[] }>('/api/carts', {
-        apiKey: u.apiKey,
-        userId: u.id,
-      })
+      const cart = await apiFetch<{ items: { quantity: number }[] }>('/api/carts')
       setCartCount(cart.items.reduce((sum, i) => sum + i.quantity, 0))
     } catch {
       setCartCount(0)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => {
-    setUser(getStoredUser())
     fetchCartCount()
     const handler = () => fetchCartCount()
     window.addEventListener('cart-updated', handler)
@@ -40,9 +35,7 @@ export default function Nav() {
   }, [fetchCartCount])
 
   const handleLogout = () => {
-    clearUser()
-    setUser(null)
-    router.push('/')
+    signOut({ callbackUrl: '/' })
   }
 
   return (
@@ -53,13 +46,13 @@ export default function Nav() {
         </Link>
         <div className="nav-links">
           <Link href="/" className={pathname === '/' ? 'nav-active' : ''}>
-            🏠ホーム
+            ホーム
           </Link>
           <Link href="/cart" className={`cart-link${pathname === '/cart' ? ' nav-active' : ''}`}>
-            🛒カート{cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            カート{cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
           </Link>
           <Link href="/orders" className={pathname.startsWith('/orders') ? 'nav-active' : ''}>
-            📦注文履歴
+            注文履歴
           </Link>
           <a
             href={grafanaUrl}

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { apiFetch } from '@/lib/api'
-import { getStoredUser } from '@/lib/auth'
+import { useAuthUser } from '@/lib/auth'
 
 interface OrderItem {
   id: string
@@ -50,6 +50,7 @@ export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
   const orderId = params.id as string
+  const { status } = useAuthUser()
 
   const [order, setOrder] = useState<Order | null>(null)
   const [shipment, setShipment] = useState<Shipment | null>(null)
@@ -58,27 +59,22 @@ export default function OrderDetailPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const user = getStoredUser()
-    if (!user) {
+    if (status === 'loading') return
+    if (status === 'unauthenticated') {
       router.push('/login')
       return
     }
     loadOrderDetail()
-  }, [orderId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId, status])
 
   async function loadOrderDetail() {
-    const user = getStoredUser()
-    if (!user) return
-
     try {
       setLoading(true)
 
       const [orderData, shipmentData] = await Promise.allSettled([
-        apiFetch<Order>(`/api/orders/${orderId}`, { apiKey: user.apiKey, userId: user.id }),
-        apiFetch<Shipment>(`/api/shipments/order/${orderId}`, {
-          apiKey: user.apiKey,
-          userId: user.id,
-        }),
+        apiFetch<Order>(`/api/orders/${orderId}`),
+        apiFetch<Shipment>(`/api/shipments/order/${orderId}`),
       ])
 
       if (orderData.status === 'fulfilled') {

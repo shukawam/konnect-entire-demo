@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # GitHub Actions を SHA 固定したまま自動更新する（SHA とバージョンコメントの両方を更新）
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    # 複数アクションの更新を 1 つの PR にまとめてノイズを抑える
+    groups:
+      github-actions:
+        patterns:
+          - '*'

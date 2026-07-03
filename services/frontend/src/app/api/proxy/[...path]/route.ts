@@ -1,5 +1,6 @@
 import { context, propagation, trace } from '@opentelemetry/api'
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/auth'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000'
 
@@ -9,13 +10,21 @@ async function proxy(req: NextRequest) {
   const url = `${BACKEND_URL}${path}${search}`
 
   const tracer = trace.getTracer('frontend-proxy')
+  const session = await auth()
 
   return tracer.startActiveSpan(`proxy ${req.method} ${path}`, async (span) => {
     try {
       const headers: Record<string, string> = {}
       for (const [key, value] of req.headers.entries()) {
         if (key === 'host' || key === 'connection' || key === 'transfer-encoding') continue
+        // 認証情報はサーバー側で付与するため、クライアント由来の値は破棄する
+        if (key === 'authorization' || key === 'apikey' || key === 'x-user-id') continue
         headers[key] = value
+      }
+
+      // Keycloak アクセストークンを Bearer として付与（Kong openid-connect が検証する）
+      if (session?.accessToken) {
+        headers['authorization'] = `Bearer ${session.accessToken}`
       }
 
       // Inject W3C trace context into outgoing request
