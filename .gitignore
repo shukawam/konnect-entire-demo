@@ -9,7 +9,6 @@ dist/
 .DS_Store
 data/
 certs/
-mise.toml
 coverage/
 generated/
 .claude/settings.local.json

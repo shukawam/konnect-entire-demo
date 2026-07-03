@@ -67,7 +67,7 @@ cd kongctl && kongctl sync konnect # API / Portal / Event Gateway 等の Konnect
 
 ### 1コマンドセットアップ（`mise run setup`）
 
-前提を「`.env` に `DECK_KONNECT_TOKEN`（Konnect PAT）を記入」「`.env` に `DECK_OPENAI_API_KEY` を記入」の 2 点まで縮小し、Konnect 同期から起動までを一括実行するオーケストレータ。認証は `.env` の `DECK_KONNECT_TOKEN` を単一 source of truth とし、mise が `.env` を読み込んで deck には環境変数 `DECK_KONNECT_TOKEN`、kongctl には `KONGCTL_DEFAULT_KONNECT_PAT` として供給する（`kongctl login` や `~/.config/deck/.deck.yaml` は不要。共有ヘルパ `setup_konnect_pat` が担う）。`.mise/tasks/` 配下のファイルベースタスクとして実装されている（`mise.toml` は編集禁止のため触れない。サブディレクトリは `:` で名前空間化され、例えば `.mise/tasks/certs/gen` は `mise run certs:gen` になる）。
+前提を「`.env` に `DECK_KONNECT_TOKEN`（Konnect PAT）を記入」「`.env` に `DECK_OPENAI_API_KEY` を記入」の 2 点まで縮小し、Konnect 同期から起動までを一括実行するオーケストレータ。認証は `.env` の `DECK_KONNECT_TOKEN` を単一 source of truth とし、mise が `.env` を読み込んで deck には環境変数 `DECK_KONNECT_TOKEN`、kongctl には `KONGCTL_DEFAULT_KONNECT_PAT` として供給する（`kongctl login` や `~/.config/deck/.deck.yaml` は不要。共有ヘルパ `setup_konnect_pat` が担う）。`.mise/tasks/` 配下のファイルベースタスクとして実装されている（`mise.toml`（内容は `[env]` で `.env` を読み込む設定のみ）はコミット対象。load-bearing なため事故防止にフックで直接編集をガードしている。サブディレクトリは `:` で名前空間化され、例えば `.mise/tasks/certs/gen` は `mise run certs:gen` になる）。
 
 ```bash
 mise run setup                        # doctor → certs:gen → konnect:sync → env:patch → gateway:sync → up を一括実行
@@ -155,7 +155,7 @@ services/<名前>/src/
 - 実装は必ず適切なブランチを作成し、プルリクエストを通じてマージする（main ブランチへの直接コミット禁止）
 - 新機能などの実装後は、必ずテストを追加する
 - コードスタイルは Prettier に従う（husky + lint-staged で pre-commit 時に自動整形。ESLint は未導入）
-- `.env`・`certs/`・`mise.toml` は機密のため編集/コミット禁止（環境変数の追加は `.env.example` を更新してユーザーに反映を依頼する）
+- `.env`・`certs/` は機密のため編集/コミット禁止（環境変数の追加は `.env.example` を更新してユーザーに反映を依頼する）。`mise.toml` はコミット対象だが load-bearing のため直接編集はフックでブロックしている（変更が必要ならユーザーに依頼）
 - README.md にはプロジェクトの概要とセットアップ手順を記載し、CLAUDE.md には開発者向けの詳細なガイドラインを記載する（追記するべき内容があれば追記する）
 - コミットメッセージはセマンティックコミット規約に従う（例: `feat: add new API endpoint for products`、`fix: resolve issue with user authentication`）
 - ブランチ名もセマンティックに決定する（例: `feature/add-product-endpoint`、`bugfix/user-authentication-issue`）
