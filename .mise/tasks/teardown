@@ -11,10 +11,13 @@ docker compose down -v || true
 ns="jungle-store-$RESOURCE_PREFIX"
 # 対象 namespace のみを空設定で sync → 当該 namespace のリソースを全削除
 empty="$(mktemp -d)"
+trap 'rm -rf "$empty"' EXIT
 printf '_defaults:\n  kongctl:\n    namespace: %s\n' "$ns" >"$empty/empty.yaml"
 kongctl sync -f "$empty" --auto-approve
 log "namespace 削除: $ns"
 
 # .env の分離値を既定へ戻す
 env_set DECK_KONNECT_CONTROL_PLANE_NAME "jungle-store-gateway"
+env_set PREFIX "<your-konnect-endpoint-prefix>"
+env_set EVENT_GATEWAY_CP_ID "<your-event-gateway-cp-id>"
 log "teardown 完了"

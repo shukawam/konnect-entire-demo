@@ -57,6 +57,8 @@ cp .env.example .env
 | `AUTH_KEYCLOAK_ID`                | Keycloak クライアント ID                                              | `jungle-store-frontend`          |
 | `AUTH_KEYCLOAK_SECRET`            | Keycloak クライアントシークレット                                     | （Keycloak で発行）              |
 
+`mise run setup` を使う場合、`AUTH_SECRET` は自動生成、`AUTH_KEYCLOAK_SECRET` は `config/keycloak/realm-export.json` から自動抽出されるため、上表の手動設定値が必要になるのは手動セットアップの場合のみです。
+
 その他の変数（MySQL, Kafka, サービス URL, Keycloak の URL/realm 等）はデフォルト値のままで動作します。
 
 ### Kong Konnect 証明書
