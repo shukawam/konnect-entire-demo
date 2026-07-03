@@ -180,7 +180,7 @@ services:
       - 8000:8000
       - 8100:8100
     volumes:
-      - ./certs:/etc/kong/cluster-certs
+      - ./certs/kong-gateway:/etc/kong/cluster-certs
     healthcheck:
       test: ['CMD', 'kong', 'health']
       interval: 10s

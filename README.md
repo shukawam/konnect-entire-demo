@@ -58,7 +58,7 @@ cp .env.example .env
 
 ### Kong Konnect 証明書
 
-Konnect コントロールプレーンのクラスタ証明書を `certs/` ディレクトリに配置してください。
+Konnect コントロールプレーンのクラスタ証明書を、Kong Gateway 用は `certs/kong-gateway/`、Event Gateway 用は `certs/event-gateway/` に配置してください（各ディレクトリに `cluster.crt` / `cluster.key`）。
 
 ### Keycloak（エンドユーザー認証）
 
