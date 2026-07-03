@@ -58,7 +58,7 @@ Other variables (MySQL, Kafka, service URLs, Keycloak URLs/realm, etc.) work wit
 
 ### Kong Konnect Certificates
 
-Place your Konnect control plane cluster certificates in the `certs/` directory.
+Place your Konnect control plane cluster certificates under `certs/kong-gateway/` (for Kong Gateway) and `certs/event-gateway/` (for Event Gateway), each containing `cluster.crt` / `cluster.key`.
 
 ### Keycloak (end-user authentication)
 
