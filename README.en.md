@@ -15,8 +15,9 @@ Built with gorilla-themed product data, it demonstrates API Gateway capabilities
 
 | Layer             | Technology                                                   |
 | ----------------- | ------------------------------------------------------------ |
-| Frontend          | Next.js 15, React 19, @vercel/otel                           |
+| Frontend          | Next.js 15, React 19, @vercel/otel, NextAuth (Auth.js v5)    |
 | Backend           | Hono, @hono/zod-openapi, Prisma, KafkaJS                     |
+| Auth (SSO)        | Keycloak (OpenID Connect IdP) + Kong `openid-connect` plugin |
 | AI Agent          | @volcano.dev/agent, Kong AI Proxy + MCP Proxy                |
 | API Gateway       | Kong Gateway 3.13 (Konnect hybrid mode)                      |
 | Event Gateway     | Kong Event Gateway (Kafka proxy with ACL)                    |
@@ -43,18 +44,46 @@ cp .env.example .env
 
 Open `.env` and configure the following values for your environment:
 
-| Variable                          | Description                            | Example             |
-| --------------------------------- | -------------------------------------- | ------------------- |
-| `CONTROL_PLANE_ID`                | Konnect control plane ID               | `xxxxxxxx-xxxx-...` |
-| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway control plane ID | `xxxxxxxx-xxxx-...` |
-| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect control plane name             | `my-control-plane`  |
-| `DECK_OPENAI_API_KEY`             | OpenAI API key (for AI Gateway)        | `sk-...`            |
+| Variable                          | Description                            | Example                                |
+| --------------------------------- | -------------------------------------- | -------------------------------------- |
+| `CONTROL_PLANE_ID`                | Konnect control plane ID               | `xxxxxxxx-xxxx-...`                    |
+| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway control plane ID | `xxxxxxxx-xxxx-...`                    |
+| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect control plane name             | `my-control-plane`                     |
+| `DECK_OPENAI_API_KEY`             | OpenAI API key (for AI Gateway)        | `sk-...`                               |
+| `AUTH_SECRET`                     | NextAuth session encryption key        | generate via `openssl rand -base64 32` |
+| `AUTH_KEYCLOAK_ID`                | Keycloak client ID                     | `jungle-store-frontend`                |
+| `AUTH_KEYCLOAK_SECRET`            | Keycloak client secret                 | (issued by Keycloak)                   |
 
-Other variables (MySQL, Kafka, service URLs, etc.) work with their default values.
+Other variables (MySQL, Kafka, service URLs, Keycloak URLs/realm, etc.) work with their default values.
 
 ### Kong Konnect Certificates
 
 Place your Konnect control plane cluster certificates in the `certs/` directory.
+
+### Keycloak (end-user authentication)
+
+End-user authentication uses Keycloak as an OpenID Connect IdP (SSO).
+The Keycloak realm (client + users) ships in `config/keycloak/realm-export.json` and is
+auto-imported on startup (includes `sslRequired: none`, two demo users, and the client config).
+
+> **No `/etc/hosts` edit required.**
+> The browser reaches Keycloak at `localhost:8081` while containers use `keycloak:8081`.
+> Keycloak's `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` plus Auth.js `customFetch` split the URLs:
+> front-channel (iss / authorization) → `localhost:8081`, back-channel (discovery / token / jwks)
+> → `keycloak:8081` (see [`config/keycloak/README.md`](config/keycloak/README.md)).
+
+To use the bundled realm as-is, just make `.env`'s `AUTH_KEYCLOAK_SECRET` match the client
+`secret` in `realm-export.json` (defaults are already set).
+
+To rebuild the realm yourself:
+
+1. Start Keycloak once with `docker compose up -d keycloak` and log in to **`http://localhost:8081`**
+   (admin credentials from `.env`: `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD`)
+2. Create the `jungle-store` realm (Require SSL = None), a client for NextAuth, and demo users
+   (see [`config/keycloak/README.md`](config/keycloak/README.md) for redirect URI requirements)
+3. Make the client secret match `.env`'s `AUTH_KEYCLOAK_SECRET`
+4. Export the realm and save it as `config/keycloak/realm-export.json`
+5. From then on, `docker compose up -d --build` auto-imports the realm
 
 ## Quick Start
 
@@ -81,81 +110,98 @@ docker compose down -v
 | Konnect      | [https://cloud.konghq.com](https://cloud.konghq.com) | Control plane (SaaS)          |
 | Grafana      | [http://localhost:3010](http://localhost:3010)       | Dashboard (no login required) |
 | Kafka UI     | [http://localhost:8080](http://localhost:8080)       | Kafka topics & messages       |
+| Keycloak     | [http://localhost:8081](http://localhost:8081)       | Auth IdP / admin console      |
 
 Each backend service auto-serves OAS 3.1.0 at `/openapi.json` (e.g., [http://localhost:3001/openapi.json](http://localhost:3001/openapi.json)).
 
 ## Demo Users
 
-The following users are automatically created on startup.
+The following demo users are bundled in `config/keycloak/realm-export.json` and auto-imported on
+startup (to rebuild the realm yourself, see [`config/keycloak/README.md`](config/keycloak/README.md)).
 
-| Name                 | Email               | Password      | API Key         |
-| -------------------- | ------------------- | ------------- | --------------- |
-| ゴリラ太郎           | `user@example.com`  | `password123` | `demo-api-key`  |
-| シルバーバック管理者 | `admin@example.com` | `password123` | `admin-api-key` |
+| Name                 | Email               | Password      |
+| -------------------- | ------------------- | ------------- |
+| ゴリラ太郎           | `user@example.com`  | `password123` |
+| シルバーバック管理者 | `admin@example.com` | `password123` |
+
+After login, the `sub` claim of the access token (JWT) is passed to each service as `X-User-Id`.
 
 ## Basic Flow
 
 ### From the browser
 
 1. Open [http://localhost:3000](http://localhost:3000)
-2. Log in with `user@example.com` / `password123`
+2. Click "Login" → redirected to Keycloak → sign in (SSO) with a demo user
 3. Browse products, add to cart, and place an order
 4. Watch order status change: `PENDING` → `CONFIRMED` → `SHIPPED`
 
-### Using curl
+### Using curl (`/admin` API-key route)
+
+The browser route (`/api/...`) requires a Keycloak JWT (OIDC), but for curl there is an
+**API-key route at `/admin/api/...`**. You can call protected APIs with just an `apikey` header,
+no JWT needed. Kong validates it via `key-auth` and injects `X-User-Id: curl-admin` upstream.
+
+> The API key is set on the `curl-admin` consumer in `config/kong/kong.yaml`
+> (default: `jungle-store-demo-admin-key`). The `/admin` route covers the 4 protected services
+> (cart / order / shipping / user); products is unauthenticated already.
 
 ```bash
-# List products (no auth required)
+APIKEY=jungle-store-demo-admin-key
+
+# List products (no auth required; normal route)
 curl http://localhost:8000/api/products
 
-# Log in
-curl -X POST http://localhost:8000/api/users/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123"}'
+# Get cart (apikey auth; processed as X-User-Id=curl-admin)
+curl -H "apikey: ${APIKEY}" http://localhost:8000/admin/api/carts
 
-# Add item to cart (API key required)
-curl -X POST http://localhost:8000/api/carts/items \
+# Add item to cart
+curl -X POST http://localhost:8000/admin/api/carts/items \
+  -H "apikey: ${APIKEY}" \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001" \
   -d '{"productId":"prod-001","quantity":2,"price":1980}'
 
 # Place an order (triggers Kafka → auto shipment creation)
-curl -X POST http://localhost:8000/api/orders \
-  -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+curl -X POST http://localhost:8000/admin/api/orders \
+  -H "apikey: ${APIKEY}" \
+  -H "Content-Type: application/json"
 ```
+
+> To call with a JWT like the browser does, enable Direct Access Grants on the Keycloak client,
+> fetch an access token via `grant_type=password`, and call `/api/...` with `Authorization: Bearer`.
 
 ## Kong Konnect Feature Demos
 
 ### Kong Plugins
 
-| Plugin                     | Scope                 | Description                                                 |
-| -------------------------- | --------------------- | ----------------------------------------------------------- |
-| `cors`                     | Global                | CORS header management                                      |
-| `rate-limiting-advanced`   | Global                | 60 req/min                                                  |
-| `correlation-id`           | Global                | Auto-assigns `X-Request-Id` header                          |
-| `opentelemetry`            | Global                | Sends traces, logs, and metrics to OTel Collector           |
-| `key-auth`                 | Cart, Order, Shipping | API key authentication                                      |
-| `rate-limiting`            | Order                 | 10 req/min (strict limit)                                   |
-| `proxy-cache`              | Catalog               | Caches GET responses for 30 seconds                         |
-| `ai-semantic-prompt-guard` | AI Gateway            | Input validation with allow/deny rules (Redis + Embeddings) |
-| `ai-prompt-decorator`      | AI Gateway            | Auto-injects gorilla character system prompt                |
-| `ai-proxy-advanced`        | AI Gateway            | LLM proxy to OpenAI GPT-4o-mini                             |
-| `ai-mcp-proxy`             | MCP (3 routes)        | Model Context Protocol tool serving                         |
+| Plugin                     | Scope                       | Description                                                   |
+| -------------------------- | --------------------------- | ------------------------------------------------------------- |
+| `cors`                     | Global                      | CORS header management                                        |
+| `rate-limiting-advanced`   | Global                      | 60 req/min                                                    |
+| `correlation-id`           | Global                      | Auto-assigns `X-Request-Id` header                            |
+| `opentelemetry`            | Global                      | Sends traces, logs, and metrics to OTel Collector             |
+| `openid-connect`           | Cart, Order, Shipping, User | Validates Keycloak JWT and injects claims as upstream headers |
+| `key-auth`                 | `/admin/api/*` (4 services) | API-key auth for curl (`apikey` header)                       |
+| `request-transformer`      | `/admin/api/*` (4 services) | Injects fixed `X-User-Id: curl-admin` on the API-key route    |
+| `rate-limiting`            | Order                       | 10 req/min (strict limit)                                     |
+| `proxy-cache`              | Catalog                     | Caches GET responses for 30 seconds                           |
+| `ai-semantic-prompt-guard` | AI Gateway                  | Input validation with allow/deny rules (Redis + Embeddings)   |
+| `ai-prompt-decorator`      | AI Gateway                  | Auto-injects gorilla character system prompt                  |
+| `ai-proxy-advanced`        | AI Gateway                  | LLM proxy to OpenAI GPT-4o-mini                               |
+| `ai-mcp-proxy`             | MCP (3 routes)              | Model Context Protocol tool serving                           |
 
-### Key-Auth
+### OpenID Connect
 
 ```bash
-# Without API key → 401
+# Without token → 401
 curl -i http://localhost:8000/api/carts
 
-# With API key → 200
+# With Bearer token → 200 (${TOKEN} obtained as shown above)
 curl -i http://localhost:8000/api/carts \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+  -H "Authorization: Bearer ${TOKEN}"
 ```
+
+Kong's `openid-connect` plugin validates the JWT and injects the `sub`/`email`/`preferred_username`
+claims as the `X-User-Id`/`X-User-Email`/`X-User-Name` upstream headers.
 
 ### Rate Limiting
 
@@ -165,8 +211,7 @@ for i in $(seq 1 15); do
   curl -s -o /dev/null -w "%{http_code}\n" \
     -X POST http://localhost:8000/api/orders \
     -H "Content-Type: application/json" \
-    -H "apikey: demo-api-key" \
-    -H "X-User-Id: user-001"
+    -H "Authorization: Bearer ${TOKEN}"
 done
 ```
 

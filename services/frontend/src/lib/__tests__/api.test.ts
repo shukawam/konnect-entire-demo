@@ -26,32 +26,21 @@ describe('apiFetch', () => {
     const [url, options] = mockFetch.mock.calls[0]
     expect(url).toBe('/api/proxy/api/products')
     expect(options.headers['Content-Type']).toBe('application/json')
-    // traceparent may be undefined if crypto.getRandomValues is unavailable in test env
-    // The header is generated at runtime in the browser
   })
 
-  it('apiKey が指定された場合ヘッダーに含める', async () => {
+  it('認証ヘッダー(apikey / X-User-Id / Authorization)はクライアントで付与しない', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({}),
     })
 
-    await apiFetch('/api/carts', { apiKey: 'my-key' })
+    await apiFetch('/api/carts')
 
     const [, options] = mockFetch.mock.calls[0]
-    expect(options.headers['apikey']).toBe('my-key')
-  })
-
-  it('userId が指定された場合 X-User-Id ヘッダーに含める', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({}),
-    })
-
-    await apiFetch('/api/carts', { userId: 'user-1' })
-
-    const [, options] = mockFetch.mock.calls[0]
-    expect(options.headers['X-User-Id']).toBe('user-1')
+    expect(options.headers['apikey']).toBeUndefined()
+    expect(options.headers['X-User-Id']).toBeUndefined()
+    expect(options.headers['authorization']).toBeUndefined()
+    expect(options.headers['Authorization']).toBeUndefined()
   })
 
   it('method と body をそのまま渡す', async () => {

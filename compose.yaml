@@ -102,6 +102,54 @@ services:
       timeout: 5s
       retries: 5
 
+  # フロントチャネル（ブラウザ）とバックチャネル（コンテナ）で到達 URL を分離する構成。
+  #   - KC_HOSTNAME=http://localhost:8081 … iss / 認可エンドポイント等のフロント URL（ブラウザは公開ポートで到達、/etc/hosts 不要）
+  #   - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true … token / jwks / userinfo はリクエストホスト（keycloak:8081）を動的採用
+  # これにより frontend / Kong はコンテナ内 keycloak:8081 で discovery・token・jwks を取得でき、
+  # ブラウザは localhost:8081 へ認可リダイレクトされる。コンテナ内ポートも 8081 に揃える（KC_HTTP_PORT）。
+  keycloak:
+    <<: *default
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:26.4
+    command: ['start-dev', '--import-realm']
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: 'true'
+      KC_HOSTNAME_STRICT: 'false'
+      KC_HTTP_ENABLED: 'true'
+      KC_HTTP_PORT: '8081'
+    ports:
+      - 8081:8081
+    volumes:
+      - ./config/keycloak:/opt/keycloak/data/import
+
+  # master realm の sslRequired は realm 単位の DB 属性で、エクスポート対象外かつ env では
+  # 設定できない。既定の `external` のままだと管理コンソール(localhost)で「HTTPS required」に
+  # なるため、起動のたびに kcadm で master を NONE に更新する（kafka-init と同じ init パターン）。
+  keycloak-init:
+    <<: *default
+    container_name: keycloak-init
+    image: quay.io/keycloak/keycloak:26.4
+    depends_on:
+      keycloak:
+        condition: service_started
+    entrypoint: ['/bin/bash', '-c']
+    command:
+      - |
+        KC=http://keycloak:8081
+        echo "waiting for keycloak admin ..."
+        until /opt/keycloak/bin/kcadm.sh config credentials --server $$KC --realm master \
+          --user "$${KEYCLOAK_ADMIN}" --password "$${KEYCLOAK_ADMIN_PASSWORD}" >/dev/null 2>&1; do
+          sleep 3
+        done
+        /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
+        echo "master realm sslRequired=NONE applied."
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+
   kong:
     <<: *default
     container_name: kong
@@ -149,6 +197,10 @@ services:
         condition: service_healthy
       user-service:
         condition: service_healthy
+      keycloak:
+        # openid-connect は JWKS を遅延取得するため起動順だけ保証すれば十分。
+        # ヘルスチェックの環境差で全体がブロックしないよう service_started にする。
+        condition: service_started
 
   event-gateway:
     <<: *default
@@ -189,6 +241,7 @@ services:
       DECK_KONNECT_CONTROL_PLANE_NAME: ${DECK_KONNECT_CONTROL_PLANE_NAME:-}
       DECK_KONNECT_TOKEN: ${DECK_KONNECT_TOKEN:-}
       DECK_OPENAI_API_KEY: ${DECK_OPENAI_API_KEY:-}
+      DECK_KEYCLOAK_ISSUER: ${DECK_KEYCLOAK_ISSUER:-http://keycloak:8081/realms/jungle-store/.well-known/openid-configuration}
     command: ['gateway', 'sync', 'kong.yaml']
     depends_on:
       - kong
@@ -468,13 +521,28 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       OTEL_SERVICE_NAME: frontend
       NEXT_OTEL_VERBOSE: 1
+      # NextAuth (Auth.js) + Keycloak SSO
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: 'true'
+      AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-}
+      AUTH_KEYCLOAK_SECRET: ${AUTH_KEYCLOAK_SECRET:-}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-jungle-store}
+      # ブラウザが到達するフロントチャネル URL（iss / 認可エンドポイント）
+      KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}
+      # コンテナが到達するバックチャネル URL（discovery / token / jwks の取得先）
+      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8081}
     healthcheck:
       test: ['CMD-SHELL', 'node -e "fetch(''http://localhost:3000'').then(r=>{if(!r.ok)throw r})"']
       interval: 10s
       timeout: 5s
       retries: 5
     depends_on:
-      - kong
+      kong:
+        condition: service_healthy
+      keycloak:
+        # NextAuth は discovery を初回ログイン時に取得するため起動順のみ保証する
+        condition: service_started
     develop:
       watch:
         - action: sync

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { apiFetch } from '@/lib/api'
-import { getStoredUser } from '@/lib/auth'
+import { useAuthUser } from '@/lib/auth'
 
 interface Order {
   id: string
@@ -23,29 +23,25 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function OrdersPage() {
   const router = useRouter()
+  const { status } = useAuthUser()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const user = getStoredUser()
-    if (!user) {
+    if (status === 'loading') return
+    if (status === 'unauthenticated') {
       router.push('/login')
       return
     }
     loadOrders()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status])
 
   async function loadOrders() {
-    const user = getStoredUser()
-    if (!user) return
-
     try {
       setLoading(true)
-      const data = await apiFetch<Order[]>('/api/orders', {
-        apiKey: user.apiKey,
-        userId: user.id,
-      })
+      const data = await apiFetch<Order[]>('/api/orders')
       setOrders(data)
     } catch (err: any) {
       setError(err.message || '注文履歴の読み込みに失敗しました')

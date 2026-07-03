@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import { apiFetch } from '@/lib/api'
-import { getStoredUser } from '@/lib/auth'
+import { useAuthUser } from '@/lib/auth'
 
 interface CartItem {
   id: string
@@ -25,6 +25,7 @@ interface Product {
 
 export default function CartPage() {
   const router = useRouter()
+  const { status } = useAuthUser()
   const [cart, setCart] = useState<Cart | null>(null)
   const [productNames, setProductNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
@@ -32,24 +33,19 @@ export default function CartPage() {
   const [ordering, setOrdering] = useState(false)
 
   useEffect(() => {
-    const user = getStoredUser()
-    if (!user) {
+    if (status === 'loading') return
+    if (status === 'unauthenticated') {
       router.push('/login')
       return
     }
     loadCart()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status])
 
   async function loadCart() {
-    const user = getStoredUser()
-    if (!user) return
-
     try {
       setLoading(true)
-      const data = await apiFetch<Cart>('/api/carts', {
-        apiKey: user.apiKey,
-        userId: user.id,
-      })
+      const data = await apiFetch<Cart>('/api/carts')
       setCart(data)
 
       const ids = [...new Set(data.items.map((i) => i.productId))]
@@ -74,21 +70,14 @@ export default function CartPage() {
   }
 
   async function updateQuantity(itemId: string, quantity: number) {
-    const user = getStoredUser()
-    if (!user) return
-
     try {
       if (quantity <= 0) {
         await apiFetch(`/api/carts/items/${itemId}`, {
           method: 'DELETE',
-          apiKey: user.apiKey,
-          userId: user.id,
         })
       } else {
         await apiFetch(`/api/carts/items/${itemId}`, {
           method: 'PATCH',
-          apiKey: user.apiKey,
-          userId: user.id,
           body: JSON.stringify({ quantity }),
         })
       }
@@ -99,15 +88,10 @@ export default function CartPage() {
   }
 
   async function placeOrder() {
-    const user = getStoredUser()
-    if (!user) return
-
     try {
       setOrdering(true)
       const order = await apiFetch<{ id: string }>('/api/orders', {
         method: 'POST',
-        apiKey: user.apiKey,
-        userId: user.id,
       })
       router.push(`/orders/${order.id}`)
     } catch (err: any) {

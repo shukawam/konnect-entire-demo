@@ -1,10 +1,5 @@
 const API_BASE = '/api/proxy'
 
-interface FetchOptions extends RequestInit {
-  apiKey?: string
-  userId?: string
-}
-
 function friendlyMessage(status: number): string {
   switch (status) {
     case 400:
@@ -30,19 +25,13 @@ function friendlyMessage(status: number): string {
   }
 }
 
-export async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { apiKey, userId, headers: customHeaders, ...rest } = options
+// 認証は /api/proxy がセッションの access_token を Authorization: Bearer として
+// サーバー側で付与する。クライアントは API キーやユーザー ID を扱わない。
+export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const { headers: customHeaders, ...rest } = options
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(customHeaders as Record<string, string>),
-  }
-
-  if (apiKey) {
-    headers['apikey'] = apiKey
-  }
-
-  if (userId) {
-    headers['X-User-Id'] = userId
   }
 
   const res = await fetch(`${API_BASE}${path}`, {

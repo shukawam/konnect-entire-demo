@@ -1,40 +1,53 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { getStoredUser, storeUser, clearUser, type AuthUser } from '../auth'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const mockUser: AuthUser = {
-  id: 'user-1',
-  email: 'test@example.com',
-  name: 'Test User',
-  apiKey: 'api-key-123',
-}
+// useAuthUser は useSession を呼び出してマッピングするだけなので、
+// next-auth/react をモックすれば React レンダラー無しで検証できる。
+vi.mock('next-auth/react', () => ({
+  useSession: vi.fn(),
+}))
+
+import { useSession } from 'next-auth/react'
+import { useAuthUser } from '../auth'
+
+const mockedUseSession = vi.mocked(useSession)
 
 beforeEach(() => {
-  localStorage.clear()
+  vi.clearAllMocks()
 })
 
-describe('storeUser', () => {
-  it('ユーザー情報を localStorage に保存する', () => {
-    storeUser(mockUser)
-    const stored = JSON.parse(localStorage.getItem('user')!)
-    expect(stored).toEqual(mockUser)
-  })
-})
+describe('useAuthUser', () => {
+  it('認証済みセッションからユーザーを返す', () => {
+    mockedUseSession.mockReturnValue({
+      data: {
+        user: { id: 'kc-sub-123', email: 'user@example.com', name: 'ゴリラ太郎' },
+        expires: '2999-01-01',
+      },
+      status: 'authenticated',
+    } as never)
 
-describe('getStoredUser', () => {
-  it('ユーザーが保存されていない場合 null を返す', () => {
-    expect(getStoredUser()).toBeNull()
+    const { user, status } = useAuthUser()
+    expect(status).toBe('authenticated')
+    expect(user).toEqual({ id: 'kc-sub-123', email: 'user@example.com', name: 'ゴリラ太郎' })
   })
 
-  it('保存済みのユーザーを返す', () => {
-    localStorage.setItem('user', JSON.stringify(mockUser))
-    expect(getStoredUser()).toEqual(mockUser)
-  })
-})
+  it('未認証の場合は user が null', () => {
+    mockedUseSession.mockReturnValue({
+      data: null,
+      status: 'unauthenticated',
+    } as never)
 
-describe('clearUser', () => {
-  it('localStorage からユーザー情報を削除する', () => {
-    storeUser(mockUser)
-    clearUser()
-    expect(localStorage.getItem('user')).toBeNull()
+    const { user, status } = useAuthUser()
+    expect(status).toBe('unauthenticated')
+    expect(user).toBeNull()
+  })
+
+  it('email / name が欠けても空文字で補完する', () => {
+    mockedUseSession.mockReturnValue({
+      data: { user: { id: 'kc-sub-789' }, expires: '2999-01-01' },
+      status: 'authenticated',
+    } as never)
+
+    const { user } = useAuthUser()
+    expect(user).toEqual({ id: 'kc-sub-789', email: '', name: '' })
   })
 })
