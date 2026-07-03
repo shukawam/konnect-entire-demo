@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="deck で Gateway 設定を Control Plane へ同期"
+set -euo pipefail
+source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
+cp_name="$(env_get DECK_KONNECT_CONTROL_PLANE_NAME)"; cp_name="${cp_name:-jungle-store-gateway}"
+deck gateway sync "$REPO_ROOT/config/kong/kong.yaml" \
+  --config "$HOME/.config/deck/.deck.yaml" \
+  --konnect-control-plane-name "$cp_name"
+log "deck gateway sync 完了: $cp_name"
