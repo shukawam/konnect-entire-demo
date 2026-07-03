@@ -148,6 +148,7 @@ services/<名前>/src/
 - `new-service` — 新規マイクロサービス作成のチェックリスト（compose.yaml / kong.yaml / DB 初期化まで）
 - `verify-stack` — スタック全体のスモークテスト（ヘルスチェック、Kong プラグイン、Kafka フロー）
 - `sync-konnect` — Konnect への設定反映（ユーザー実行専用。diff → 承認 → sync）
+- `kongctl-declarative` / `kongctl-extension-builder` — kongctl CLI が配布する公式スキル（実体は `.claude/skills/` 配下、`.agents/skills/` からシンボリックリンク。kongctl での再インストール時は配置先に注意）
 
 ### サブエージェント（.claude/agents/）
 
