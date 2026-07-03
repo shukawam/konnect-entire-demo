@@ -9,6 +9,10 @@ event_gateways:
     labels:
       environment: local
 
+    data_plane_certificates:
+      - ref: jungle-store-event-gateway-cert
+        certificate: !file .certs/event-gateway.crt
+
     backend_clusters:
       - ref: jungle-store-kafka
         name: jungle-store-kafka
