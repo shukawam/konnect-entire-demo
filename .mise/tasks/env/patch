@@ -21,7 +21,7 @@ env_set PREFIX "$pfx"
 log "PREFIX=$pfx"
 
 # --- Event Gateway id ---
-eg_json="$(kongctl get event-gateways -o json 2>/dev/null || kongctl get event-gateway -o json)"
+eg_json="$(kongctl get event-gateway -o json)"
 eg_id="$(printf '%s' "$eg_json" | jq -r --arg n "$eg_name" '
   (.data // .) | (if type=="array" then . else [.] end)
   | map(select(.name==$n)) | .[0] | (.id // .control_plane_id // empty)')"
