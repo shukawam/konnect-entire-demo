@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="セットアップスクリプトのローカルテスト（Konnect 不要）"
+set -euo pipefail
+exec bash "$(git rev-parse --show-toplevel)/.mise/lib/selftest.sh"
