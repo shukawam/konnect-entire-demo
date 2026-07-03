@@ -44,6 +44,27 @@ npm run db:push        # prisma db push
 npm run db:seed        # tsx prisma/seed.ts（catalog, user のみ）
 ```
 
+### テスト・検証
+
+```bash
+npm run test                                 # 全ワークスペースのテスト（vitest）
+npm run test -w services/order-service       # サービス単体のテスト
+npx tsc --noEmit -p services/<名前>-service   # 型チェック（サービス単位）
+npm run format:check                         # Prettier チェック（format で自動修正）
+docker compose config -q                     # compose.yaml の構文検証
+```
+
+テストは各サービスの `src/__tests__/*.test.ts` に配置する（vitest、Prisma は `vi.mock('../db.js', ...)` でモック）。
+
+### Kong / Konnect への設定反映
+
+```bash
+mise run sync-konnect              # config/kong/kong.yaml を decK で同期（CP: jungle-store-gateway）
+cd kongctl && kongctl sync konnect # API / Portal / Event Gateway 等の Konnect リソースを同期
+```
+
+いずれも外部環境を変更する操作。実行前に diff（`deck gateway diff` / `kongctl plan`）をユーザーに提示して承認を得ること。詳細は `/sync-konnect` スキル参照。
+
 ## アーキテクチャ
 
 ```sh
@@ -97,11 +118,42 @@ services/<名前>/src/
 - Kong の設定は `config/kong/kong.yaml` の宣言型 YAML を使用し、decK を用いて管理する
 - 実装は必ず適切なブランチを作成し、プルリクエストを通じてマージする（main ブランチへの直接コミット禁止）
 - 新機能などの実装後は、必ずテストを追加する
-- コードスタイルはプロジェクトの ESLint 設定に従う（Prettier も併用）
+- コードスタイルは Prettier に従う（husky + lint-staged で pre-commit 時に自動整形。ESLint は未導入）
+- `.env`・`certs/`・`mise.toml` は機密のため編集/コミット禁止（環境変数の追加は `.env.example` を更新してユーザーに反映を依頼する）
 - README.md にはプロジェクトの概要とセットアップ手順を記載し、CLAUDE.md には開発者向けの詳細なガイドラインを記載する（追記するべき内容があれば追記する）
 - コミットメッセージはセマンティックコミット規約に従う（例: `feat: add new API endpoint for products`、`fix: resolve issue with user authentication`）
 - ブランチ名もセマンティックに決定する（例: `feature/add-product-endpoint`、`bugfix/user-authentication-issue`）
 - ローカルでの実装後に必ず、コードレビューを行い、その指摘が妥当であれば修正を行う
+
+## Claude Code ハーネス（.claude/）
+
+タスクの種類に応じて、以下のスキル・エージェントを使う:
+
+### スキル（.claude/skills/）
+
+- `add-endpoint` — バックエンドサービスへの API エンドポイント追加手順（TDD + Zod/createRoute パターン）
+- `new-service` — 新規マイクロサービス作成のチェックリスト（compose.yaml / kong.yaml / DB 初期化まで）
+- `verify-stack` — スタック全体のスモークテスト（ヘルスチェック、Kong プラグイン、Kafka フロー）
+- `sync-konnect` — Konnect への設定反映（ユーザー実行専用。diff → 承認 → sync）
+
+### サブエージェント（.claude/agents/）
+
+実装タスクは「implementer（実装）→ verifier（独立検証）→ code-reviewer（レビュー）」のパイプラインで委譲できる:
+
+- `implementer`（Sonnet）— 単一のスコープが明確な実装タスク。ファイルパスと受け入れ条件を明示して渡す
+- `verifier`（Sonnet）— 実装後の独立検証。型チェック・テスト・スモークテストを実行し証拠付きで合否報告
+- `code-reviewer`（Opus）— PR 作成前のレビュー。正確性 + プロジェクト規約準拠を file:line で指摘
+
+### フック（.claude/hooks/、settings.json で有効化）
+
+- 編集時に Prettier 自動整形 + サービス単位の型チェック（型エラーは即フィードバックされる）
+- `.env` / `certs/` / `mise.toml` / `package-lock.json` の編集ブロック
+- main ブランチへの直接コミット・強制 push のブロック
+
+## ドキュメント
+
+- `guides/` — 各サービスの API ガイド、Getting Started、kongctl 手順
+- `guides/demos/` — デモシナリオ（Gateway 基礎 / セキュリティ / AI Gateway / イベント駆動 / オブザーバビリティ / E2E 購入フロー）
 
 ## デモデータ
 

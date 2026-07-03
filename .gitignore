@@ -10,3 +10,6 @@ certs/
 mise.toml
 coverage/
 generated/
+.claude/settings.local.json
+.playwright-mcp/
+*.tsbuildinfo
