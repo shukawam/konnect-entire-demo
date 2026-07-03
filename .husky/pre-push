@@ -1,0 +1,9 @@
+# main への直接 push を禁止（refspec 単位で検査するため git push の呼び出し形式に依らない）。
+# 意図的な場合は --no-verify で回避可能。
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "✗ main ブランチへの直接 push は禁止されています。PR を作成してマージしてください。" >&2
+    exit 1
+  fi
+done
+exit 0

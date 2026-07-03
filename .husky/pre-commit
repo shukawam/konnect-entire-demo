@@ -1,1 +1,7 @@
+# main への直接コミットを禁止（CLAUDE.md 規約）。意図的な場合は --no-verify で回避可能。
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$branch" = "main" ]; then
+  echo "✗ main ブランチへの直接コミットは禁止されています。feature/xxx ブランチを作成してください。" >&2
+  exit 1
+fi
 npx lint-staged
