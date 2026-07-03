@@ -44,15 +44,15 @@ cp .env.example .env
 
 Open `.env` and configure the following values for your environment:
 
-| Variable                          | Description                            | Example                                |
-| --------------------------------- | -------------------------------------- | -------------------------------------- |
-| `CONTROL_PLANE_ID`                | Konnect control plane ID               | `xxxxxxxx-xxxx-...`                    |
-| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway control plane ID | `xxxxxxxx-xxxx-...`                    |
-| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect control plane name             | `my-control-plane`                     |
-| `DECK_OPENAI_API_KEY`             | OpenAI API key (for AI Gateway)        | `sk-...`                               |
-| `AUTH_SECRET`                     | NextAuth session encryption key        | generate via `openssl rand -base64 32` |
-| `AUTH_KEYCLOAK_ID`                | Keycloak client ID                     | `jungle-store-frontend`                |
-| `AUTH_KEYCLOAK_SECRET`            | Keycloak client secret                 | (issued by Keycloak)                   |
+| Variable                          | Description                                           | Example                                |
+| --------------------------------- | ----------------------------------------------------- | -------------------------------------- |
+| `PREFIX`                          | Konnect endpoint prefix (`<prefix>.us.cp.konghq.com`) | `4fa752f311`                           |
+| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway control plane ID                | `xxxxxxxx-xxxx-...`                    |
+| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect control plane name                            | `my-control-plane`                     |
+| `DECK_OPENAI_API_KEY`             | OpenAI API key (for AI Gateway)                       | `sk-...`                               |
+| `AUTH_SECRET`                     | NextAuth session encryption key                       | generate via `openssl rand -base64 32` |
+| `AUTH_KEYCLOAK_ID`                | Keycloak client ID                                    | `jungle-store-frontend`                |
+| `AUTH_KEYCLOAK_SECRET`            | Keycloak client secret                                | (issued by Keycloak)                   |
 
 Other variables (MySQL, Kafka, service URLs, Keycloak URLs/realm, etc.) work with their default values.
 
