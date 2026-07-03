@@ -21,12 +21,11 @@ disable-model-invocation: true
 
    ```bash
    deck gateway diff config/kong/kong.yaml \
-     --config ~/.config/deck/.deck.yaml \
      --konnect-control-plane-name jungle-store-gateway
    ```
 
 2. diff をユーザーに提示し、適用の承認を得る。
-3. 承認後: `mise run sync-konnect`
+3. 承認後: `mise run gateway:sync`
 4. 反映確認: `/verify-stack` の手順 3（Kong 経由のリクエスト）で動作検証。
 
 ## 手順（Konnect リソース: kongctl/）
@@ -36,5 +35,5 @@ disable-model-invocation: true
 
 ## 注意
 
-- decK の認証設定は `~/.config/deck/.deck.yaml`(ローカル)にある。認証エラー時はユーザーに `deck gateway ping` での確認を依頼する。
+- decK / kongctl の認証は `.env` の `DECK_KONNECT_TOKEN`（Konnect PAT）を共用する。mise が `.env` を読み込むため、`mise run` 経由のタスク（`gateway:sync` 等）では自動で供給される。素の shell で `deck` / `kongctl` を直接叩く場合は事前に `export DECK_KONNECT_TOKEN=... KONGCTL_DEFAULT_KONNECT_PAT=...` するか `mise exec -- ...` で実行する。認証エラー時は PAT の失効を疑い、`mise run doctor` で有効性を確認する。
 - kong.yaml には OpenAI キー参照（`DECK_OPENAI_API_KEY`、mise.toml の env で注入）がある。sync は mise 経由で実行しないと環境変数が欠落する。
