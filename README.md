@@ -30,6 +30,8 @@ Kong Konnect の各機能をフル活用したマイクロサービス構成の 
 
 ## 前提条件
 
+- [mise](https://mise.jdx.dev/)（`mise run setup` の実行基盤。`.env` の読み込みも担う）
+- `mise run setup` が使う CLI: `deck`（decK）/ `kongctl` / `jq` / `yq` / `openssl`（未導入なら各ツールのドキュメントに従って導入）
 - Docker / Docker Compose
 - Node.js 20+（ローカル開発時）
 - Kong Konnect アカウント + Personal Access Token（`.env` の `DECK_KONNECT_TOKEN` に設定。deck と kongctl が共用し、mise が `.env` を読み込んで両ツールへ供給します。`kongctl login` や `~/.config/deck/.deck.yaml` は不要）
