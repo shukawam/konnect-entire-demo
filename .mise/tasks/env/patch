@@ -13,7 +13,7 @@ eg_name="jungle-store-event-gateway${prefix:+-$prefix}"
 # --- Gateway CP endpoint → PREFIX ---
 cp_json="$(kongctl get gateway control-planes -o json)"
 endpoint="$(printf '%s' "$cp_json" | jq -r --arg n "$cp_name" '
-  (.data // .) | (if type=="array" then . else [.] end)
+  (.data? // .) | (if type=="array" then . else [.] end)
   | map(select(.name==$n)) | .[0]
   | (.config.control_plane_endpoint // .config.controlPlaneEndpoint // .control_plane_endpoint // empty)')"
 [ -n "$endpoint" ] || die "control-plane endpoint を取得できませんでした（CP: $cp_name / JSON フィールド名を確認）"
@@ -24,7 +24,7 @@ log "PREFIX=$pfx"
 # --- Event Gateway id ---
 eg_json="$(kongctl get event-gateway -o json)"
 eg_id="$(printf '%s' "$eg_json" | jq -r --arg n "$eg_name" '
-  (.data // .) | (if type=="array" then . else [.] end)
+  (.data? // .) | (if type=="array" then . else [.] end)
   | map(select(.name==$n)) | .[0] | (.id // .control_plane_id // empty)')"
 [ -n "$eg_id" ] || die "event gateway id を取得できませんでした（EG: ${eg_name}）"
 env_set EVENT_GATEWAY_CP_ID "$eg_id"
