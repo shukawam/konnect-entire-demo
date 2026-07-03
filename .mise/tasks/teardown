@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#MISE description="E2E分離環境の後始末（RESOURCE_PREFIX 必須）"
+set -euo pipefail
+source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
+
+[ -n "${RESOURCE_PREFIX:-}" ] || die "teardown は RESOURCE_PREFIX を指定して実行してください（本番誤削除防止）"
+
+cd "$REPO_ROOT"
+docker compose down -v || true
+
+ns="jungle-store-$RESOURCE_PREFIX"
+# 対象 namespace のみを空設定で sync → 当該 namespace のリソースを全削除
+empty="$(mktemp -d)"
+printf '_defaults:\n  kongctl:\n    namespace: %s\n' "$ns" >"$empty/empty.yaml"
+kongctl sync -f "$empty" --auto-approve
+log "namespace 削除: $ns"
+
+# .env の分離値を既定へ戻す
+env_set DECK_KONNECT_CONTROL_PLANE_NAME "jungle-store-gateway"
+log "teardown 完了"
