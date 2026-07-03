@@ -3,3 +3,7 @@ dist
 .next
 package-lock.json
 *.prisma
+
+# kongctl CLI が配布するスキル（上流の内容を保持するため整形しない）
+.claude/skills/kongctl-declarative
+.claude/skills/kongctl-extension-builder
