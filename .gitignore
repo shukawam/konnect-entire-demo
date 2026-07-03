@@ -4,6 +4,7 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+.env.pre-*
 *.log
 .DS_Store
 data/

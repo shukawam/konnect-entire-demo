@@ -10,6 +10,13 @@ prefix="${RESOURCE_PREFIX:-}"
 cp_name="jungle-store-gateway${prefix:+-$prefix}"
 eg_name="jungle-store-event-gateway${prefix:+-$prefix}"
 
+# 分離実行（RESOURCE_PREFIX 指定）時は、本番 .env を上書きする前にバックアップする。
+# teardown がこのバックアップから .env を復元し、本番の PREFIX 等を失わないようにする。
+if [ -n "$prefix" ] && [ ! -f "$REPO_ROOT/.env.pre-$prefix" ]; then
+  cp "$ENV_FILE" "$REPO_ROOT/.env.pre-$prefix"
+  log ".env を .env.pre-$prefix にバックアップ"
+fi
+
 # --- Gateway CP endpoint → PREFIX ---
 cp_json="$(kongctl get gateway control-planes -o json)"
 endpoint="$(printf '%s' "$cp_json" | jq -r --arg n "$cp_name" '
