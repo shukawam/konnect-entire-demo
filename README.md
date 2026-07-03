@@ -32,7 +32,10 @@ Kong Konnect の各機能をフル活用したマイクロサービス構成の 
 
 - Docker / Docker Compose
 - Node.js 20+（ローカル開発時）
-- Kong Konnect アカウント + クラスタ証明書（`certs/` に配置）
+- Kong Konnect アカウント（`kongctl login` 済み、deck トークン設定済み: `~/.config/deck/.deck.yaml`）
+- `.env` に `DECK_OPENAI_API_KEY`（AI Gateway 用。唯一の外部シークレットで、他の動的値・秘密値は `mise run setup` が自動生成/自動抽出します）
+
+> クラスタ証明書の事前取得・配置は不要です。`mise run certs:gen`（`mise run setup` に含まれます）が自己署名証明書を自動生成し、Konnect 側への宣言的なピン留めまで行います。詳細は [クイックスタート](#クイックスタート) を参照してください。
 
 ## セットアップ
 
@@ -58,7 +61,9 @@ cp .env.example .env
 
 ### Kong Konnect 証明書
 
-Konnect コントロールプレーンのクラスタ証明書を、Kong Gateway 用は `certs/kong-gateway/`、Event Gateway 用は `certs/event-gateway/` に配置してください（各ディレクトリに `cluster.crt` / `cluster.key`）。
+自己署名のクラスタ証明書は `mise run certs:gen`（`mise run setup` の一部）が自動生成します。Kong Gateway 用は `certs/kong-gateway/`、Event Gateway 用は `certs/event-gateway/` に `cluster.crt` / `cluster.key` として生成され、kongctl の宣言設定（`data_plane_certificates`）で Konnect 側へ宣言的にピン留めされます。手動でのアップロード・ピン留め作業は不要です。
+
+既存の証明書（Konnect 発行のものなど）を使い続けたい場合は、`certs:gen` 実行前に `certs/kong-gateway/` `certs/event-gateway/` へ同名ファイルを配置しておけば、それがそのまま流用されます（`certs/` は gitignore 済みでコミットされません）。
 
 ### Keycloak（エンドユーザー認証）
 
@@ -86,6 +91,27 @@ Keycloak の realm（クライアント・ユーザー）は `config/keycloak/re
 5. 以降は `docker compose up -d --build` で realm が自動インポートされます
 
 ## クイックスタート
+
+### 1コマンドセットアップ（推奨）
+
+前提: `.env` に `DECK_OPENAI_API_KEY` を記入 / `kongctl login` 済み / deck トークン設定済み。
+
+```bash
+mise run setup
+```
+
+`doctor`（前提チェック）→ `certs:gen`（自己署名証明書を生成）→ `konnect:sync`（Konnect リソース同期 + 証明書ピン留め）→ `env:patch`（`.env` に `PREFIX` / `EVENT_GATEWAY_CP_ID` / シークレット等を反映）→ `gateway:sync`（deck で Gateway 設定を Control Plane へ同期）→ `up`（`docker compose up -d --build`）を一括実行します。各タスクは `mise run doctor` のように単体実行もでき、二度目以降も冪等に再実行できます。
+
+分離起動（本番リソースと衝突させずに E2E 検証したい場合）:
+
+```bash
+RESOURCE_PREFIX=e2e mise run setup
+RESOURCE_PREFIX=e2e mise run teardown  # 後始末（Konnect リソース削除 + compose down -v）
+```
+
+### 手動セットアップ（個別コマンド）
+
+Konnect リソースの作成・同期を自分でコントロールしたい場合、または起動済みのスタックを個別に操作したい場合は次のコマンドを使います（Konnect / Gateway の同期手順は [CLAUDE.md](CLAUDE.md) の「Kong / Konnect への設定反映」節を参照）。
 
 ```bash
 # 全サービス起動（初回はビルドに数分かかります）
