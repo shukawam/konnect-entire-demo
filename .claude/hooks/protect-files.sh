@@ -1,7 +1,10 @@
 #!/bin/bash
-# PreToolUse hook (Edit|Write): 機密・生成物ファイルへの書き込みをブロックする
+# PreToolUse hook (Edit|Write): 機密・生成物ファイルへの書き込みをブロックする。
+# .claude/settings.json の permissions.deny (Edit ルール) が最終防衛線で、
+# このフックはリポジトリ内の任意の場所にある同名ファイルもカバーする追加層。
 input=$(cat)
-file_path=$(echo "$input" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).tool_input.file_path||'')}catch{console.log('')}})" 2>/dev/null)
+. "$(dirname "$0")/lib.sh"
+file_path=$(get_tool_input_field "$input" "file_path")
 [ -z "$file_path" ] && exit 0
 
 deny() {
@@ -9,9 +12,7 @@ deny() {
   exit 2
 }
 
-base=$(basename "$file_path")
-
-case "$base" in
+case "$(basename "$file_path")" in
   .env | .env.local | .env.*.local)
     deny "BLOCKED: $file_path は機密ファイルです。変更が必要な場合は .env.example を更新し、ユーザーに手動反映を依頼してください。"
     ;;
@@ -24,7 +25,7 @@ case "$base" in
 esac
 
 case "$file_path" in
-  */certs/* | certs/*)
+  */certs/*)
     deny "BLOCKED: certs/ 配下の証明書・秘密鍵は編集禁止です。"
     ;;
 esac

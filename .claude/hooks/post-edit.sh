@@ -1,23 +1,27 @@
 #!/bin/bash
 # PostToolUse hook (Edit|Write): Prettier 自動整形 + バックエンドサービスのスコープ付き型チェック
 input=$(cat)
-file_path=$(echo "$input" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).tool_input.file_path||'')}catch{console.log('')}})" 2>/dev/null)
+. "$(dirname "$0")/lib.sh"
+file_path=$(get_tool_input_field "$input" "file_path")
 [ -z "$file_path" ] && exit 0
 [ ! -f "$file_path" ] && exit 0
 
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
-[ -d node_modules ] || exit 0
+BIN="$PWD/node_modules/.bin"
+[ -d "$BIN" ] || exit 0
 
-# lint-staged と同じ対象拡張子を Prettier で整形（pre-commit 前にフォーマット差分を潰す）
+# lint-staged と同じ対象拡張子（package.json の lint-staged glob が正）を Prettier で整形
 case "$file_path" in
   *.js | *.jsx | *.ts | *.tsx | *.json | *.css | *.md | *.yaml | *.yml)
-    npx --no-install prettier --write "$file_path" >/dev/null 2>&1 || true
+    [ -x "$BIN/prettier" ] && "$BIN/prettier" --write "$file_path" >/dev/null 2>&1
     ;;
 esac
 
-# バックエンドサービス / packages の .ts はサービス単位で型チェック（frontend は next build が担当）
+# バックエンドサービス / packages の .ts はサービス単位で型チェック。
+# frontend は next build が担当。テストファイルは各サービスの tsconfig で exclude
+# されておりチェック対象外のためスキップ（vitest 実行時に検証される）。
 case "$file_path" in
-  */services/frontend/*) exit 0 ;;
+  */services/frontend/* | */__tests__/* | *.test.ts) exit 0 ;;
   *.ts)
     dir=$(dirname "$file_path")
     while [ "$dir" != "/" ] && [ ! -f "$dir/tsconfig.json" ]; do
@@ -25,7 +29,8 @@ case "$file_path" in
     done
     case "$dir" in
       */services/* | */packages/*)
-        errors=$(npx --no-install tsc --noEmit -p "$dir" 2>&1)
+        [ -x "$BIN/tsc" ] || exit 0
+        errors=$("$BIN/tsc" --noEmit -p "$dir" 2>&1)
         rc=$?
         if [ $rc -ne 0 ] && [ -n "$errors" ]; then
           echo "TypeScript errors in $dir:" >&2

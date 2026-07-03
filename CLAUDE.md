@@ -147,8 +147,9 @@ services/<名前>/src/
 ### フック（.claude/hooks/、settings.json で有効化）
 
 - 編集時に Prettier 自動整形 + サービス単位の型チェック（型エラーは即フィードバックされる）
-- `.env` / `certs/` / `mise.toml` / `package-lock.json` の編集ブロック
-- main ブランチへの直接コミット・強制 push のブロック
+- `.env` / `certs/` / `mise.toml` / `package-lock.json` の編集ブロック（フック + `permissions.deny` の二層。ガードレールであり完全な境界ではない）
+- main ブランチへの直接コミット・強制 push のブロック（PreToolUse フックで即時検知、`.husky/pre-commit` / `.husky/pre-push` が実行時点で強制）
+- フック変更時は `.claude/hooks/run-tests.sh` でリグレッションテストを実行する
 
 ## ドキュメント
 
