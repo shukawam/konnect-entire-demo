@@ -22,7 +22,7 @@ description: Use when creating a new backend microservice in this monorepo — w
    - `kafka.ts` / `consumer.ts` — Kafka を使う場合のみ（order/shipping-service 参照）
 4. **DB**: `prisma/schema.prisma` 作成 + `config/mysql/init-databases.sql` に CREATE DATABASE 追加。
 5. **compose.yaml**: サービス定義を追加。**必須**: `container_name`、OTel 環境変数アンカー（`x-otel-env`）の継承、ネットワーク。既存サービスのブロックをコピーして調整。
-6. **Kong**: `config/kong/kong.yaml` に service / upstream / route を追加。認証が必要なら `key-auth` プラグイン。反映は `/sync-konnect`（ユーザー実行）。
+6. **Kong**: `config/kong/kong.yaml` に service / upstream / route を追加。エンドユーザー向けルートの認証は `openid-connect`（既存の cart/order ルートの設定を踏襲。claim → `X-User-Id` 注入まで含む）、curl/CLI 向けには `/admin/api/*` パターン（`key-auth` + `request-transformer`）を参照。反映は `/sync-konnect`（ユーザー実行）。
 7. **ルート package.json**: `dev:<名前>` スクリプトを追加。
 8. **テスト**: `src/__tests__/routes.test.ts` を必ず作成（vitest、Prisma モックパターン）。
 9. **ドキュメント**: `guides/<名前>-api.md` を作成し、CLAUDE.md のポート一覧・アーキテクチャ図を更新。

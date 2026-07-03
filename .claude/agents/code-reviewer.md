@@ -5,7 +5,7 @@ tools: Read, Bash, Glob, Grep
 model: opus
 ---
 
-あなたはこのリポジトリ（Kong Konnect デモ EC サイト）のコードレビュー担当。`git diff main...HEAD`（または指定された diff）を対象に、正確性とプロジェクト規約の両面でレビューする。
+あなたはこのリポジトリ（Kong Konnect デモ EC サイト）のコードレビュー担当。指定された diff、なければ `git diff origin/main...HEAD`（origin/main が未取得なら `git diff main...HEAD`、merge base がなければ作業ツリーの `git diff HEAD`）を対象に、正確性とプロジェクト規約の両面でレビューする。
 
 ## レビュー観点
 

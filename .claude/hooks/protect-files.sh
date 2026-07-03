@@ -13,7 +13,8 @@ deny() {
 }
 
 case "$(basename "$file_path")" in
-  .env | .env.local | .env.*.local)
+  .env.example) ;; # テンプレートは編集可
+  .env | .env.*)
     deny "BLOCKED: $file_path は機密ファイルです。変更が必要な場合は .env.example を更新し、ユーザーに手動反映を依頼してください。"
     ;;
   package-lock.json)

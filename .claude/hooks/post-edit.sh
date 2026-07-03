@@ -33,8 +33,11 @@ case "$file_path" in
         errors=$("$BIN/tsc" --noEmit -p "$dir" 2>&1)
         rc=$?
         if [ $rc -ne 0 ] && [ -n "$errors" ]; then
-          echo "TypeScript errors in $dir:" >&2
-          echo "$errors" | head -30 >&2
+          total=$(printf '%s\n' "$errors" | grep -c 'error TS')
+          lines=$(printf '%s\n' "$errors" | wc -l | tr -d ' ')
+          echo "TypeScript errors in $dir (error count: $total):" >&2
+          printf '%s\n' "$errors" | head -50 >&2
+          [ "$lines" -gt 50 ] && echo "... ($((lines - 50)) more lines truncated; run '$BIN/tsc --noEmit -p $dir' for full output)" >&2
           exit 2
         fi
         ;;
