@@ -46,7 +46,7 @@ cp .env.example .env
 
 | 変数名                            | 説明                                          | 例                               |
 | --------------------------------- | --------------------------------------------- | -------------------------------- |
-| `CONTROL_PLANE_ID`                | Konnect コントロールプレーン ID               | `xxxxxxxx-xxxx-...`              |
+| `PREFIX`                          | Konnect コントロールプレーン ID               | `xxxxxxxx-xxxx-...`              |
 | `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway コントロールプレーン ID | `xxxxxxxx-xxxx-...`              |
 | `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect コントロールプレーン名                | `my-control-plane`               |
 | `DECK_OPENAI_API_KEY`             | OpenAI API キー（AI Gateway 用）              | `sk-...`                         |

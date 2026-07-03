@@ -46,7 +46,7 @@ Open `.env` and configure the following values for your environment:
 
 | Variable                          | Description                            | Example                                |
 | --------------------------------- | -------------------------------------- | -------------------------------------- |
-| `CONTROL_PLANE_ID`                | Konnect control plane ID               | `xxxxxxxx-xxxx-...`                    |
+| `PREFIX`                          | Konnect control plane ID               | `xxxxxxxx-xxxx-...`                    |
 | `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway control plane ID | `xxxxxxxx-xxxx-...`                    |
 | `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect control plane name             | `my-control-plane`                     |
 | `DECK_OPENAI_API_KEY`             | OpenAI API key (for AI Gateway)        | `sk-...`                               |

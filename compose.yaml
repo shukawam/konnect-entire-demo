@@ -159,10 +159,10 @@ services:
       KONG_DATABASE: off
       KONG_VITALS: off
       KONG_CLUSTER_MTLS: pki
-      KONG_CLUSTER_CONTROL_PLANE: ${CONTROL_PLANE_ID:-}.us.cp.konghq.com:443
-      KONG_CLUSTER_SERVER_NAME: ${CONTROL_PLANE_ID:-}.us.cp.konghq.com
-      KONG_CLUSTER_TELEMETRY_ENDPOINT: ${CONTROL_PLANE_ID:-}.us.tp.konghq.com:443
-      KONG_CLUSTER_TELEMETRY_SERVER_NAME: ${CONTROL_PLANE_ID:-}.us.tp.konghq.com
+      KONG_CLUSTER_CONTROL_PLANE: ${PREFIX:-}.us.cp.konghq.com:443
+      KONG_CLUSTER_SERVER_NAME: ${PREFIX:-}.us.cp.konghq.com
+      KONG_CLUSTER_TELEMETRY_ENDPOINT: ${PREFIX:-}.us.tp.konghq.com:443
+      KONG_CLUSTER_TELEMETRY_SERVER_NAME: ${PREFIX:-}.us.tp.konghq.com
       KONG_CLUSTER_CERT: /etc/kong/cluster-certs/cluster.crt
       KONG_CLUSTER_CERT_KEY: /etc/kong/cluster-certs/cluster.key
       KONG_LUA_SSL_TRUSTED_CERTIFICATE: system
@@ -180,7 +180,7 @@ services:
       - 8000:8000
       - 8100:8100
     volumes:
-      - ./certs:/etc/kong/cluster-certs
+      - ./certs/kong-gateway:/etc/kong/cluster-certs
     healthcheck:
       test: ['CMD', 'kong', 'health']
       interval: 10s
@@ -198,8 +198,6 @@ services:
       user-service:
         condition: service_healthy
       keycloak:
-        # openid-connect は JWKS を遅延取得するため起動順だけ保証すれば十分。
-        # ヘルスチェックの環境差で全体がブロックしないよう service_started にする。
         condition: service_started
 
   event-gateway:
@@ -249,8 +247,6 @@ services:
   # ============================================================
   # Observability
   # ============================================================
-  # Collector + Tempo + Prometheus + Loki + Grafana を 1 コンテナに集約。
-  # Collector 設定のみ上書きして既存の filter/traces フィルタを保持する。
   otel-lgtm:
     <<: *default
     container_name: otel-lgtm
