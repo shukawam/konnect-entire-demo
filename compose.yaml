@@ -180,7 +180,7 @@ services:
       - 8000:8000
       - 8100:8100
     volumes:
-      - ./certs/kong-gateway:/etc/kong/cluster-certs
+      - ./certs:/etc/kong/cluster-certs
     healthcheck:
       test: ['CMD', 'kong', 'health']
       interval: 10s
@@ -198,6 +198,8 @@ services:
       user-service:
         condition: service_healthy
       keycloak:
+        # openid-connect は JWKS を遅延取得するため起動順だけ保証すれば十分。
+        # ヘルスチェックの環境差で全体がブロックしないよう service_started にする。
         condition: service_started
 
   event-gateway:
@@ -247,6 +249,8 @@ services:
   # ============================================================
   # Observability
   # ============================================================
+  # Collector + Tempo + Prometheus + Loki + Grafana を 1 コンテナに集約。
+  # Collector 設定のみ上書きして既存の filter/traces フィルタを保持する。
   otel-lgtm:
     <<: *default
     container_name: otel-lgtm
