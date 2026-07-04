@@ -196,7 +196,7 @@ services:
   event-gateway:
     <<: *default
     container_name: event-gateway
-    image: kong/kong-event-gateway:latest
+    image: kong/kong-event-gateway:1.2.0
     environment:
       # see: https://developer.konghq.com/event-gateway/configuration/
       KONNECT_REGION: us
