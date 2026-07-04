@@ -80,7 +80,6 @@ cp .env.example .env
 Keycloak の realm（クライアント・ユーザー）は `config/keycloak/realm-export.json` に同梱されており、
 起動時に自動インポートされます（`sslRequired: none`・デモユーザー 2 名・client 設定込み）。
 
-> **`/etc/hosts` の編集は不要です。**
 > ブラウザは `localhost:8081`、コンテナ間は `keycloak:8081` で Keycloak に到達します。
 > Keycloak の `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` と Auth.js の `customFetch` により、
 > フロントチャネル（iss / 認可）は `localhost:8081`、バックチャネル（discovery / token / jwks）は
