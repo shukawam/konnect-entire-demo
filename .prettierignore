@@ -7,3 +7,8 @@ package-lock.json
 # kongctl CLI が配布するスキル（上流の内容を保持するため整形しない）
 .claude/skills/kongctl-declarative
 .claude/skills/kongctl-extension-builder
+
+# Konnect Dev Portal の MDC ディレクティブ（::page-hero 等）は Prettier で壊れるため整形しない
+# （"text 行 + 次行 ---" が Setext 見出しとして正規化され `## ::page-hero` に化ける）
+kongctl/portals/pages
+kongctl/portals/snippets
