@@ -30,8 +30,8 @@ Kong Konnect の各機能をフル活用したマイクロサービス構成の 
 
 ## 前提条件
 
-- [mise](https://mise.jdx.dev/)（`mise run setup` の実行基盤。`.env` の読み込みも担う）
-- `mise run setup` が使う CLI: `deck`（decK）/ `kongctl` / `jq` / `yq` / `openssl`（未導入なら各ツールのドキュメントに従って導入）
+- [mise](https://mise.jdx.dev/)（`mise run setup` の実行基盤。`.env` の読み込みも担う）。mise を入れたくない場合は同等の `make setup` を利用でき、mise は不要です（→ [クイックスタート](#クイックスタート)）
+- `mise run setup` / `make setup` が使う CLI: `deck`（decK）/ `kongctl` / `jq` / `yq` / `openssl`（未導入なら各ツールのドキュメントに従って導入）
 - Docker / Docker Compose
 - Node.js 20+（ローカル開発時）
 - Kong Konnect アカウント + Personal Access Token（`.env` の `DECK_KONNECT_TOKEN` に設定。deck と kongctl が共用し、mise が `.env` を読み込んで両ツールへ供給します）
@@ -110,7 +110,19 @@ mise run setup
 
 `doctor`（前提チェック）→ `certs:gen`（自己署名証明書を生成）→ `konnect:sync`（Konnect リソース同期 + 証明書ピン留め）→ `env:patch`（`.env` に `PREFIX` / `EVENT_GATEWAY_CP_ID` / シークレット等を反映）→ `gateway:sync`（deck で Gateway 設定を Control Plane へ同期）→ `up`（`docker compose up -d --build`）を一括実行します。各タスクは `mise run doctor` のように単体実行もでき、二度目以降も冪等に再実行できます。
 
-分離起動（本番リソースと衝突させずに E2E 検証したい場合）:
+#### mise を入れずに実行する（`make setup`）
+
+mise をインストールしたくない場合は、同じ導線を `make` で実行できます。中身は `mise run setup` と同一のスクリプトを順に呼び出すだけで、追加の前提はありません（`deck` / `kongctl` / `jq` / `yq` / `openssl` / Docker は同様に必要）。
+
+```bash
+make setup   # doctor → certs → konnect 同期 → .env 反映 → gateway 同期 → up（mise run setup と同等）
+make up      # docker compose up -d --build
+make down    # docker compose down
+```
+
+> `make` が提供するのはコア導線（`setup` / `up` / `down`）のみです。分離起動（`RESOURCE_PREFIX`）・`teardown`・個別サブタスクは `mise` 専用です。
+
+分離起動（本番リソースと衝突させずに E2E 検証したい場合、`mise` が必要）:
 
 ```bash
 RESOURCE_PREFIX=e2e mise run setup

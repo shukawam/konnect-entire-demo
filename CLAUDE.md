@@ -88,6 +88,10 @@ RESOURCE_PREFIX=e2e mise run teardown # 分離環境の後始末（namespace 削
 
 共有ロジックは `.mise/lib/`（`common.sh`: `.env` パッチ関数・ログヘルパ、`render-kongctl.sh`: `RESOURCE_PREFIX` によるリソース名の接頭辞化レンダリング、`selftest.sh`）にまとまっている。
 
+#### mise 非依存の入口（`Makefile`）
+
+mise をインストールしたくない利用者向けに、リポジトリ直下の `Makefile` がコア導線（`make setup` / `make up` / `make down`）を提供する。実体は `.mise/tasks/*` のシェルスクリプトで、mise と make の双方が同じスクリプトを呼び出す（ロジックの単一 source of truth）。各タスクスクリプトは元々 `env_get` / `setup_konnect_pat` で `.env` を自前で読むため mise の `[env]` 自動ロードにほぼ非依存で、唯一 `gateway:sync` が deck のテンプレート変数（`DECK_KEYCLOAK_ISSUER` / `DECK_OPENAI_API_KEY`）を環境から引く点だけは、当該スクリプト自身が `.env` から `export` して自己完結させている（mise 経由でも挙動は不変）。`make` が提供するのはコア導線のみで、分離起動（`RESOURCE_PREFIX`）・`teardown`・個別サブタスクは mise 専用。CLI ツール（deck / kongctl / jq / yq / openssl / docker）の導入が別途必要な点は mise と同じ。
+
 ## アーキテクチャ
 
 ```sh

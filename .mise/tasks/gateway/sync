@@ -3,6 +3,11 @@
 set -euo pipefail
 source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
 setup_konnect_pat
+# deck のテンプレート変数を .env から環境へ供給する。
+# mise は [env] で .env を自動ロードするが、make 等 mise 非依存の経路でも
+# 同じ設定が引けるよう、このスクリプト自身で export して自己完結させる。
+export DECK_KEYCLOAK_ISSUER="$(env_get DECK_KEYCLOAK_ISSUER)"
+export DECK_OPENAI_API_KEY="$(env_get DECK_OPENAI_API_KEY)"
 cp_name="$(env_get DECK_KONNECT_CONTROL_PLANE_NAME)"; cp_name="${cp_name:-jungle-store-gateway}"
 # deck は環境変数 DECK_KONNECT_TOKEN を --konnect-token として自動採用する（.deck.yaml 不要）
 deck gateway sync "$REPO_ROOT/config/kong/kong.yaml" \
