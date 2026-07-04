@@ -21,7 +21,10 @@ event_gateways:
           - 'kafka:9092'
         authentication:
           type: anonymous
-          insecure_allow_anonymous_virtual_cluster_auth: true
+        # anonymous な仮想クラスタを公開するために backend 側で明示的に許可する。
+        # このフィールドは authentication の子ではなく backend cluster 直下（トップレベル）。
+        # 誤って authentication 配下に置くと kongctl が黙って無視し Konnect 上は false のままになる。
+        insecure_allow_anonymous_virtual_cluster_auth: true
 
     virtual_clusters:
       # Order Service 用 VC — order.created に write、order.status-updated に read
@@ -59,14 +62,9 @@ event_gateways:
                     - name: read
                   resource_names:
                     - match: 'order-service-group'
-                - action: deny
-                  resource_type: topic
-                  operations:
-                    - name: write
-                    - name: read
-                    - name: describe
-                  resource_names:
-                    - match: '*'
+                # ACL 有効時は default-deny。明示 allow 以外は自動的に拒否される。
+                # keg は deny 優先で評価するため、ワイルドカード deny を足すと上の specific
+                # allow（describe 含む）まで打ち消され Topic authorization failed になる。
 
       # Shipping Service 用 VC — order.created に read、order.status-updated に write
       - ref: shipping-service-vc
@@ -103,14 +101,8 @@ event_gateways:
                     - name: read
                   resource_names:
                     - match: 'shipping-service-group'
-                - action: deny
-                  resource_type: topic
-                  operations:
-                    - name: write
-                    - name: read
-                    - name: describe
-                  resource_names:
-                    - match: '*'
+                # ACL 有効時は default-deny のため明示 deny は不要。ワイルドカード deny は
+                # 上の specific allow を deny 優先で打ち消すので置かない（order VC と同じ理由）。
 
     listeners:
       - ref: order-service-listener
