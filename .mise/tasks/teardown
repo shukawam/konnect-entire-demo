@@ -26,7 +26,7 @@ if [ -f "$backup" ]; then
   mv "$backup" "$ENV_FILE"
   log ".env を $backup から復元"
 else
-  warn ".env バックアップ ($backup) が無いため分離値をプレースホルダへリセットします（本番値は手動で戻すか mise run env:patch を実行してください）"
+  warn ".env バックアップ ($backup) が無いため分離値をプレースホルダへリセットします（本番値は手動で戻すか mise run env:patch / make setup を実行してください）"
   env_set DECK_KONNECT_CONTROL_PLANE_NAME "jungle-store-gateway"
   env_set PREFIX "<your-konnect-endpoint-prefix>"
   env_set EVENT_GATEWAY_CP_ID "<your-event-gateway-cp-id>"

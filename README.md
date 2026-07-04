@@ -120,9 +120,16 @@ make up      # docker compose up -d --build
 make down    # docker compose down
 ```
 
-> `make` が提供するのはコア導線（`setup` / `up` / `down`）のみです。分離起動（`RESOURCE_PREFIX`）・`teardown`・個別サブタスクは `mise` 専用です。
+分離起動（本番リソースと衝突させずに E2E 検証したい場合）も `make` で実行できます:
 
-分離起動（本番リソースと衝突させずに E2E 検証したい場合、`mise` が必要）:
+```bash
+make setup RESOURCE_PREFIX=e2e     # 分離環境を作成（RESOURCE_PREFIX=e2e mise run setup と同等）
+make teardown RESOURCE_PREFIX=e2e  # 後始末（Konnect リソース削除 + compose down -v + .env 復元）
+```
+
+> `make` が提供するのはコア導線（`setup` / `up` / `down` / `teardown`）と分離起動です。個別サブタスク（`doctor` / `certs:gen` 等の単体実行）だけは `mise` 専用です。
+
+mise を使う場合の分離起動は次のとおりです:
 
 ```bash
 RESOURCE_PREFIX=e2e mise run setup
