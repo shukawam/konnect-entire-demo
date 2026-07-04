@@ -14,6 +14,9 @@ portals:
     auto_approve_developers: false
     auto_approve_applications: false
 
+    assets:
+      logo: !file ./assets/logo.jpg
+
     pages:
       - ref: home
         slug: /
