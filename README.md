@@ -34,10 +34,10 @@ Kong Konnect の各機能をフル活用したマイクロサービス構成の 
 - `mise run setup` が使う CLI: `deck`（decK）/ `kongctl` / `jq` / `yq` / `openssl`（未導入なら各ツールのドキュメントに従って導入）
 - Docker / Docker Compose
 - Node.js 20+（ローカル開発時）
-- Kong Konnect アカウント + Personal Access Token（`.env` の `DECK_KONNECT_TOKEN` に設定。deck と kongctl が共用し、mise が `.env` を読み込んで両ツールへ供給します。`kongctl login` や `~/.config/deck/.deck.yaml` は不要）
+- Kong Konnect アカウント + Personal Access Token（`.env` の `DECK_KONNECT_TOKEN` に設定。deck と kongctl が共用し、mise が `.env` を読み込んで両ツールへ供給します）
 - `.env` に `DECK_OPENAI_API_KEY`（AI Gateway 用。`DECK_KONNECT_TOKEN` と並ぶ外部シークレットで、他の動的値・秘密値は `mise run setup` が自動生成/自動抽出します）
 
-> クラスタ証明書の事前取得・配置は不要です。`mise run certs:gen`（`mise run setup` に含まれます）が自己署名証明書を自動生成し、Konnect 側への宣言的なピン留めまで行います。詳細は [クイックスタート](#クイックスタート) を参照してください。
+> クラスタ証明書は `mise run certs:gen`（`mise run setup` に含まれます）が自己署名証明書を自動生成し、Konnect 側へ宣言的にピン留めします。詳細は [クイックスタート](#クイックスタート) を参照してください。
 
 ## セットアップ
 
@@ -70,7 +70,7 @@ cp .env.example .env
 
 ### Kong Konnect 証明書
 
-自己署名のクラスタ証明書は `mise run certs:gen`（`mise run setup` の一部）が自動生成します。Kong Gateway 用は `certs/kong-gateway/`、Event Gateway 用は `certs/event-gateway/` に `cluster.crt` / `cluster.key` として生成され、kongctl の宣言設定（`data_plane_certificates`）で Konnect 側へ宣言的にピン留めされます。手動でのアップロード・ピン留め作業は不要です。
+自己署名のクラスタ証明書は `mise run certs:gen`（`mise run setup` の一部）が自動生成します。Kong Gateway 用は `certs/kong-gateway/`、Event Gateway 用は `certs/event-gateway/` に `cluster.crt` / `cluster.key` として生成され、kongctl の宣言設定（`data_plane_certificates`）で Konnect 側へ宣言的にピン留めされます。
 
 既存の証明書（Konnect 発行のものなど）を使い続けたい場合は、`certs:gen` 実行前に `certs/kong-gateway/` `certs/event-gateway/` へ同名ファイルを配置しておけば、それがそのまま流用されます（`certs/` は gitignore 済みでコミットされません）。
 
@@ -103,7 +103,7 @@ Keycloak の realm（クライアント・ユーザー）は `config/keycloak/re
 
 ### 1コマンドセットアップ（推奨）
 
-前提: `.env` に `DECK_KONNECT_TOKEN`（Konnect PAT）と `DECK_OPENAI_API_KEY` を記入。`kongctl login` / `~/.config/deck/.deck.yaml` は不要（mise が `.env` を読み込み、deck・kongctl 双方へ PAT を供給します）。
+前提: `.env` に `DECK_KONNECT_TOKEN`（Konnect PAT）と `DECK_OPENAI_API_KEY` を記入。（mise が `.env` を読み込み、deck・kongctl 双方へ PAT を供給します）。
 
 ```bash
 mise run setup
