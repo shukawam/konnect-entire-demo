@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="コンテナを起動（compose up -d --build）"
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+docker compose up -d --build

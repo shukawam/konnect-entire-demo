@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#MISE description="1コマンドセットアップ（Konnect同期→証明書→.env→Gateway→起動）"
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+mise run doctor
+mise run certs:gen
+mise run konnect:sync
+mise run env:patch
+mise run gateway:sync
+mise run up
+
+printf '\n✅ セットアップ完了: http://localhost:3000\n'

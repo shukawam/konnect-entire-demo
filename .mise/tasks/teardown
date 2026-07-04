@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#MISE description="E2E分離環境の後始末（RESOURCE_PREFIX 必須）"
+set -euo pipefail
+source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
+
+[ -n "${RESOURCE_PREFIX:-}" ] || die "teardown は RESOURCE_PREFIX を指定して実行してください（本番誤削除防止）"
+setup_konnect_pat
+
+cd "$REPO_ROOT"
+docker compose down -v || true
+
+# 接頭辞付きリソースを削除する。空設定の sync では prune されないため、
+# konnect:sync と同じレンダリング済み設定を kongctl delete で明示的に消す。
+# （!file .certs/... を解決するため証明書のステージも同様に行う）
+SRC="$(bash "$REPO_ROOT/.mise/lib/render-kongctl.sh")"
+mkdir -p "$SRC/.certs"
+cp "$REPO_ROOT/certs/kong-gateway/cluster.crt"  "$SRC/.certs/kong-gateway.crt"
+cp "$REPO_ROOT/certs/event-gateway/cluster.crt" "$SRC/.certs/event-gateway.crt"
+kongctl delete -f "$SRC" --auto-approve
+log "Konnect リソース削除: namespace jungle-store-$RESOURCE_PREFIX"
+
+# .env を分離実行前の状態へ復元する（env:patch が作成したバックアップから）。
+# バックアップが無い場合はプレースホルダへリセット（本番値は失われるため警告する）。
+backup="$REPO_ROOT/.env.pre-$RESOURCE_PREFIX"
+if [ -f "$backup" ]; then
+  mv "$backup" "$ENV_FILE"
+  log ".env を $backup から復元"
+else
+  warn ".env バックアップ ($backup) が無いため分離値をプレースホルダへリセットします（本番値は手動で戻すか mise run env:patch を実行してください）"
+  env_set DECK_KONNECT_CONTROL_PLANE_NAME "jungle-store-gateway"
+  env_set PREFIX "<your-konnect-endpoint-prefix>"
+  env_set EVENT_GATEWAY_CP_ID "<your-event-gateway-cp-id>"
+fi
+log "teardown 完了"

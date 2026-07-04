@@ -4,13 +4,15 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+.env.pre-*
 *.log
 .DS_Store
 data/
 certs/
-mise.toml
 coverage/
 generated/
 .claude/settings.local.json
 .playwright-mcp/
 *.tsbuildinfo
+.tmp/
+kongctl/.certs/

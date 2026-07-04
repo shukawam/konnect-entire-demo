@@ -30,9 +30,14 @@ Kong Konnect の各機能をフル活用したマイクロサービス構成の 
 
 ## 前提条件
 
+- [mise](https://mise.jdx.dev/)（`mise run setup` の実行基盤。`.env` の読み込みも担う）
+- `mise run setup` が使う CLI: `deck`（decK）/ `kongctl` / `jq` / `yq` / `openssl`（未導入なら各ツールのドキュメントに従って導入）
 - Docker / Docker Compose
 - Node.js 20+（ローカル開発時）
-- Kong Konnect アカウント + クラスタ証明書（`certs/` に配置）
+- Kong Konnect アカウント + Personal Access Token（`.env` の `DECK_KONNECT_TOKEN` に設定。deck と kongctl が共用し、mise が `.env` を読み込んで両ツールへ供給します）
+- `.env` に `DECK_OPENAI_API_KEY`（AI Gateway 用。`DECK_KONNECT_TOKEN` と並ぶ外部シークレットで、他の動的値・秘密値は `mise run setup` が自動生成/自動抽出します）
+
+> クラスタ証明書は `mise run certs:gen`（`mise run setup` に含まれます）が自己署名証明書を自動生成し、Konnect 側へ宣言的にピン留めします。詳細は [クイックスタート](#クイックスタート) を参照してください。
 
 ## セットアップ
 
@@ -42,23 +47,32 @@ Kong Konnect の各機能をフル活用したマイクロサービス構成の 
 cp .env.example .env
 ```
 
-`.env` を開き、以下の値を自分の環境に合わせて設定してください:
+**`mise run setup`（推奨）を使う場合、手動で設定するのは次の 2 つだけです**:
 
-| 変数名                            | 説明                                                                  | 例                               |
-| --------------------------------- | --------------------------------------------------------------------- | -------------------------------- |
-| `PREFIX`                          | Konnect エンドポイントのプレフィックス（`<prefix>.us.cp.konghq.com`） | `4fa752f311`                     |
-| `EVENT_GATEWAY_CP_ID`             | Konnect Event Gateway コントロールプレーン ID                         | `xxxxxxxx-xxxx-...`              |
-| `DECK_KONNECT_CONTROL_PLANE_NAME` | Konnect コントロールプレーン名                                        | `my-control-plane`               |
-| `DECK_OPENAI_API_KEY`             | OpenAI API キー（AI Gateway 用）                                      | `sk-...`                         |
-| `AUTH_SECRET`                     | NextAuth のセッション暗号鍵                                           | `openssl rand -base64 32` で生成 |
-| `AUTH_KEYCLOAK_ID`                | Keycloak クライアント ID                                              | `jungle-store-frontend`          |
-| `AUTH_KEYCLOAK_SECRET`            | Keycloak クライアントシークレット                                     | （Keycloak で発行）              |
+| 変数名                | 説明                                                                    | 例         |
+| --------------------- | ----------------------------------------------------------------------- | ---------- |
+| `DECK_KONNECT_TOKEN`  | Konnect Personal Access Token（deck と kongctl が共用）。Konnect で発行 | `kpat_...` |
+| `DECK_OPENAI_API_KEY` | OpenAI API キー（AI Gateway 用）                                        | `sk-...`   |
 
-その他の変数（MySQL, Kafka, サービス URL, Keycloak の URL/realm 等）はデフォルト値のままで動作します。
+残りの値は `mise run setup`（`env:patch`）が自動で `.env` に反映します（手動で埋める必要はありません）:
+
+| 変数名                            | 自動設定の内容                                                    |
+| --------------------------------- | ----------------------------------------------------------------- |
+| `PREFIX`                          | Konnect の Gateway Control Plane エンドポイントから取得           |
+| `EVENT_GATEWAY_CP_ID`             | Konnect の Event Gateway ID から取得                              |
+| `DECK_KONNECT_CONTROL_PLANE_NAME` | Control Plane 名（`RESOURCE_PREFIX` 指定時は接頭辞付き）          |
+| `AUTH_SECRET`                     | `openssl rand -base64 32` で自動生成（既存値があれば温存）        |
+| `AUTH_KEYCLOAK_SECRET`            | `config/keycloak/realm-export.json` の client secret から自動抽出 |
+
+その他の変数（MySQL, Kafka, サービス URL, Keycloak の URL/realm, `AUTH_KEYCLOAK_ID` 等）はデフォルト値のままで動作します。
+
+> 手動セットアップ（`mise run setup` を使わない）を行う場合は、上記の自動設定分（`PREFIX` / `EVENT_GATEWAY_CP_ID` / `DECK_KONNECT_CONTROL_PLANE_NAME` / `AUTH_SECRET` / `AUTH_KEYCLOAK_SECRET`）を自分で `.env` に設定してください。`PREFIX` は `<prefix>.us.cp.konghq.com` のプレフィックス、`AUTH_SECRET` は `openssl rand -base64 32`、`AUTH_KEYCLOAK_SECRET` は realm の client secret です。
 
 ### Kong Konnect 証明書
 
-Konnect コントロールプレーンのクラスタ証明書を、Kong Gateway 用は `certs/kong-gateway/`、Event Gateway 用は `certs/event-gateway/` に配置してください（各ディレクトリに `cluster.crt` / `cluster.key`）。
+自己署名のクラスタ証明書は `mise run certs:gen`（`mise run setup` の一部）が自動生成します。Kong Gateway 用は `certs/kong-gateway/`、Event Gateway 用は `certs/event-gateway/` に `cluster.crt` / `cluster.key` として生成され、kongctl の宣言設定（`data_plane_certificates`）で Konnect 側へ宣言的にピン留めされます。
+
+既存の証明書（Konnect 発行のものなど）を使い続けたい場合は、`certs:gen` 実行前に `certs/kong-gateway/` `certs/event-gateway/` へ同名ファイルを配置しておけば、それがそのまま流用されます（`certs/` は gitignore 済みでコミットされません）。
 
 ### Keycloak（エンドユーザー認証）
 
@@ -66,7 +80,6 @@ Konnect コントロールプレーンのクラスタ証明書を、Kong Gateway
 Keycloak の realm（クライアント・ユーザー）は `config/keycloak/realm-export.json` に同梱されており、
 起動時に自動インポートされます（`sslRequired: none`・デモユーザー 2 名・client 設定込み）。
 
-> **`/etc/hosts` の編集は不要です。**
 > ブラウザは `localhost:8081`、コンテナ間は `keycloak:8081` で Keycloak に到達します。
 > Keycloak の `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` と Auth.js の `customFetch` により、
 > フロントチャネル（iss / 認可）は `localhost:8081`、バックチャネル（discovery / token / jwks）は
@@ -86,6 +99,27 @@ Keycloak の realm（クライアント・ユーザー）は `config/keycloak/re
 5. 以降は `docker compose up -d --build` で realm が自動インポートされます
 
 ## クイックスタート
+
+### 1コマンドセットアップ（推奨）
+
+前提: `.env` に `DECK_KONNECT_TOKEN`（Konnect PAT）と `DECK_OPENAI_API_KEY` を記入。（mise が `.env` を読み込み、deck・kongctl 双方へ PAT を供給します）。
+
+```bash
+mise run setup
+```
+
+`doctor`（前提チェック）→ `certs:gen`（自己署名証明書を生成）→ `konnect:sync`（Konnect リソース同期 + 証明書ピン留め）→ `env:patch`（`.env` に `PREFIX` / `EVENT_GATEWAY_CP_ID` / シークレット等を反映）→ `gateway:sync`（deck で Gateway 設定を Control Plane へ同期）→ `up`（`docker compose up -d --build`）を一括実行します。各タスクは `mise run doctor` のように単体実行もでき、二度目以降も冪等に再実行できます。
+
+分離起動（本番リソースと衝突させずに E2E 検証したい場合）:
+
+```bash
+RESOURCE_PREFIX=e2e mise run setup
+RESOURCE_PREFIX=e2e mise run teardown  # 後始末（Konnect リソース削除 + compose down -v）
+```
+
+### 手動セットアップ（個別コマンド）
+
+Konnect リソースの作成・同期を自分でコントロールしたい場合、または起動済みのスタックを個別に操作したい場合は次のコマンドを使います（Konnect / Gateway の同期手順は [CLAUDE.md](CLAUDE.md) の「Kong / Konnect への設定反映」節を参照）。
 
 ```bash
 # 全サービス起動（初回はビルドに数分かかります）

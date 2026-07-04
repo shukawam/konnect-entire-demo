@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#MISE description=".env に動的値・秘密値を反映（PREFIX/CP_ID/AUTH_SECRET 等）"
+set -euo pipefail
+source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
+
+[ -f "$ENV_FILE" ] || { cp "$REPO_ROOT/.env.example" "$ENV_FILE"; log ".env を .env.example から作成"; }
+setup_konnect_pat
+
+prefix="${RESOURCE_PREFIX:-}"
+cp_name="jungle-store-gateway${prefix:+-$prefix}"
+eg_name="jungle-store-event-gateway${prefix:+-$prefix}"
+
+# 分離実行（RESOURCE_PREFIX 指定）時は、本番 .env を上書きする前にバックアップする。
+# teardown がこのバックアップから .env を復元し、本番の PREFIX 等を失わないようにする。
+if [ -n "$prefix" ] && [ ! -f "$REPO_ROOT/.env.pre-$prefix" ]; then
+  cp "$ENV_FILE" "$REPO_ROOT/.env.pre-$prefix"
+  log ".env を .env.pre-$prefix にバックアップ"
+fi
+
+# --- Gateway CP endpoint → PREFIX ---
+cp_json="$(kongctl get gateway control-planes -o json)"
+endpoint="$(printf '%s' "$cp_json" | jq -r --arg n "$cp_name" '
+  (.data? // .) | (if type=="array" then . else [.] end)
+  | map(select(.name==$n)) | .[0]
+  | (.config.control_plane_endpoint // .config.controlPlaneEndpoint // .control_plane_endpoint // empty)')"
+[ -n "$endpoint" ] || die "control-plane endpoint を取得できませんでした（CP: $cp_name / JSON フィールド名を確認）"
+pfx="$(printf '%s' "$endpoint" | sed -E 's#^https?://##; s#\..*$##')"
+env_set PREFIX "$pfx"
+log "PREFIX=$pfx"
+
+# --- Event Gateway id ---
+eg_json="$(kongctl get event-gateway -o json)"
+eg_id="$(printf '%s' "$eg_json" | jq -r --arg n "$eg_name" '
+  (.data? // .) | (if type=="array" then . else [.] end)
+  | map(select(.name==$n)) | .[0] | (.id // .control_plane_id // empty)')"
+[ -n "$eg_id" ] || die "event gateway id を取得できませんでした（EG: ${eg_name}）"
+env_set EVENT_GATEWAY_CP_ID "$eg_id"
+log "EVENT_GATEWAY_CP_ID=$eg_id"
+
+# --- deck ターゲット CP 名 ---
+env_set DECK_KONNECT_CONTROL_PLANE_NAME "$cp_name"
+
+# --- AUTH_SECRET（プレースホルダ/空のみ生成）---
+cur="$(env_get AUTH_SECRET)"
+case "$cur" in
+  ""|"<your-auth-secret>") env_set AUTH_SECRET "$(openssl rand -base64 32)"; log "AUTH_SECRET を生成";;
+  *) log "AUTH_SECRET は既存値を温存";;
+esac
+
+# --- AUTH_KEYCLOAK_SECRET（realm-export.json から抽出）---
+kc_id="$(env_get AUTH_KEYCLOAK_ID)"; kc_id="${kc_id:-jungle-store-frontend}"
+realm="$REPO_ROOT/config/keycloak/realm-export.json"
+secret="$(jq -r --arg id "$kc_id" '.clients[]? | select(.clientId==$id) | .secret // empty' "$realm")"
+if [ -n "$secret" ]; then env_set AUTH_KEYCLOAK_SECRET "$secret"; log "AUTH_KEYCLOAK_SECRET を realm から同期"; else warn "realm に client secret が見つかりません: $kc_id"; fi
+
+log "env:patch 完了"

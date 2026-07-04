@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#MISE description="Konnect リソースを同期（自己署名証明書のピン留め含む）"
+set -euo pipefail
+source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
+setup_konnect_pat
+
+SRC="$(bash "$REPO_ROOT/.mise/lib/render-kongctl.sh")"
+log "kongctl source: $SRC"
+
+# 証明書 PEM を同期ソース配下 .certs/ にステージ（YAML の !file .certs/... が参照）
+mkdir -p "$SRC/.certs"
+cp "$REPO_ROOT/certs/kong-gateway/cluster.crt"  "$SRC/.certs/kong-gateway.crt"
+cp "$REPO_ROOT/certs/event-gateway/cluster.crt" "$SRC/.certs/event-gateway.crt"
+
+kongctl sync -f "$SRC" --auto-approve
+log "kongctl sync 完了"

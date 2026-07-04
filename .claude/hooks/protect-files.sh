@@ -21,7 +21,7 @@ case "$(basename "$file_path")" in
     deny "BLOCKED: package-lock.json は直接編集禁止です。npm install 経由で更新してください。"
     ;;
   mise.toml)
-    deny "BLOCKED: mise.toml には API キー等の機密情報が含まれます。ユーザーに手動編集を依頼してください。"
+    deny "BLOCKED: mise.toml は mise の実行基盤設定（.env 読み込み等）で load-bearing のため、事故防止に直接編集をブロックしています。変更が必要ならユーザーに依頼してください（コミット対象です）。"
     ;;
 esac
 

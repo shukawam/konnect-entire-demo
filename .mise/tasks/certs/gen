@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#MISE description="自己署名クラスタ証明書を生成（既存なら流用）"
+set -euo pipefail
+source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
+
+gen_cert() {
+  local dir="$1" cn="$2"
+  mkdir -p "$dir"
+  if [ -f "$dir/cluster.crt" ] && [ -f "$dir/cluster.key" ]; then
+    log "証明書は既存: ${dir}（流用）"
+    return 0
+  fi
+  log "自己署名証明書を生成: $dir"
+  openssl req -new -x509 -nodes -newkey rsa:2048 -days 1095 -sha256 \
+    -keyout "$dir/cluster.key" -out "$dir/cluster.crt" -subj "/CN=$cn"
+}
+
+gen_cert "$REPO_ROOT/certs/kong-gateway"  "jungle-store-gateway"
+gen_cert "$REPO_ROOT/certs/event-gateway" "jungle-store-event-gateway"
+log "証明書 OK"

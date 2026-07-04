@@ -10,3 +10,6 @@ control_planes:
     cluster_type: CLUSTER_TYPE_CONTROL_PLANE
     labels:
       environment: local
+    data_plane_certificates:
+      - ref: jungle-store-gateway-cert
+        cert: !file .certs/kong-gateway.crt

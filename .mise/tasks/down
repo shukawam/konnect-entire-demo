@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="コンテナを停止（compose down）"
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+docker compose down
