@@ -17,12 +17,17 @@ export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
  */
 export function useAuthUser(): { user: AuthUser | null; status: AuthStatus } {
   const { data: session, status } = useSession()
-  const user = session?.user
-    ? {
-        id: session.user.id,
-        email: session.user.email ?? '',
-        name: session.user.name ?? '',
-      }
-    : null
-  return { user, status }
+  // アクセストークンのリフレッシュに失敗したセッションは「見た目はログイン中だが実体は
+  // 未認証」の状態。UI 上は未認証として扱い、ユーザー名を表示しない。
+  const errored = session?.error === 'RefreshTokenError'
+  const user =
+    session?.user && !errored
+      ? {
+          id: session.user.id,
+          email: session.user.email ?? '',
+          name: session.user.name ?? '',
+        }
+      : null
+  const effectiveStatus: AuthStatus = errored ? 'unauthenticated' : status
+  return { user, status: effectiveStatus }
 }
