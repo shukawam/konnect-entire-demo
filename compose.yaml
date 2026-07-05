@@ -217,6 +217,14 @@ services:
       - '19094:19094'
     volumes:
       - ./certs/event-gateway:/etc/kong/cluster-certs
+    healthcheck:
+      # distroless イメージ（シェル/curl 無し）のため keg バイナリ内蔵の healthcheck を使う。
+      # Konnect から設定を取得し Kafka リスナーが受付可能になると OK を返す。
+      test: ['CMD', '/keg', 'healthcheck']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       kafka:
         condition: service_healthy
@@ -368,7 +376,7 @@ services:
       mysql:
         condition: service_healthy
       event-gateway:
-        condition: service_started
+        condition: service_healthy
     develop:
       watch:
         - action: sync
@@ -407,7 +415,7 @@ services:
       mysql:
         condition: service_healthy
       event-gateway:
-        condition: service_started
+        condition: service_healthy
     develop:
       watch:
         - action: sync
