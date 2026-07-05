@@ -199,15 +199,15 @@ services:
     image: kong/kong-event-gateway:1.2.0
     environment:
       # see: https://developer.konghq.com/event-gateway/configuration/
-      KONNECT_REGION: us
-      KONNECT_DOMAIN: konghq.com
-      KONNECT_GATEWAY_CLUSTER_ID: ${EVENT_GATEWAY_CP_ID:-}
-      KONNECT_CLIENT_CERT_PATH: /etc/kong/cluster-certs/cluster.crt
-      KONNECT_CLIENT_KEY_PATH: /etc/kong/cluster-certs/cluster.key
+      KONG_KONNECT_REGION: us
+      KONG_KONNECT_DOMAIN: konghq.com
+      KONG_KONNECT_GATEWAY_CLUSTER_ID: ${EVENT_GATEWAY_CP_ID:-}
+      KONG_KONNECT_CLIENT_CERT_PATH: /etc/kong/cluster-certs/cluster.crt
+      KONG_KONNECT_CLIENT_KEY_PATH: /etc/kong/cluster-certs/cluster.key
       KEG__OBSERVABILITY__LOG_FLAGS: info
       KEG__OBSERVABILITY__LOG_FORMAT: json
       KEG__OBSERVABILITY__METRICS_ROLLUP_ALLOW_MAP: 'api_kind=produce,fetch'
-      KEG__OBSERVABILITY__OTLP__TRACING__ENABLED: true
+      KEG__OBSERVABILITY__OTEL__TRACES__ENDPOINT: http://otel-lgtm:4318/v1/traces
       OTEL_SERVICE_NAME: event-gateway
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
     ports:
