@@ -2,12 +2,15 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { signIn, useSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
+import { useAuthUser } from '@/lib/auth'
 import Nav from '@/components/Nav'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { status } = useSession()
+  // useAuthUser は RefreshTokenError のセッションを unauthenticated として扱うため、
+  // 失効ユーザーが /login に来ても / へ跳ね返さず再ログインできる。
+  const { status } = useAuthUser()
 
   // 既にログイン済みならトップへ
   useEffect(() => {

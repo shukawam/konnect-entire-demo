@@ -1,6 +1,7 @@
 import NextAuth, { customFetch } from 'next-auth'
 import Keycloak from 'next-auth/providers/keycloak'
 import { createKeycloakFetch } from '@/lib/keycloak-fetch'
+import { isAccessTokenValid, refreshAccessToken } from '@/lib/token-refresh'
 
 // フロントチャネル（ブラウザ）とバックチャネル（コンテナ）で Keycloak の到達 URL を分離する。
 //   - issuer: token の iss / 認可エンドポイントに使う「ブラウザが到達する」URL（localhost:8081）。
@@ -18,6 +19,9 @@ const internalUrl = process.env.KEYCLOAK_INTERNAL_URL ?? 'http://keycloak:8081'
 // 公開オリジン宛のサーバー側リクエストだけ内部オリジンへ書き換える fetch。
 const keycloakFetch = createKeycloakFetch(publicUrl, internalUrl)
 
+// リフレッシュはサーバー(コンテナ)→ Keycloak の直接通信なので内部 URL を使う。
+const tokenEndpoint = `${internalUrl}/realms/${realm}/protocol/openid-connect/token`
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   providers: [
@@ -30,17 +34,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    // Kong へ渡す access_token のみをセッショントークンへ引き継ぐ
+    // アクセストークンのライフサイクルを Keycloak に追従させる。
     async jwt({ token, account, profile }) {
+      // 初回サインイン: account からトークン一式を取り込む
       if (account) {
         token.accessToken = account.access_token
+        token.refreshToken = account.refresh_token
+        token.expiresAt = account.expires_at // エポック秒
+        token.error = undefined
+        if (profile?.sub) token.sub = profile.sub
+        return token
       }
-      if (profile?.sub) token.sub = profile.sub
-      return token
+      // 有効期限内ならそのまま
+      if (isAccessTokenValid(token)) return token
+      // 失効: refresh_token で更新（不能なら error が立ち session 側で未認証に落ちる）。
+      // 注: 並列リクエストで同時実行されると同じ refresh_token を独立に使う。現在の realm 設定
+      // （config/keycloak/realm-export.json: revokeRefreshToken=false）では再利用可能なため安全。
+      // リフレッシュトークンローテーションを有効化する場合は先勝ち以外が invalid_grant で
+      // 誤サインアウトしうるので、更新の直列化・ミューテックスが必要になる。
+      return refreshAccessToken(token, {
+        tokenEndpoint,
+        clientId: process.env.AUTH_KEYCLOAK_ID ?? '',
+        clientSecret: process.env.AUTH_KEYCLOAK_SECRET ?? '',
+      })
     },
-    // proxy が Kong へ渡せるよう accessToken を、UI 表示用に user.id(sub) を公開する
+    // proxy が Kong へ渡せるよう accessToken を、UI 表示用に user.id(sub) を公開する。
+    // リフレッシュ失敗時は error を伝播し、クライアント側で未認証扱い＆サインアウトさせる。
     async session({ session, token }) {
-      session.accessToken = token.accessToken as string | undefined
+      // リフレッシュ不能時は失効済みアクセストークンを proxy に渡さない（Kong へ送っても
+      // 401 になるだけなので、error のみ伝播して SessionGuard に signOut を委ねる）。
+      session.accessToken = token.error ? undefined : (token.accessToken as string | undefined)
+      session.error = token.error as string | undefined
       if (session.user) session.user.id = token.sub ?? ''
       return session
     },
