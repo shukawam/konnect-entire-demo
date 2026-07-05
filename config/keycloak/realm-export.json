@@ -29,12 +29,12 @@
   "sslRequired": "none",
   "users": [
     {
-      "username": "yosuke.shiraishi",
-      "email": "yosuke.shiraishi@konghq.com",
+      "username": "kingston",
+      "email": "kingston@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "Yosuke",
-      "lastName": "Shiraishi",
+      "firstName": "Kingston",
+      "lastName": "Kong",
       "credentials": [
         {
           "type": "password",
@@ -45,11 +45,11 @@
     },
     {
       "username": "admin",
-      "email": "shuhei.kawamura@konghq.com",
+      "email": "kira@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "Shuhei",
-      "lastName": "Kawamura",
+      "firstName": "Kira",
+      "lastName": "Kong",
       "credentials": [
         {
           "type": "password",
