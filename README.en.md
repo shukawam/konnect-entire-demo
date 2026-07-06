@@ -266,10 +266,11 @@ The Agent Service (port 3006) is an AI chatbot powered by Kong AI Gateway and MC
 
 ### How it works
 
-1. **AI Proxy Advanced** — Provides an LLM gateway to OpenAI GPT-4o-mini via the `/ai/v1` route
+1. **AI Proxy Advanced** — Provides an LLM gateway to OpenAI GPT-4o-mini (`/ai/v1` for one-shot Q&A with caching, `/ai/agent/v1` for the Agent without caching)
 2. **AI Prompt Decorator** — Auto-injects the gorilla character system prompt into requests
 3. **AI Semantic Prompt Guard** — Blocks inappropriate inputs using Redis vector DB + OpenAI Embeddings
-4. **AI MCP Proxy** — Provides product search, cart operations, and order history as MCP tools to the LLM
+4. **AI Semantic Cache** — Reuses semantically-similar responses to cut cost/latency (`/ai/v1` only; not applied to the Agent route to avoid breaking multi-turn conversation context)
+5. **AI MCP Proxy** — Provides product search, cart operations, and order history as MCP tools to the LLM
 
 ### MCP Routes
 

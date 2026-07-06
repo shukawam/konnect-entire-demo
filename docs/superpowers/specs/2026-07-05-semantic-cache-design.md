@@ -4,6 +4,8 @@
 - 日付: 2026-07-05
 - ステータス: 設計合意済み
 
+> **追記（実装後の是正）**: 当初は agent-service も `/ai/v1`（キャッシュあり）経由で LLM を呼ぶ設計だったが、agent のマルチターン会話では話題が関連する連続ターンが意味的に近く、キャッシュが古い応答を返して文脈を壊す不具合が判明した。このため agent は専用のキャッシュなし経路 `/ai/agent/v1` を使うよう変更し、`ai-semantic-cache` は一問一答の `/ai/v1`（curl デモ）に限定した。共有プラグイン（prompt-guard / prompt-decorator / proxy-advanced）は service 単位で両経路に適用する。以下本文の「`/ai/v1`」の記述はこの是正前のスナップショットである。
+
 ## 背景・目的
 
 現状、LLM API 呼び出し（`agent-service` → Kong `/ai/v1` → OpenAI）には意味ベースのキャッシュが存在しない。デモ用に、意味的に近いプロンプトの応答を再利用する Semantic Cache 機構を導入し、コスト削減・レイテンシ短縮・アプリコード非依存という Kong AI Gateway の価値を実演する。

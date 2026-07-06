@@ -22,10 +22,13 @@ const telemetry = createVolcanoTelemetry({
 
 const gatewayEndpoint = process.env.GATEWAY_ENDPOINT || 'http://localhost:8000'
 
+// Agent 専用のキャッシュなしルートを使う。/ai/v1 は ai-semantic-cache 付き（一問一答の curl デモ用）
+// だが、マルチターン会話では話題が関連する連続ターンが意味的に近くキャッシュが文脈を壊すため、
+// Agent は openai-agent-route（/ai/agent/v1・キャッシュなし）を経由する。詳細は config/kong/kong.yaml。
 const llm = llmOpenAI({
   apiKey: 'set-api-key-via-kong-gateway',
   model: 'gpt-4o-mini',
-  baseURL: `${gatewayEndpoint}/ai/v1`,
+  baseURL: `${gatewayEndpoint}/ai/agent/v1`,
 })
 
 const catalogMcp = mcp(`${gatewayEndpoint}/mcp/products`)

@@ -299,12 +299,23 @@ services:
         strip_path: true
 
   # AI Proxy (LLM Gateway)
+  # openai-route  : /ai/v1     — 一問一答向け（curl デモ）。ai-semantic-cache をルート単位で付与。
+  # openai-agent-route: /ai/agent/v1 — Agent Service 専用。マルチターン会話の文脈を壊さないよう
+  #   キャッシュを掛けない。共有プラグイン（prompt-guard / prompt-decorator / proxy-advanced）は
+  #   サービス単位で両ルートに適用し、キャッシュだけを openai-route に限定する。
   - name: openai-service
     url: https://example.com
     routes:
       - name: openai-route
         paths:
           - /ai/v1
+        protocols:
+          - http
+          - https
+        strip_path: true
+      - name: openai-agent-route
+        paths:
+          - /ai/agent/v1
         protocols:
           - http
           - https
@@ -529,8 +540,9 @@ plugins:
       strategy: memory
 
   # AI Semantic Prompt Guard — Block inappropriate inputs for EC site
+  # サービス単位で付与し、/ai/v1（curl）と /ai/agent/v1（Agent）の両ルートで入力検証する。
   - name: ai-semantic-prompt-guard
-    route: openai-route
+    service: openai-service
     config:
       embeddings:
         auth:
@@ -562,6 +574,9 @@ plugins:
   # 実行順はプラグイン優先度で決まり（ai-semantic-prompt-guard=775 > ai-semantic-cache=765）、
   # guard が先に走るため不正入力はキャッシュに載らない（YAML の記述順とは無関係）。
   # embeddings / vectordb ブロックは ai-semantic-prompt-guard と同じ redis + OpenAI 埋め込みを流用。
+  # ★ openai-route（/ai/v1・一問一答の curl デモ）にのみルート単位で付与する。
+  #   Agent（/ai/agent/v1）にはあえて掛けない。マルチターン会話では話題が関連する連続ターンが
+  #   意味的に近く、キャッシュが古い応答を返して文脈を壊す（＝別ユーザーへのデータ混線も含む）ため。
   # 注意: このキャッシュは openai-route を通る全リクエストで共有される（consumer 単位の分離なし）。
   # デモは商品・一般質問で行い、カート/注文などユーザー固有データを含む質問は対象外とする。
   - name: ai-semantic-cache
@@ -585,8 +600,9 @@ plugins:
       cache_ttl: 300 # キャッシュ有効期限（秒）
 
   # AI Prompt Decorator — System prompt injection (hidden from client)
+  # サービス単位で付与し、両ルートで「ゴリ助」キャラクターを注入する。
   - name: ai-prompt-decorator
-    route: openai-route
+    service: openai-service
     config:
       prompts:
         prepend:
@@ -609,8 +625,9 @@ plugins:
               - ゴリラのキャラクターを保ちつつ、正確な情報を提供する
 
   # AI Proxy Advanced — OpenAI LLM Gateway
+  # サービス単位で付与し、両ルートから OpenAI へ転送する。
   - name: ai-proxy-advanced
-    route: openai-route
+    service: openai-service
     config:
       targets:
         - route_type: llm/v1/chat
