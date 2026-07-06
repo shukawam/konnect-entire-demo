@@ -379,9 +379,10 @@ plugins:
   # 署名/有効期限/iss を検証したうえで claim を upstream ヘッダーへ注入する:
   #   sub → X-User-Id, email → X-User-Email, preferred_username → X-User-Name
   # 各バックエンドは従来どおり X-User-Id でユーザーを識別する。
+  # 4 サービス共通の OIDC 設定。以降のサービスは *oidc_config で参照する。
   - name: openid-connect
     service: cart-service
-    config:
+    config: &oidc_config
       issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
       auth_methods:
         - bearer
@@ -398,53 +399,17 @@ plugins:
   # OpenID Connect on Order
   - name: openid-connect
     service: order-service
-    config:
-      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
-      auth_methods:
-        - bearer
-      cache_tokens_salt: jungle-store-oidc
-      upstream_headers_claims:
-        - sub
-        - email
-        - preferred_username
-      upstream_headers_names:
-        - X-User-Id
-        - X-User-Email
-        - X-User-Name
+    config: *oidc_config
 
   # OpenID Connect on Shipping
   - name: openid-connect
     service: shipping-service
-    config:
-      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
-      auth_methods:
-        - bearer
-      cache_tokens_salt: jungle-store-oidc
-      upstream_headers_claims:
-        - sub
-        - email
-        - preferred_username
-      upstream_headers_names:
-        - X-User-Id
-        - X-User-Email
-        - X-User-Name
+    config: *oidc_config
 
   # OpenID Connect on User（/api/users/me は本人のトークンが必須）
   - name: openid-connect
     service: user-service
-    config:
-      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
-      auth_methods:
-        - bearer
-      cache_tokens_salt: jungle-store-oidc
-      upstream_headers_claims:
-        - sub
-        - email
-        - preferred_username
-      upstream_headers_names:
-        - X-User-Id
-        - X-User-Email
-        - X-User-Name
+    config: *oidc_config
 
   # Stricter Rate Limiting on Order
   - name: rate-limiting
