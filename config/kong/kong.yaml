@@ -5,7 +5,9 @@ upstreams:
     targets:
       - target: catalog-service:3001
         weight: 100
-    healthchecks:
+    sticky_sessions_cookie_path: /
+    # 全 upstream 共通のヘルスチェック設定。以降の upstream は *upstream_healthchecks で参照する。
+    healthchecks: &upstream_healthchecks
       active:
         type: http
         http_path: /health
@@ -27,111 +29,36 @@ upstreams:
     targets:
       - target: cart-service:3002
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
   - name: order-service.upstream
     targets:
       - target: order-service:3003
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
   - name: shipping-service.upstream
     targets:
       - target: shipping-service:3004
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
   - name: user-service.upstream
     targets:
       - target: user-service:3005
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
   - name: agent-service.upstream
     targets:
       - target: agent-service:3006
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
 services:
   - name: catalog-service
