@@ -1,6 +1,6 @@
 # シナリオ 4: AI Gateway & MCP
 
-Kong の AI Gateway 機能（AI Proxy、Prompt Guard、Prompt Decorator）と MCP（Model Context Protocol）を使った AI エージェントの統合を体験するデモです。
+Kong の AI Gateway 機能（AI Proxy、Prompt Guard、Semantic Cache、Prompt Decorator）と MCP（Model Context Protocol）を使った AI エージェントの統合を体験するデモです。
 
 **対象:** AI 活用に関心のある方、LLM Gateway の導入検討者
 **所要時間:** 15〜20分
@@ -23,6 +23,7 @@ Kong の AI Gateway 機能（AI Proxy、Prompt Guard、Prompt Decorator）と MC
                                               ├── LLM 呼び出し
                                               │   └──> [Kong Gateway] /ai/v1
                                               │             ├── ai-semantic-prompt-guard（入力検証）
+                                              │             ├── ai-semantic-cache（意味ベースの応答キャッシュ）
                                               │             ├── ai-prompt-decorator（キャラクター注入）
                                               │             └── ai-proxy-advanced（OpenAI 転送）
                                               │
@@ -164,7 +165,45 @@ curl -X POST http://localhost:8000/ai/v1/chat/completions \
 
 ---
 
-## ステップ 4: MCP によるツール呼び出し
+## ステップ 4: Semantic Cache（意味ベースの応答キャッシュ）
+
+意味的に近いプロンプトの応答を再利用し、OpenAI への到達を回避してコストとレイテンシを削減する機能です。
+
+### 4-1. キャッシュのヒットを確認する
+
+商品・一般的な質問で curl を 2 回投げます。1 回目は OpenAI に到達（`X-Cache-Status: Miss`）、2 回目は**言い換えても**キャッシュから応答（`X-Cache-Status: Hit`）し、レスポンスが大幅に高速化します。
+
+```bash
+# 1回目: キャッシュミス（OpenAI へ到達）— レスポンスヘッダとレイテンシに注目
+curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8000/ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"どんな商品がありますか？"}]}' \
+  | grep -iE "X-Cache-Status|total:"
+
+# 2回目: 言い換えでもキャッシュヒット（OpenAI 未到達・高速）
+curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8000/ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"取り扱っている商品を教えて"}]}' \
+  | grep -iE "X-Cache-Status|total:"
+```
+
+レスポンスヘッダの `X-Cache-Status` が `Miss` → `Hit` に変わり、`time_total` が短縮されることを確認します。
+
+### 解説ポイント
+
+- `ai-semantic-cache` プラグインが Redis のベクトル DB を使用
+- OpenAI Embeddings でプロンプトをベクトル化し、過去の応答と意味的な類似度で照合
+- 類似度が閾値内なら OpenAI に到達せずキャッシュ応答を返す（`cache_ttl` の間有効）
+- アプリケーションコードを変更せず、Kong の設定だけで LLM コスト・レイテンシを削減
+- `ai-semantic-prompt-guard` と同じ Redis + Embeddings 基盤を流用（追加インフラ不要）
+
+### ⚠️ 注意: キャッシュは全ユーザーで共有される
+
+このデモの `ai-semantic-cache` は `openai-route` を通る全リクエストで共有され、consumer 単位の分離を行っていません。そのため「私のカートの中身は？」のようなユーザー固有データを含む質問は、別ユーザーのキャッシュ応答が返る恐れがあり**デモ対象外**です（商品・一般的な質問で試してください）。本番では consumer 単位のキャッシュ分離や、ユーザー固有データを含む経路の除外が必要です。
+
+---
+
+## ステップ 5: MCP によるツール呼び出し
 
 AI エージェントが MCP（Model Context Protocol）を使って各サービスの API を呼び出す仕組みを確認します。
 
@@ -211,7 +250,7 @@ Kong の `ai-mcp-proxy` プラグインが:
 
 ---
 
-## ステップ 5:（オプション）Grafana で AI メトリクスを確認
+## ステップ 6:（オプション）Grafana で AI メトリクスを確認
 
 AI Gateway の利用状況を Prometheus メトリクスで確認できます。
 
@@ -232,6 +271,7 @@ kong_ai_llm_prompt_tokens_count
 - Kong の `prometheus` プラグインで AI 関連メトリクスを自動収集
 - LLM の利用状況（リクエスト数、トークン消費量）をリアルタイムで監視可能
 - コスト管理やキャパシティプランニングに活用できる
+- Semantic Cache がヒットするとリクエストは OpenAI に到達しないため、`kong_ai_llm_requests_total` の増加が止まる（＝キャッシュによるコスト削減を数値で確認できる）
 
 ---
 
@@ -239,12 +279,13 @@ kong_ai_llm_prompt_tokens_count
 
 このシナリオで確認した AI Gateway の機能:
 
-| 機能               | プラグイン                 | 効果                                       |
-| ------------------ | -------------------------- | ------------------------------------------ |
-| LLM プロキシ       | `ai-proxy-advanced`        | OpenAI API への透過的なプロキシ            |
-| キャラクター制御   | `ai-prompt-decorator`      | システムプロンプト自動注入                 |
-| 入力フィルタリング | `ai-semantic-prompt-guard` | セマンティック類似度による不正入力ブロック |
-| MCP プロキシ       | `ai-mcp-proxy`             | 既存 API を MCP ツールとして公開           |
-| AI メトリクス      | `prometheus`               | LLM 利用状況のリアルタイム監視             |
+| 機能               | プラグイン                 | 効果                                                |
+| ------------------ | -------------------------- | --------------------------------------------------- |
+| LLM プロキシ       | `ai-proxy-advanced`        | OpenAI API への透過的なプロキシ                     |
+| キャラクター制御   | `ai-prompt-decorator`      | システムプロンプト自動注入                          |
+| 入力フィルタリング | `ai-semantic-prompt-guard` | セマンティック類似度による不正入力ブロック          |
+| 応答キャッシュ     | `ai-semantic-cache`        | 意味的に近い応答の再利用によるコスト/レイテンシ削減 |
+| MCP プロキシ       | `ai-mcp-proxy`             | 既存 API を MCP ツールとして公開                    |
+| AI メトリクス      | `prometheus`               | LLM 利用状況のリアルタイム監視                      |
 
 Kong AI Gateway により、AI 機能のセキュリティ・監視・制御をアプリケーションコードの外側で一元管理できます。

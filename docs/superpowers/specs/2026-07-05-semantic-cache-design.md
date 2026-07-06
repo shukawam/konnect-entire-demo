@@ -43,14 +43,14 @@ agent-service / curl ─> Kong /ai/v1
       strategy: redis
       distance_metric: cosine
       dimensions: 1536
-      threshold: 0.1 # キャッシュは厳しめ（誤ヒット防止）。0.1〜0.2 で調整
+      threshold: 0.2 # cosine 距離。言い換えヒットを見せるため緩めの 0.2（0.1〜0.3 で調整）
       redis:
         host: redis
         port: 6379
     cache_ttl: 300 # 5分
 ```
 
-- `threshold`: 「言い換えでもヒット」しつつ別質問を誤ヒットさせない値に調整（実装時に 0.1〜0.2 で検証）。
+- `threshold`: 「言い換えでもヒット」しつつ別質問を誤ヒットさせない値に調整。デモの言い換えヒット再現性を優先し緩めの 0.2 を採用（0.1〜0.3 で調整可）。
 - `cache_ttl` やその他フィールド（exact/semantic 併用等）は実装時に `deck gateway diff` と Kong 3.14 のスキーマで最終確定する。
 
 ## デモドキュメント更新

@@ -558,6 +558,32 @@ plugins:
           - 政治・宗教・差別に関する議論
           - EC サイトと無関係な専門的な相談（法律、医療、金融など）
 
+  # AI Semantic Cache — 意味的に近いプロンプトの応答を再利用しコスト/レイテンシを削減
+  # 実行順はプラグイン優先度で決まり（ai-semantic-prompt-guard=775 > ai-semantic-cache=765）、
+  # guard が先に走るため不正入力はキャッシュに載らない（YAML の記述順とは無関係）。
+  # embeddings / vectordb ブロックは ai-semantic-prompt-guard と同じ redis + OpenAI 埋め込みを流用。
+  # 注意: このキャッシュは openai-route を通る全リクエストで共有される（consumer 単位の分離なし）。
+  # デモは商品・一般質問で行い、カート/注文などユーザー固有データを含む質問は対象外とする。
+  - name: ai-semantic-cache
+    route: openai-route
+    config:
+      embeddings:
+        auth:
+          header_name: Authorization
+          header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+        model:
+          provider: openai
+          name: text-embedding-3-small
+      vectordb:
+        strategy: redis
+        distance_metric: cosine
+        dimensions: 1536
+        threshold: 0.2 # 一致判定（cosine 距離、小さいほど厳格）。言い換えヒットを見せるため緩めの 0.2。0.1〜0.3 で調整可
+        redis:
+          host: redis
+          port: 6379
+      cache_ttl: 300 # キャッシュ有効期限（秒）
+
   # AI Prompt Decorator — System prompt injection (hidden from client)
   - name: ai-prompt-decorator
     route: openai-route
