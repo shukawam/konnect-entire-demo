@@ -173,6 +173,8 @@ services/<名前>/src/
 
 - `add-endpoint` — バックエンドサービスへの API エンドポイント追加手順（TDD + Zod/createRoute パターン）
 - `new-service` — 新規マイクロサービス作成のチェックリスト（compose.yaml / kong.yaml / DB 初期化まで）
+- `cross-service-contracts` — サービス間の暗黙契約マップ。サービス境界をまたぐ変更・リファクタリングの前に連動箇所（Kafka トピック ↔ Event Gateway ACL、Kong ルート ↔ フロントのパス、`X-User-*` ヘッダ等）を洗い出すためのリファレンス
+- `create-pr` — 実装完了からの PR 作成フロー（検証 → code-reviewer レビュー → セマンティックコミット → gh pr create）
 - `verify-stack` — スタック全体のスモークテスト（ヘルスチェック、Kong プラグイン、Kafka フロー）
 - `sync-konnect` — Konnect への設定反映（ユーザー実行専用。diff → 承認 → sync）
 - `kongctl-declarative` / `kongctl-extension-builder` — kongctl CLI が配布する公式スキル（実体は `.claude/skills/` 配下、`.agents/skills/` からシンボリックリンク。kongctl での再インストール時は配置先に注意）
@@ -187,10 +189,10 @@ services/<名前>/src/
 
 ### フック（.claude/hooks/、settings.json で有効化）
 
-- 編集時に Prettier 自動整形 + サービス単位の型チェック（型エラーは即フィードバックされる）
+- 編集時に Prettier 自動整形 + サービス単位の型チェック（型エラーは即フィードバックされる）+ 設定ファイルの構文検証（YAML は yq、JSON は node、compose ファイルは `docker compose config` によるスキーマ検証。構文エラーは編集時点でブロックされる）
 - `.env` / `certs/` / `mise.toml` / `package-lock.json` の編集ブロック（フック + `permissions.deny` の二層。ガードレールであり完全な境界ではない）
 - main ブランチへの直接コミット・強制 push のブロック（PreToolUse フックで即時検知、`.husky/pre-commit` / `.husky/pre-push` が実行時点で強制）
-- フック変更時は `.claude/hooks/run-tests.sh` でリグレッションテストを実行する
+- フック変更時は `.claude/hooks/run-tests.sh` でリグレッションテストを実行する（CI の `Claude Code Hooks` ジョブでも毎 push 実行される）
 
 ## ドキュメント
 

@@ -7,13 +7,50 @@ file_path=$(get_tool_input_field "$input" "file_path")
 [ ! -f "$file_path" ] && exit 0
 
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
+# prettier / tsc は各使用箇所で [ -x ] ガード済み（node_modules 不在でも後続の構文検証は動かす）
 BIN="$PWD/node_modules/.bin"
-[ -d "$BIN" ] || exit 0
 
 # lint-staged と同じ対象拡張子（package.json の lint-staged glob が正）を Prettier で整形
 case "$file_path" in
   *.js | *.jsx | *.ts | *.tsx | *.json | *.css | *.md | *.yaml | *.yml)
     [ -x "$BIN/prettier" ] && "$BIN/prettier" --write "$file_path" >/dev/null 2>&1
+    ;;
+esac
+
+# 設定ファイルの構文バリデーション。Prettier はパース不能なファイルを黙って素通しする
+# （2>/dev/null で失敗を握りつぶしている）ため、ここで構文エラーを検出して即フィードバック
+# する。検証ツールが無い環境ではフェイルオープン。
+case "$file_path" in
+  *.yaml | *.yml)
+    if command -v yq >/dev/null 2>&1; then
+      if ! errors=$(yq e 'true' "$file_path" 2>&1 >/dev/null); then
+        echo "YAML syntax error in $file_path:" >&2
+        printf '%s\n' "$errors" | head -10 >&2
+        exit 2
+      fi
+    fi
+    # compose ファイルはスキーマまで検証する（docker compose config はクライアント側で完結）
+    case "$(basename "$file_path")" in
+      compose.yaml | compose.yml | docker-compose.yaml | docker-compose.yml)
+        if command -v docker >/dev/null 2>&1; then
+          if ! errors=$(docker compose -f "$file_path" config -q 2>&1); then
+            echo "compose validation error in $file_path:" >&2
+            printf '%s\n' "$errors" | head -10 >&2
+            exit 2
+          fi
+        fi
+        ;;
+    esac
+    ;;
+  */tsconfig*.json | */.vscode/*.json) ;; # JSONC（コメント付き JSON）を許容するファイルは対象外
+  *.json)
+    if command -v node >/dev/null 2>&1; then
+      if ! errors=$(node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))' "$file_path" 2>&1); then
+        echo "JSON syntax error in $file_path:" >&2
+        printf '%s\n' "$errors" | head -5 >&2
+        exit 2
+      fi
+    fi
     ;;
 esac
 

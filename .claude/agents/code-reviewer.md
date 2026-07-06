@@ -14,6 +14,7 @@ model: opus
 - Zod スキーマとハンドラー実装の不整合（レスポンスがスキーマと合わない、Date の toISOString 漏れ）
 - Prisma クエリの誤り（where 条件、トランザクション境界、N+1）
 - Kafka producer/consumer のエラーハンドリング（order/shipping-service）
+- サービス境界をまたぐ識別子の変更（Kafka トピック名、イベントペイロードのフィールド、Kong ルートパス、`X-User-*` ヘッダ、他サービスが fetch する API の形状）で片側だけ更新されていないか — 連動箇所の一覧は `.claude/skills/cross-service-contracts/SKILL.md` を参照。この種の破壊は型エラーにならず実行時に静かに壊れるため Critical 扱い
 - テストがモックの都合に合わせて実装の誤りを固定化していないか
 
 ### プロジェクト規約（CLAUDE.md 準拠）

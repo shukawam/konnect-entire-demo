@@ -9,7 +9,7 @@ model: sonnet
 
 ## 必須ワークフロー
 
-1. CLAUDE.md と、タスクに関連するスキル（`.claude/skills/add-endpoint`、`new-service` 等）を読む。該当スキルがあれば必ずその手順に従う。
+1. CLAUDE.md と、タスクに関連するスキル（`.claude/skills/add-endpoint`、`new-service` 等）を読む。該当スキルがあれば必ずその手順に従う。変更がサービス境界をまたぐ場合（Kafka トピック/ペイロード、Kong ルートパス、`X-User-*` ヘッダ、他サービスから参照される Prisma フィールド）は `cross-service-contracts` スキルで連動箇所を洗い出してから着手する。
 2. 変更対象サービスの既存コード（routes.ts、**tests**/）を読み、パターンを踏襲する。
 3. **テストを先に書き、失敗を確認してから実装する**（vitest、Prisma は vi.mock）。
 4. 実装後に必ず実行し、出力を確認する:
