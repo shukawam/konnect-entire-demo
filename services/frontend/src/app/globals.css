@@ -703,20 +703,24 @@ a:hover {
   margin-bottom: 0.5rem;
 }
 /* 想定質問（サジェスト）は入力バー上に常時表示する。会話中でもクリックでき、
-   キャッシュデモ（同じ質問の連続クリックで Miss→Hit）を回しやすくする。 */
+   キャッシュデモ（同じ質問の連続クリックで Miss→Hit）を回しやすくする。
+   各チップを 1 行ずつ縦に並べ、上に区切り線・下に余白を取って入力欄と分離する。 */
 .ask-ai-suggestion-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.4rem;
-  padding: 0.5rem 0.75rem 0;
+  padding: 0.7rem 0.9rem 0.85rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 .ask-ai-suggestion-chip {
-  padding: 0.4rem 0.75rem;
+  max-width: 100%;
+  padding: 0.45rem 0.9rem;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text);
   text-align: left;
   transition: all 0.15s;
@@ -726,6 +730,7 @@ a:hover {
   background: rgba(255, 255, 255, 0.85);
   border-color: var(--secondary);
   color: var(--secondary-dark);
+  transform: translateX(2px);
 }
 .ask-ai-suggestion-chip:disabled {
   opacity: 0.5;
