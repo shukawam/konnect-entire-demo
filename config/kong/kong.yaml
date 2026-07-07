@@ -5,7 +5,9 @@ upstreams:
     targets:
       - target: catalog-service:3001
         weight: 100
-    healthchecks:
+    sticky_sessions_cookie_path: /
+    # 全 upstream 共通のヘルスチェック設定。以降の upstream は *upstream_healthchecks で参照する。
+    healthchecks: &upstream_healthchecks
       active:
         type: http
         http_path: /health
@@ -27,111 +29,36 @@ upstreams:
     targets:
       - target: cart-service:3002
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
   - name: order-service.upstream
     targets:
       - target: order-service:3003
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
   - name: shipping-service.upstream
     targets:
       - target: shipping-service:3004
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
   - name: user-service.upstream
     targets:
       - target: user-service:3005
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
   - name: agent-service.upstream
     targets:
       - target: agent-service:3006
         weight: 100
-    healthchecks:
-      active:
-        type: http
-        http_path: /health
-        healthy:
-          interval: 5
-          successes: 2
-        unhealthy:
-          interval: 5
-          http_failures: 3
-      passive:
-        type: http
-        healthy:
-          successes: 2
-        unhealthy:
-          http_failures: 3
-          tcp_failures: 1
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
 
 services:
   - name: catalog-service
@@ -299,12 +226,23 @@ services:
         strip_path: true
 
   # AI Proxy (LLM Gateway)
+  # openai-route  : /ai/v1     — 一問一答向け（curl デモ）。ai-semantic-cache をルート単位で付与。
+  # openai-agent-route: /ai/agent/v1 — Agent Service 専用。マルチターン会話の文脈を壊さないよう
+  #   キャッシュを掛けない。共有プラグイン（prompt-guard / prompt-decorator / proxy-advanced）は
+  #   サービス単位で両ルートに適用し、キャッシュだけを openai-route に限定する。
   - name: openai-service
     url: https://example.com
     routes:
       - name: openai-route
         paths:
           - /ai/v1
+        protocols:
+          - http
+          - https
+        strip_path: true
+      - name: openai-agent-route
+        paths:
+          - /ai/agent/v1
         protocols:
           - http
           - https
@@ -378,10 +316,11 @@ plugins:
         - 60
       namespace: jungle-store
       strategy: local # 複数 DP でカウンター共有する場合は redis を使用
-  # MCP ルートは AI エージェントの内部通信のため、グローバルより緩いレート制限を適用
+  # MCP ルートは AI エージェントの内部通信のため、グローバルより緩いレート制限を適用。
+  # 3 サービスで共通の limit/window_size/strategy をマージキー(<<)で継承し、namespace だけ上書きする。
   - name: rate-limiting-advanced
     service: mcp-catalog
-    config:
+    config: &mcp_rate_limit
       limit:
         - 600
       window_size:
@@ -391,21 +330,13 @@ plugins:
   - name: rate-limiting-advanced
     service: mcp-cart
     config:
-      limit:
-        - 600
-      window_size:
-        - 60
+      <<: *mcp_rate_limit
       namespace: jungle-store-mcp-cart
-      strategy: local
   - name: rate-limiting-advanced
     service: mcp-order
     config:
-      limit:
-        - 600
-      window_size:
-        - 60
+      <<: *mcp_rate_limit
       namespace: jungle-store-mcp-order
-      strategy: local
   - name: correlation-id
     config:
       header_name: X-Request-Id
@@ -441,9 +372,10 @@ plugins:
   # 署名/有効期限/iss を検証したうえで claim を upstream ヘッダーへ注入する:
   #   sub → X-User-Id, email → X-User-Email, preferred_username → X-User-Name
   # 各バックエンドは従来どおり X-User-Id でユーザーを識別する。
+  # 4 サービス共通の OIDC 設定。以降のサービスは *oidc_config で参照する。
   - name: openid-connect
     service: cart-service
-    config:
+    config: &oidc_config
       issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
       auth_methods:
         - bearer
@@ -460,53 +392,17 @@ plugins:
   # OpenID Connect on Order
   - name: openid-connect
     service: order-service
-    config:
-      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
-      auth_methods:
-        - bearer
-      cache_tokens_salt: jungle-store-oidc
-      upstream_headers_claims:
-        - sub
-        - email
-        - preferred_username
-      upstream_headers_names:
-        - X-User-Id
-        - X-User-Email
-        - X-User-Name
+    config: *oidc_config
 
   # OpenID Connect on Shipping
   - name: openid-connect
     service: shipping-service
-    config:
-      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
-      auth_methods:
-        - bearer
-      cache_tokens_salt: jungle-store-oidc
-      upstream_headers_claims:
-        - sub
-        - email
-        - preferred_username
-      upstream_headers_names:
-        - X-User-Id
-        - X-User-Email
-        - X-User-Name
+    config: *oidc_config
 
   # OpenID Connect on User（/api/users/me は本人のトークンが必須）
   - name: openid-connect
     service: user-service
-    config:
-      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
-      auth_methods:
-        - bearer
-      cache_tokens_salt: jungle-store-oidc
-      upstream_headers_claims:
-        - sub
-        - email
-        - preferred_username
-      upstream_headers_names:
-        - X-User-Id
-        - X-User-Email
-        - X-User-Name
+    config: *oidc_config
 
   # Stricter Rate Limiting on Order
   - name: rate-limiting
@@ -529,8 +425,9 @@ plugins:
       strategy: memory
 
   # AI Semantic Prompt Guard — Block inappropriate inputs for EC site
+  # サービス単位で付与し、/ai/v1（curl）と /ai/agent/v1（Agent）の両ルートで入力検証する。
   - name: ai-semantic-prompt-guard
-    route: openai-route
+    service: openai-service
     config:
       embeddings:
         auth:
@@ -558,9 +455,39 @@ plugins:
           - 政治・宗教・差別に関する議論
           - EC サイトと無関係な専門的な相談（法律、医療、金融など）
 
-  # AI Prompt Decorator — System prompt injection (hidden from client)
-  - name: ai-prompt-decorator
+  # AI Semantic Cache — 意味的に近いプロンプトの応答を再利用しコスト/レイテンシを削減
+  # 実行順はプラグイン優先度で決まり（ai-semantic-prompt-guard=775 > ai-semantic-cache=765）、
+  # guard が先に走るため不正入力はキャッシュに載らない（YAML の記述順とは無関係）。
+  # embeddings / vectordb ブロックは ai-semantic-prompt-guard と同じ redis + OpenAI 埋め込みを流用。
+  # ★ openai-route（/ai/v1・一問一答の curl デモ）にのみルート単位で付与する。
+  #   Agent（/ai/agent/v1）にはあえて掛けない。マルチターン会話では話題が関連する連続ターンが
+  #   意味的に近く、キャッシュが古い応答を返して文脈を壊す（＝別ユーザーへのデータ混線も含む）ため。
+  # 注意: このキャッシュは openai-route を通る全リクエストで共有される（consumer 単位の分離なし）。
+  # デモは商品・一般質問で行い、カート/注文などユーザー固有データを含む質問は対象外とする。
+  - name: ai-semantic-cache
     route: openai-route
+    config:
+      embeddings:
+        auth:
+          header_name: Authorization
+          header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+        model:
+          provider: openai
+          name: text-embedding-3-small
+      vectordb:
+        strategy: redis
+        distance_metric: cosine
+        dimensions: 1536
+        threshold: 0.2 # 一致判定（cosine 距離、小さいほど厳格）。言い換えヒットを見せるため緩めの 0.2。0.1〜0.3 で調整可
+        redis:
+          host: redis
+          port: 6379
+      cache_ttl: 300 # キャッシュ有効期限（秒）
+
+  # AI Prompt Decorator — System prompt injection (hidden from client)
+  # サービス単位で付与し、両ルートで「ゴリ助」キャラクターを注入する。
+  - name: ai-prompt-decorator
+    service: openai-service
     config:
       prompts:
         prepend:
@@ -583,8 +510,9 @@ plugins:
               - ゴリラのキャラクターを保ちつつ、正確な情報を提供する
 
   # AI Proxy Advanced — OpenAI LLM Gateway
+  # サービス単位で付与し、両ルートから OpenAI へ転送する。
   - name: ai-proxy-advanced
-    route: openai-route
+    service: openai-service
     config:
       targets:
         - route_type: llm/v1/chat

@@ -3,11 +3,9 @@
 import { useState, useRef, useEffect } from 'react'
 import Markdown from 'react-markdown'
 import { apiFetch } from '@/lib/api'
+import { buildChatMessages, type ChatMessage } from '@/lib/chat'
 
-interface Message {
-  role: 'user' | 'assistant'
-  content: string
-}
+type Message = ChatMessage
 
 interface ChatResponse {
   response: string
@@ -56,7 +54,9 @@ export default function AskAIDialog() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const sendMessage = async (text?: string) => {
+  // standalone=true（サジェスト経由）は履歴を付けず質問単体を送る（会話文脈に引きずられない）。
+  // 詳細は lib/chat.ts。
+  const sendMessage = async (text?: string, standalone = false) => {
     const content = text || input.trim()
     if (!content || loading) return
 
@@ -69,7 +69,9 @@ export default function AskAIDialog() {
     try {
       const data = await apiFetch<ChatResponse>('/api/agent/chat', {
         method: 'POST',
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({
+          messages: buildChatMessages(messages, userMessage, standalone),
+        }),
       })
       setMessages([...newMessages, { role: 'assistant', content: data.response }])
     } catch (error) {
@@ -116,15 +118,6 @@ export default function AskAIDialog() {
             {messages.length === 0 && (
               <div className="ask-ai-welcome">
                 <p>こんにちは！ゴリラストアについて何でも聞いてください。</p>
-                {suggestions.length > 0 && (
-                  <div className="ask-ai-suggestions">
-                    {suggestions.map((s) => (
-                      <button key={s} className="ask-ai-suggestion" onClick={() => sendMessage(s)}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
 
@@ -147,6 +140,21 @@ export default function AskAIDialog() {
             )}
             <div ref={messagesEndRef} />
           </div>
+
+          {suggestions.length > 0 && (
+            <div className="ask-ai-suggestion-bar">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  className="ask-ai-suggestion-chip"
+                  onClick={() => sendMessage(s, true)}
+                  disabled={loading}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="ask-ai-input-bar">
             <input
