@@ -59,7 +59,7 @@ docker compose config -q                     # compose.yaml の構文検証
 ### Kong / Konnect への設定反映
 
 ```bash
-mise run sync-konnect              # config/kong/kong.yaml を decK で同期（CP: jungle-store-gateway）
+mise run gateway:sync              # config/kong/kong.yaml を decK で同期（CP: jungle-store-gateway）
 cd kongctl && kongctl sync konnect # API / Portal / Event Gateway 等の Konnect リソースを同期
 ```
 
@@ -201,7 +201,7 @@ services/<名前>/src/
 
 ## デモデータ
 
-- **ユーザー:** Keycloak の realm 側で作成・管理する（`config/keycloak/README.md` 参照。例: `user@example.com` / `password123`、`admin@example.com` / `password123`）。ログイン後はトークンの `sub` が `X-User-Id` として各サービスへ渡る。
+- **ユーザー:** Keycloak の realm 側で作成・管理する（`config/keycloak/README.md` 参照。例: `jack@example.com` / `password123`、`carl@example.com` / `password123`）。ログイン後はトークンの `sub` が `X-User-Id` として各サービスへ渡る。
 - **商品:** ゴリラテーマの12商品が自動シード
 
 ## ポート一覧

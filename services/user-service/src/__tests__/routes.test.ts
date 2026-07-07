@@ -15,8 +15,8 @@ describe('GET /me', () => {
       method: 'GET',
       headers: {
         'X-User-Id': 'kc-sub-123',
-        'X-User-Email': 'user@example.com',
-        'X-User-Name': 'gorilla-taro',
+        'X-User-Email': 'jack@example.com',
+        'X-User-Name': 'jack',
       },
     })
 
@@ -24,8 +24,8 @@ describe('GET /me', () => {
     const body = await res.json()
     expect(body).toEqual({
       id: 'kc-sub-123',
-      email: 'user@example.com',
-      name: 'gorilla-taro',
+      email: 'jack@example.com',
+      name: 'jack',
     })
   })
 

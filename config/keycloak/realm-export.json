@@ -29,12 +29,12 @@
   "sslRequired": "none",
   "users": [
     {
-      "username": "kingston",
-      "email": "kingston@example.com",
+      "username": "jack",
+      "email": "jack@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "Kingston",
-      "lastName": "Kong",
+      "firstName": "Jack",
+      "lastName": "Driscoll",
       "credentials": [
         {
           "type": "password",
@@ -44,12 +44,12 @@
       ]
     },
     {
-      "username": "kira",
-      "email": "kira@example.com",
+      "username": "carl",
+      "email": "carl@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "Kira",
-      "lastName": "Kong",
+      "firstName": "Carl",
+      "lastName": "Denham",
       "credentials": [
         {
           "type": "password",

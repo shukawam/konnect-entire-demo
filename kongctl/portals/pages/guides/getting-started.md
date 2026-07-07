@@ -55,7 +55,7 @@ curl -X POST http://localhost:8000/api/users/register \
 ```bash
 curl -X POST http://localhost:8000/api/users/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123"}'
+  -d '{"email":"jack@example.com","password":"password123"}'
 ```
 
 ::alert

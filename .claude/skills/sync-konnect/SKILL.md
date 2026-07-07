@@ -12,7 +12,7 @@ disable-model-invocation: true
 
 | 変更したファイル        | 反映コマンド                         | 対象                             |
 | ----------------------- | ------------------------------------ | -------------------------------- |
-| `config/kong/kong.yaml` | `mise run sync-konnect`（decK）      | Gateway の service/route/plugin  |
+| `config/kong/kong.yaml` | `mise run gateway:sync`（decK）      | Gateway の service/route/plugin  |
 | `kongctl/*.yaml`        | `cd kongctl && kongctl sync konnect` | API、Portal、Event Gateway、Team |
 
 ## 手順（Gateway 設定: kong.yaml）

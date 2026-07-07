@@ -44,9 +44,9 @@ docker compose ps
 
 デモユーザー情報:
 
-| 名前                 | メール              | パスワード    | API Key         |
-| -------------------- | ------------------- | ------------- | --------------- |
-| ゴリラ太郎           | `user@example.com`  | `password123` | `demo-api-key`  |
-| シルバーバック管理者 | `admin@example.com` | `password123` | `admin-api-key` |
+| 名前          | メール             | パスワード    | API Key         |
+| ------------- | ------------------ | ------------- | --------------- |
+| Jack Driscoll | `jack@example.com` | `password123` | `demo-api-key`  |
+| Carl Denham   | `carl@example.com` | `password123` | `admin-api-key` |
 
 詳しい起動手順は [はじめに](../getting-started.md) を参照してください。
