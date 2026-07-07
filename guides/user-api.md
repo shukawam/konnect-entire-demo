@@ -53,7 +53,7 @@ curl -X POST http://localhost:8000/api/users/register \
 curl -X POST http://localhost:8000/api/users/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "user@example.com",
+    "email": "jack@example.com",
     "password": "password123"
   }'
 ```
@@ -63,8 +63,8 @@ curl -X POST http://localhost:8000/api/users/login \
 ```json
 {
   "id": "clx...",
-  "email": "user@example.com",
-  "name": "ゴリラ太郎",
+  "email": "jack@example.com",
+  "name": "Jack Driscoll",
   "apiKey": "demo-api-key"
 }
 ```
@@ -83,8 +83,8 @@ curl http://localhost:8000/api/users/me \
 ```json
 {
   "id": "clx...",
-  "email": "user@example.com",
-  "name": "ゴリラ太郎",
+  "email": "jack@example.com",
+  "name": "Jack Driscoll",
   "createdAt": "2025-01-01T00:00:00.000Z",
   "updatedAt": "2025-01-01T00:00:00.000Z"
 }

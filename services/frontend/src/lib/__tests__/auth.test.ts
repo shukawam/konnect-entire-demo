@@ -19,7 +19,7 @@ describe('useAuthUser', () => {
   it('認証済みセッションからユーザーを返す', () => {
     mockedUseSession.mockReturnValue({
       data: {
-        user: { id: 'kc-sub-123', email: 'user@example.com', name: 'ゴリラ太郎' },
+        user: { id: 'kc-sub-123', email: 'jack@example.com', name: 'Jack Driscoll' },
         expires: '2999-01-01',
       },
       status: 'authenticated',
@@ -27,7 +27,7 @@ describe('useAuthUser', () => {
 
     const { user, status } = useAuthUser()
     expect(status).toBe('authenticated')
-    expect(user).toEqual({ id: 'kc-sub-123', email: 'user@example.com', name: 'ゴリラ太郎' })
+    expect(user).toEqual({ id: 'kc-sub-123', email: 'jack@example.com', name: 'Jack Driscoll' })
   })
 
   it('未認証の場合は user が null', () => {
@@ -44,7 +44,7 @@ describe('useAuthUser', () => {
   it('リフレッシュ失敗(error)のセッションは未認証扱いで user を返さない', () => {
     mockedUseSession.mockReturnValue({
       data: {
-        user: { id: 'kc-sub-123', email: 'user@example.com', name: 'ゴリラ太郎' },
+        user: { id: 'kc-sub-123', email: 'jack@example.com', name: 'Jack Driscoll' },
         error: 'RefreshTokenError',
         expires: '2999-01-01',
       },

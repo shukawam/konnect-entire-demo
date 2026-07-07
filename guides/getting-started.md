@@ -59,10 +59,10 @@ docker compose down -v
 
 起動時に以下のユーザーが自動作成されます。
 
-| 名前                 | メール              | パスワード    | API Key         |
-| -------------------- | ------------------- | ------------- | --------------- |
-| ゴリラ太郎           | `user@example.com`  | `password123` | `demo-api-key`  |
-| シルバーバック管理者 | `admin@example.com` | `password123` | `admin-api-key` |
+| 名前          | メール             | パスワード    | API Key         |
+| ------------- | ------------------ | ------------- | --------------- |
+| Jack Driscoll | `jack@example.com` | `password123` | `demo-api-key`  |
+| Carl Denham   | `carl@example.com` | `password123` | `admin-api-key` |
 
 ---
 
@@ -86,7 +86,7 @@ docker compose down -v
 ### 1. ブラウザで EC サイトを操作
 
 1. http://localhost:3000 を開く
-2. **ログイン** → `user@example.com` / `password123`
+2. **ログイン** → `jack@example.com` / `password123`
 3. 商品一覧からカテゴリを選んで閲覧
 4. 「カートに追加」で商品をカートに入れる
 5. カートページで数量調整
@@ -113,7 +113,7 @@ curl -X POST http://localhost:8000/api/users/register \
 # ログイン
 curl -X POST http://localhost:8000/api/users/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123"}'
+  -d '{"email":"jack@example.com","password":"password123"}'
 
 # カートに商品追加（API Key 認証 + X-User-Id 必須）
 curl -X POST http://localhost:8000/api/carts/items \
