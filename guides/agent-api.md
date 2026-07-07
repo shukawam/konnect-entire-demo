@@ -16,59 +16,53 @@ Base URL: `http://localhost:8000/api/agent`
 
 ## エンドポイント一覧
 
-| メソッド | パス                     | 概要           |
-| -------- | ------------------------ | -------------- |
-| POST     | `/api/agent/chat`        | AI チャット    |
-| GET      | `/api/agent/suggestions` | サジェスト取得 |
+| メソッド | パス                                 | 概要                                                |
+| -------- | ------------------------------------ | --------------------------------------------------- |
+| POST     | `/ai/agent-chat/v1/chat/completions` | AI チャット（OpenAI 互換・Kong 境界キャッシュ経由） |
+| GET      | `/api/agent/suggestions`             | サジェスト取得                                      |
 
 ## AI チャット
 
-### 単一プロンプトで送信
+チャットは Kong の OpenAI 互換境界ルート `POST http://localhost:8000/ai/agent-chat/v1/chat/completions` 経由で行います。このルートは Kong の `ai-proxy-advanced`（upstream: agent-service）と `ai-semantic-cache` で保護されており、意味的に類似した質問はキャッシュされます（詳細は `guides/demos/demo-scenario-ai-gateway.md` 参照）。
+
+### リクエスト送信
 
 ```bash
-curl -X POST http://localhost:8000/api/agent/chat \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "おすすめの商品を教えてください"}'
-```
-
-### 会話履歴付きで送信
-
-```bash
-curl -X POST http://localhost:8000/api/agent/chat \
+curl -X POST http://localhost:8000/ai/agent-chat/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
+    "model": "gpt-4o-mini",
     "messages": [
-      {"role": "user", "content": "Tシャツはありますか？"},
-      {"role": "assistant", "content": "はい、ゴリラTシャツがございます。"},
-      {"role": "user", "content": "それをカートに入れてください"}
+      {"role": "user", "content": "おすすめの商品を教えてください"}
     ]
   }'
 ```
 
 ### リクエストボディ
 
-`prompt` または `messages` のいずれかが必須です。
+OpenAI の chat-completions 形式に従います。
 
-| フィールド | 型     | 必須 | 説明                           |
-| ---------- | ------ | ---- | ------------------------------ |
-| `prompt`   | string | \*   | 単一のプロンプト               |
-| `messages` | array  | \*   | 会話履歴（`role` + `content`） |
+| フィールド | 型     | 必須 | 説明                                  |
+| ---------- | ------ | ---- | ------------------------------------- |
+| `model`    | string | ○    | 使用するモデル名（例: `gpt-4o-mini`） |
+| `messages` | array  | ○    | 会話履歴（`role` + `content`）        |
 
 ### レスポンス例
 
+OpenAI の chat completion 形式で返却されます。回答本文は `choices[0].message.content` に入ります。
+
 ```json
 {
-  "response": "ゴリラストアには以下の商品がございます..."
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "ゴリラストアには以下の商品がございます..."
+      }
+    }
+  ]
 }
 ```
-
-### エラーケース
-
-| ステータス | 説明                                       |
-| ---------- | ------------------------------------------ |
-| 400        | `prompt` も `messages` も未指定            |
-| 503        | MCP サーバー（Kong Gateway）に接続できない |
-| 500        | 予期しないエラー                           |
 
 ## サジェスト取得
 
