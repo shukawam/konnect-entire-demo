@@ -56,4 +56,28 @@ describe('proxy route', () => {
     const [, options] = mockFetch.mock.calls[0]
     expect(options.headers['authorization']).toBeUndefined()
   })
+
+  it('upstream の content-length / content-encoding は転送しない（fetch が gzip を解凍済みのため）', async () => {
+    // Node の fetch は gzip を自動解凍するが、レスポンスヘッダには圧縮時の content-length と
+    // content-encoding が残る。これらをそのまま返すとブラウザが解凍後の本文を（小さい）
+    // content-length の位置で打ち切り、JSON が途中で壊れる（"Unterminated string in JSON"）。
+    // Kong の ai-semantic-cache ヒット時に固定 content-length + gzip で返るため顕在化する。
+    mockedAuth.mockResolvedValue(null as never)
+    mockFetch.mockResolvedValue(
+      new Response('{"object":"chat.completion","choices":[]}', {
+        status: 200,
+        headers: new Headers({
+          'content-type': 'application/json',
+          'content-encoding': 'gzip',
+          'content-length': '1724',
+        }),
+      }),
+    )
+
+    const res = await GET(makeRequest())
+
+    expect(res.headers.get('content-encoding')).toBeNull()
+    expect(res.headers.get('content-length')).toBeNull()
+    expect(res.headers.get('content-type')).toBe('application/json')
+  })
 })

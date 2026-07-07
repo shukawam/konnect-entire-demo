@@ -40,7 +40,12 @@ async function proxy(req: NextRequest) {
 
       const responseHeaders = new Headers()
       for (const [key, value] of res.headers.entries()) {
-        if (key === 'transfer-encoding' || key === 'content-encoding') continue
+        // fetch は gzip を自動解凍するため、圧縮時の content-encoding / content-length を
+        // そのまま返すとブラウザが解凍後の本文を（小さい）content-length で打ち切り JSON が壊れる
+        // （Kong ai-semantic-cache ヒット時に固定 content-length + gzip で返るため顕在化）。
+        // 本文長はプラットフォームに再計算させる。
+        if (key === 'transfer-encoding' || key === 'content-encoding' || key === 'content-length')
+          continue
         responseHeaders.set(key, value)
       }
 
