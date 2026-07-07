@@ -10,8 +10,8 @@ export interface ChatMessage {
  * その質問だけを問い合わせる用途のため、直前の会話文脈に引きずられない方が結果が安定する。
  * 手入力メッセージは履歴を含めてマルチターンの文脈を保つ（standalone=false）。
  *
- * 注: フロントの AI チャットは Agent 経由（/api/agent/chat → /ai/agent/v1）でキャッシュ非対象。
- * Kong の ai-semantic-cache は一問一答の /ai/v1（curl デモ経路）にのみ適用される。
+ * 注: フロントの AI チャットは Kong の境界ルート /ai/agent-chat/v1 経由で、
+ * ai-proxy-advanced(upstream=agent) + ai-semantic-cache により応答が Kong 層でキャッシュされる。
  */
 export function buildChatMessages(
   history: ChatMessage[],
@@ -19,4 +19,19 @@ export function buildChatMessages(
   standalone: boolean,
 ): ChatMessage[] {
   return standalone ? [userMessage] : [...history, userMessage]
+}
+
+/**
+ * Kong 境界ルート（/ai/agent-chat/v1）へ送る OpenAI 互換の chat completion リクエストを組み立てる。
+ * ai-semantic-cache のキャッシュキーはここで送る messages（＝ユーザー質問）に基づく。
+ */
+export function buildChatCompletionRequest(
+  history: ChatMessage[],
+  userMessage: ChatMessage,
+  standalone: boolean,
+): { model: string; messages: ChatMessage[] } {
+  return {
+    model: 'gpt-4o-mini',
+    messages: buildChatMessages(history, userMessage, standalone),
+  }
 }
