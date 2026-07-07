@@ -522,7 +522,9 @@ plugins:
           host: redis
           port: 6379
       cache_ttl: 300
-      cache_control: true # 将来のバイパス余地（Cache-Control: no-store）を残す
+      # 注: cache_control は付けない。AI 応答は常に no-cache を返すため cache_control: true にすると
+      # RFC7234 を尊重して毎回 X-Cache-Status: Bypass となりキャッシュが一切効かない（Kong 公式ドキュメント）。
+      # 既存 /ai/v1 の ai-semantic-cache も cache_control 未設定（＝既定 false・Cache-Control 無視）で意味キャッシュする。
       message_countback: 1 # 最後のユーザーメッセージのみを埋め込み対象にする
 
   # AI Prompt Decorator — System prompt injection (hidden from client)
