@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect } from 'react'
 import Markdown from 'react-markdown'
 import { apiFetch } from '@/lib/api'
-import { buildChatMessages, type ChatMessage } from '@/lib/chat'
+import { buildChatCompletionRequest, type ChatMessage } from '@/lib/chat'
 
 type Message = ChatMessage
 
-interface ChatResponse {
-  response: string
+interface ChatCompletionResponse {
+  choices: { message: { role: string; content: string } }[]
 }
 
 interface SuggestionsResponse {
@@ -67,13 +67,14 @@ export default function AskAIDialog() {
     setLoading(true)
 
     try {
-      const data = await apiFetch<ChatResponse>('/api/agent/chat', {
+      const data = await apiFetch<ChatCompletionResponse>('/ai/agent-chat/v1/chat/completions', {
         method: 'POST',
-        body: JSON.stringify({
-          messages: buildChatMessages(messages, userMessage, standalone),
-        }),
+        body: JSON.stringify(buildChatCompletionRequest(messages, userMessage, standalone)),
       })
-      setMessages([...newMessages, { role: 'assistant', content: data.response }])
+      const content =
+        data.choices?.[0]?.message?.content ??
+        '申し訳ありません。適切な回答を生成できませんでした。'
+      setMessages([...newMessages, { role: 'assistant', content }])
     } catch (error) {
       setMessages([
         ...newMessages,

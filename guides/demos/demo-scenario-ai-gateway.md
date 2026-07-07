@@ -18,18 +18,22 @@ Kong の AI Gateway 機能（AI Proxy、Prompt Guard、Semantic Cache、Prompt D
 ## AI Gateway アーキテクチャ
 
 ```sh
-[フロントエンド] ── /api/agent/chat ──> [Agent Service :3006]
-                                              │
-                                              ├── LLM 呼び出し（Agent は /ai/agent/v1 = キャッシュなし）
-                                              │   └──> [Kong Gateway] /ai/agent/v1
-                                              │             ├── ai-semantic-prompt-guard（入力検証）
-                                              │             ├── ai-prompt-decorator（キャラクター注入）
-                                              │             └── ai-proxy-advanced（OpenAI 転送）
-                                              │
-                                              └── MCP ツール呼び出し
-                                                  ├── /mcp/products → Catalog API
-                                                  ├── /mcp/carts    → Cart API
-                                                  └── /mcp/orders   → Order API
+[フロントエンド] ── /ai/agent-chat/v1 ──> [Kong Gateway] /ai/agent-chat/v1（境界・キャッシュあり）
+                                              ├── ai-semantic-cache（意味ベースの応答キャッシュ）
+                                              └── ai-proxy-advanced（upstream_url → Agent Service :3006 /v1/chat/completions）
+                                                        │
+                                                        [Agent Service :3006]
+                                                              │
+                                                              ├── LLM 呼び出し（Agent 内部は /ai/agent/v1 = キャッシュなし）
+                                                              │   └──> [Kong Gateway] /ai/agent/v1
+                                                              │             ├── ai-semantic-prompt-guard（入力検証）
+                                                              │             ├── ai-prompt-decorator（キャラクター注入）
+                                                              │             └── ai-proxy-advanced（OpenAI 転送）
+                                                              │
+                                                              └── MCP ツール呼び出し
+                                                                  ├── /mcp/products → Catalog API
+                                                                  ├── /mcp/carts    → Cart API
+                                                                  └── /mcp/orders   → Order API
 
 [curl / API クライアント] ── /ai/v1 ──> [Kong Gateway] /ai/v1（一問一答・キャッシュあり）
                                               ├── ai-semantic-prompt-guard（入力検証）
@@ -38,7 +42,12 @@ Kong の AI Gateway 機能（AI Proxy、Prompt Guard、Semantic Cache、Prompt D
                                               └── ai-proxy-advanced（OpenAI 転送）
 ```
 
-> Semantic Cache は一問一答向けの `/ai/v1`（curl デモ経路）にのみ適用する。Agent は複数回のやり取り（マルチターン）で会話するため、話題が関連する連続ターンが意味的に近く、キャッシュが古い応答を返して文脈を壊す。これを避けるため Agent は専用のキャッシュなし経路 `/ai/agent/v1` を使う。共有プラグイン（prompt-guard / prompt-decorator / proxy-advanced）はサービス単位で両経路に適用される。
+> Semantic Cache は 2 か所に適用する。① 一問一答向けの `/ai/v1`（curl デモ経路）。
+> ② エージェント経路は **入出力境界** `/ai/agent-chat/v1` に適用する。エージェントを OpenAI 互換
+> upstream に見立て、Kong が「ユーザー質問 in → 最終応答 out」だけを見るため、ツール定義や
+> system プロンプトがキャッシュキーに混入せず誤ヒットしない。エージェント内部の LLM 呼び出し
+> （`/ai/agent/v1`）自体はキャッシュしない。共有プラグイン（prompt-guard / prompt-decorator /
+> proxy-advanced）はサービス単位で `/ai/v1`・`/ai/agent/v1` に適用される。
 
 ---
 
@@ -204,13 +213,32 @@ curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8000/
 - アプリケーションコードを変更せず、Kong の設定だけで LLM コスト・レイテンシを削減
 - `ai-semantic-prompt-guard` と同じ Redis + Embeddings 基盤を流用（追加インフラ不要）
 
-### なぜ Agent チャットにはキャッシュを掛けないのか
+### エージェントのキャッシュは「入出力境界」で行う
 
-Semantic Cache は一問一答向けの `/ai/v1`（この curl 経路）にのみ適用し、Agent（`/ai/agent/v1`）にはあえて掛けていません。Agent はマルチターンで会話するため、話題が関連する連続ターン（例: 「注文履歴を確認したい」→ その後のやり取り）が意味的に近く、キャッシュが**古い応答を返して会話の文脈を壊す**ためです。
+かつては Agent 経路をキャッシュ対象外にしていた。エージェントの内部 LLM 呼び出しを直接
+キャッシュすると、各呼び出しに全質問共通の巨大コンテキスト（system プロンプト・ツール定義・
+ツール結果）が乗り、意味キャッシュがそれに支配されて誤ヒットするためである。
+
+そこでキャッシュの位置を内部 LLM 呼び出しから **エージェントの入出力境界**（`/ai/agent-chat/v1`）へ
+移した。エージェント自身を OpenAI 互換の upstream に見立て、境界ルートに `ai-proxy-advanced`
+（`upstream_url` をエージェントに向ける）と `ai-semantic-cache` を載せる。Kong が見るのは
+「ユーザー質問 → 最終応答」だけなので、キャッシュキーがクリーンになり誤ヒットが構造的に消える。
+アプリ側にキャッシュロジックを持たせず、Kong プラグインだけで実現している点がポイント。
+
+### 4-2. UI チャットでもキャッシュを体感する
+
+右下の ✨（Ask Gorilla）から「どんな商品がありますか？」を送信し、同じ/言い換えた質問を
+再送すると、2 回目はエージェントループ（複数の LLM/ツール呼び出し）を丸ごとスキップして
+高速に応答する。ブラウザの DevTools → Network で `/api/proxy/ai/agent-chat/v1/chat/completions`
+のレスポンスヘッダ `X-Cache-Status` が `Miss` → `Hit` に変わることを確認できる。
 
 ### ⚠️ 注意: キャッシュは全ユーザーで共有される
 
-`ai-semantic-cache` は `openai-route`（`/ai/v1`）を通る全リクエストで共有され、consumer 単位の分離を行っていません。そのため「私のカートの中身は？」のようなユーザー固有データを含む質問は、別ユーザーのキャッシュ応答が返る恐れがあり**デモ対象外**です（商品・一般的な質問で試してください）。本番では consumer 単位のキャッシュ分離や、ユーザー固有データを含む経路の除外が必要です。この共有問題も、Agent 経路をキャッシュ対象外にしている理由の一つです。
+`ai-semantic-cache` は `openai-route`（`/ai/v1`）を通る全リクエストで共有され、consumer 単位の分離を行っていません。そのため「私のカートの中身は？」のようなユーザー固有データを含む質問は、別ユーザーのキャッシュ応答が返る恐れがあり**デモ対象外**です（商品・一般的な質問で試してください）。本番では consumer 単位のキャッシュ分離や、ユーザー固有データを含む経路の除外が必要です。
+
+なお、エージェント境界ルート（`/ai/agent-chat/v1`）の `ai-semantic-cache` も同様に全ユーザー
+共有で、Kong プラグインには consumer/ユーザー単位のキャッシュ分離機能がない。UI チャットでも
+カート・注文などユーザー固有データを含む質問はデモ対象外とする（商品・一般的な質問で試すこと）。
 
 ---
 

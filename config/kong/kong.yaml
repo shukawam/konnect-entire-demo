@@ -248,6 +248,22 @@ services:
           - https
         strip_path: true
 
+  # openai-agent-boundary — エージェント I/O 境界の意味キャッシュ用（#22 後続）。
+  # エージェントを OpenAI 互換 upstream に見立て、この route に ai-proxy-advanced(upstream_url=agent)
+  # と ai-semantic-cache を載せる。Kong はここで「ユーザー質問 in → 最終応答 out」だけを見るため、
+  # ツール定義や system プロンプトがキャッシュキーに混入せず、内部 LLM 呼び出しの誤ヒットが起きない。
+  # url はプレースホルダ（実 upstream は ai-proxy-advanced の upstream_url が上書きする）。
+  - name: openai-agent-boundary
+    url: https://example.com
+    routes:
+      - name: openai-agent-boundary-route
+        paths:
+          - /ai/agent-chat/v1
+        protocols:
+          - http
+          - https
+        strip_path: true
+
   # MCP Proxy — Catalog API
   # MCP プロキシは ai-mcp-proxy プラグインの特殊ルーティング（strip_path + path 書き換え）を
   # 使用するため、upstream 経由ではなく直接 URL を指定する。
@@ -484,6 +500,33 @@ plugins:
           port: 6379
       cache_ttl: 300 # キャッシュ有効期限（秒）
 
+  # AI Semantic Cache（境界ルート専用）— エージェント I/O 境界でユーザー質問の応答をキャッシュ。
+  # embeddings / vectordb は /ai/v1 用と同じ redis + OpenAI 埋め込みを流用。
+  # 全ユーザー共有・consumer 分離なし（Kong プラグインの制約）。ユーザー固有質問はデモ対象外。
+  - name: ai-semantic-cache
+    route: openai-agent-boundary-route
+    config:
+      embeddings:
+        auth:
+          header_name: Authorization
+          header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+        model:
+          provider: openai
+          name: text-embedding-3-small
+      vectordb:
+        strategy: redis
+        distance_metric: cosine
+        dimensions: 1536
+        threshold: 0.2 # 言い換えヒットを見せるため緩め。0.1〜0.3 で調整
+        redis:
+          host: redis
+          port: 6379
+      cache_ttl: 300
+      # 注: cache_control は付けない。AI 応答は常に no-cache を返すため cache_control: true にすると
+      # RFC7234 を尊重して毎回 X-Cache-Status: Bypass となりキャッシュが一切効かない（Kong 公式ドキュメント）。
+      # 既存 /ai/v1 の ai-semantic-cache も cache_control 未設定（＝既定 false・Cache-Control 無視）で意味キャッシュする。
+      message_countback: 1 # 最後のユーザーメッセージのみを埋め込み対象にする
+
   # AI Prompt Decorator — System prompt injection (hidden from client)
   # サービス単位で付与し、両ルートで「ゴリ助」キャラクターを注入する。
   - name: ai-prompt-decorator
@@ -529,6 +572,27 @@ plugins:
               output_cost: 0.6 # per 1M tokens
           logging:
             log_payloads: true # デモ用。本番では false 推奨（PII 漏洩リスク）
+            log_statistics: true
+
+  # AI Proxy Advanced（境界ルート専用）— upstream をエージェントに向ける。
+  # ai-semantic-cache は AI Proxy / AI Proxy Advanced を前提とするため、境界ルートにも AIPA を置く。
+  # auth はエージェント upstream 側では不要だが、スキーマ整合と保険で OpenAI 用と同じ値を付ける
+  # （エージェントは Authorization を無視し、内部 LLM 呼び出しは /ai/agent/v1 経由で別途キーが注入される）。
+  - name: ai-proxy-advanced
+    route: openai-agent-boundary-route
+    config:
+      targets:
+        - route_type: llm/v1/chat
+          auth:
+            header_name: Authorization
+            header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+          model:
+            provider: openai
+            name: gpt-4o-mini
+            options:
+              upstream_url: http://agent-service:3006/v1/chat/completions
+          logging:
+            log_payloads: true
             log_statistics: true
 
   # MCP Proxy — Catalog tools
