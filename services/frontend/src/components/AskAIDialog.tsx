@@ -54,8 +54,8 @@ export default function AskAIDialog() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // standalone=true（サジェスト経由）は履歴を付けず質問単体を送り、連続クリックでも
-  // プロンプトが完全一致して Kong の ai-semantic-cache が Miss→Hit する。詳細は lib/chat.ts。
+  // standalone=true（サジェスト経由）は履歴を付けず質問単体を送る（会話文脈に引きずられない）。
+  // 詳細は lib/chat.ts。
   const sendMessage = async (text?: string, standalone = false) => {
     const content = text || input.trim()
     if (!content || loading) return

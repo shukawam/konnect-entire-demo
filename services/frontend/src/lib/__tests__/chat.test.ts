@@ -8,11 +8,11 @@ describe('buildChatMessages', () => {
   ]
   const userMessage: ChatMessage = { role: 'user', content: 'おすすめは？' }
 
-  it('standalone=true では履歴を付けず質問単体のみ送る（キャッシュヒットを狙う）', () => {
+  it('standalone=true では履歴を付けず質問単体のみ送る', () => {
     expect(buildChatMessages(history, userMessage, true)).toEqual([userMessage])
   })
 
-  it('standalone=true は連続クリックで同一ペイロードになる（プロンプト完全一致）', () => {
+  it('standalone=true は履歴の状態によらず同一ペイロードになる', () => {
     const first = buildChatMessages(history, userMessage, true)
     const second = buildChatMessages(
       [...history, userMessage, { role: 'assistant', content: '…' }],

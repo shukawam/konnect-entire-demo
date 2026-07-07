@@ -6,11 +6,12 @@ export interface ChatMessage {
 /**
  * agent-service に送るメッセージ配列を組み立てる。
  *
- * agent-service は受け取った messages を 1 つのプロンプト文字列に連結して LLM に渡すため、
- * 履歴を含めると同じ質問でもプロンプトが変化し Kong の ai-semantic-cache がヒットしない。
- * サジェスト（想定質問）は履歴を付けず質問単体で送り（standalone=true）、
- * 連続クリックでもプロンプトが完全一致して Miss→Hit を再現できるようにする。
- * 手入力メッセージは従来どおり履歴を含めてマルチターンの文脈を保つ（standalone=false）。
+ * サジェスト（想定質問）は履歴を付けず質問単体で送る（standalone=true）。ワンクリックで
+ * その質問だけを問い合わせる用途のため、直前の会話文脈に引きずられない方が結果が安定する。
+ * 手入力メッセージは履歴を含めてマルチターンの文脈を保つ（standalone=false）。
+ *
+ * 注: フロントの AI チャットは Agent 経由（/api/agent/chat → /ai/agent/v1）でキャッシュ非対象。
+ * Kong の ai-semantic-cache は一問一答の /ai/v1（curl デモ経路）にのみ適用される。
  */
 export function buildChatMessages(
   history: ChatMessage[],
