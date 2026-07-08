@@ -59,11 +59,13 @@ docker compose config -q                     # compose.yaml の構文検証
 ### Kong / Konnect への設定反映
 
 ```bash
+mise run gateway:diff              # config/kong/kong.yaml の適用前差分を表示（適用はしない）
 mise run gateway:sync              # config/kong/kong.yaml を decK で同期（CP: jungle-store-gateway）
-cd kongctl && kongctl sync konnect # API / Portal / Event Gateway 等の Konnect リソースを同期
+mise run konnect:diff              # kongctl/ の適用前差分を表示（適用はしない）
+mise run konnect:sync              # API / Portal / Event Gateway 等の Konnect リソースを同期（--auto-approve）
 ```
 
-いずれも外部環境を変更する操作。実行前に diff（`deck gateway diff` / `kongctl plan`）をユーザーに提示して承認を得ること。詳細は `/sync-konnect` スキル参照。
+いずれも sync は外部環境を変更する操作。実行前に対応する `diff` タスクの出力をユーザーに提示して承認を得ること。詳細は `/sync-konnect` スキル参照。
 
 ### 1コマンドセットアップ（`mise run setup`）
 

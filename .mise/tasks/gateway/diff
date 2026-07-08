@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#MISE description="deck で Gateway 設定の差分を表示（適用はしない）"
+set -euo pipefail
+source "$(git rev-parse --show-toplevel)/.mise/lib/common.sh"
+setup_konnect_pat
+# deck のテンプレート変数を .env から環境へ供給する（gateway:sync と同じ理由で自己完結させる）
+export DECK_KEYCLOAK_ISSUER="$(env_get DECK_KEYCLOAK_ISSUER)"
+export DECK_OPENAI_API_KEY="$(env_get DECK_OPENAI_API_KEY)"
+cp_name="$(env_get DECK_KONNECT_CONTROL_PLANE_NAME)"; cp_name="${cp_name:-jungle-store-gateway}"
+deck gateway diff "$REPO_ROOT/config/kong/kong.yaml" \
+  --konnect-control-plane-name "$cp_name"
