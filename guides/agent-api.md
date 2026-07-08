@@ -4,6 +4,8 @@ AI チャットエージェントの API です。Volcano Agent SDK を使用し
 
 Base URL: `http://localhost:8000/api/agent`
 
+> **認証（ログイン必須）**: `/api/agent/*` と `/ai/agent-chat/v1` は Keycloak SSO（OIDC/JWT）で保護されています。ブラウザ経路はフロントエンドの `/api/proxy` がログインセッションのアクセストークンを `Authorization: Bearer` として自動付与します。curl から呼ぶ場合は有効なアクセストークンを `Authorization: Bearer <access_token>` で渡してください（未認証は `401`）。cart/order 等の `/admin/api/*`（API キー）のような curl 用バイパス経路は agent には用意していません。
+
 ## アーキテクチャ
 
 ```
@@ -30,6 +32,7 @@ Base URL: `http://localhost:8000/api/agent`
 ```bash
 curl -X POST http://localhost:8000/ai/agent-chat/v1/chat/completions \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access_token>" \
   -d '{
     "model": "gpt-4o-mini",
     "messages": [
@@ -69,7 +72,8 @@ OpenAI の chat completion 形式で返却されます。回答本文は `choice
 ユーザーに表示する質問候補を返します。
 
 ```bash
-curl http://localhost:8000/api/agent/suggestions
+curl http://localhost:8000/api/agent/suggestions \
+  -H "Authorization: Bearer <access_token>"
 ```
 
 ### レスポンス例
