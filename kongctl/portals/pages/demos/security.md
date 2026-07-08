@@ -131,12 +131,20 @@ RateLimit-Remaining: 59
 RateLimit-Reset: 58
 ```
 
-### 2-2. サービス別レート制限（Order: 10 req/min）
+### 2-2. サービス別レート制限（Order: 10 req/min、ブラウザ経由のみ）
 
-Order Service にはより厳しい制限が設定されています。
+::alert
+---
+type: "warning"
+show-icon: true
+message: "Order Service 専用の 10 リクエスト/分制限は、ブラウザ経由の /api/orders（OIDC 認証）にのみ適用されます。curl 向けの /admin/api/orders はこの制限の対象外で、2-1 と同じグローバル制限（60 リクエスト/分）が適用されます。ブラウザでの体験は「EC サイト購買フロー」シナリオを参照してください。"
+---
+::
+
+curl から `/admin/api/orders` を連続で呼んでも、Order Service 専用の 10 req/min ではなく、2-1 のグローバル制限（60 req/min）のカウンターが消費されます（`/api/products/` と共有）。
 
 ```bash
-# 連続リクエストで制限を発動
+# 連続リクエスト（グローバル制限のカウンターを消費）
 for i in $(seq 1 12); do
   STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
     -X POST http://localhost:8000/admin/api/orders \
@@ -146,20 +154,23 @@ for i in $(seq 1 12); do
 done
 ```
 
-10回目以降は `429 Too Many Requests` が返ります。
+12回程度では 429 は発生しません（60回分のグローバル枠を共有しているため）。429 を再現するには 60 回を超えて呼び出す必要があります（2-3 参照）。
 
-### 2-3. 429 レスポンスの確認
+### 2-3. 429 レスポンスの確認（グローバル制限超過時）
 
 ```bash
-# レート制限超過時のレスポンス
-curl -i -X POST http://localhost:8000/admin/api/orders \
-  -H "Content-Type: application/json" \
-  -H "apikey: jungle-store-demo-admin-key"
+# 60回を超えて連続リクエストすると 429 が返る
+for i in $(seq 1 65); do
+  curl -s -o /dev/null -w "%{http_code}\n" \
+    -X POST http://localhost:8000/admin/api/orders \
+    -H "Content-Type: application/json" \
+    -H "apikey: jungle-store-demo-admin-key"
+done
 ```
 
 ```sh
 HTTP/1.1 429 Too Many Requests
-RateLimit-Limit: 10
+RateLimit-Limit: 60
 RateLimit-Remaining: 0
 RateLimit-Reset: 45
 
@@ -170,8 +181,9 @@ RateLimit-Reset: 45
 
 ### 解説ポイント
 
-- グローバル制限とサービス別制限の二段構え
-- 重要な API（注文作成）には厳しい制限を適用し、DDoS や不正利用を防止
+- curl 向けの `/admin/api/orders` にはグローバル制限（60 req/min）のみが適用される
+- Order Service 専用の追加 10 req/min 制限は、ブラウザ経由の `/api/orders`（OIDC 認証）にのみ適用され、`/admin/api/orders` には及ばない
+- 重要な API に追加のレート制限をかける場合は、ルート・サービス単位で設定を分ける必要がある
 - `RateLimit-*` ヘッダーでクライアントに制限情報を返却
 
 ---

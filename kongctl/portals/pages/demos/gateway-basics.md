@@ -108,12 +108,20 @@ HTTP/1.1 200 OK
 
 ## ステップ 3: レート制限
 
-Order Service には 10 リクエスト/分の厳しいレート制限が設定されています。
+::alert
+---
+type: "warning"
+show-icon: true
+message: "Order Service 専用の 10 リクエスト/分制限は、ブラウザ経由の /api/orders（OIDC 認証）にのみ適用されます。curl 向けの /admin/api/orders はこの制限の対象外で、グローバル制限（60 リクエスト/分）のみが適用されます。Order 専用制限をブラウザで体験する場合は「EC サイト購買フロー」シナリオを参照してください。"
+---
+::
 
-### 3-1. 連続リクエストで制限を発動させる
+### 3-1. 連続リクエストでグローバル制限を発動させる
+
+`/admin/api/orders` に適用されるのはグローバルレート制限（60 リクエスト/分）です。60 回を超えて連続リクエストすると 429 が返ります。
 
 ```bash
-for i in $(seq 1 15); do
+for i in $(seq 1 65); do
   echo -n "Request $i: "
   curl -s -o /dev/null -w "%{http_code}" \
     -X POST http://localhost:8000/admin/api/orders \
@@ -123,15 +131,15 @@ for i in $(seq 1 15); do
 done
 ```
 
-期待される出力（10回成功後に 429 が返る）:
+期待される出力（60回成功後に 429 が返る）:
 
 ```sh
 Request 1: 200
 Request 2: 200
 ...
-Request 10: 200
-Request 11: 429
-Request 12: 429
+Request 60: 200
+Request 61: 429
+Request 62: 429
 ...
 ```
 
@@ -139,7 +147,7 @@ Request 12: 429
 ---
 type: "warning"
 show-icon: true
-message: "カートに商品が入っていない場合は 400 が返りますが、レート制限の動作確認には影響しません。10回目以降に 429 に変わることがポイントです。"
+message: "カートに商品が入っていない場合は 400 が返りますが、レート制限の動作確認には影響しません。61回目以降に 429 に変わることがポイントです。"
 ---
 ::
 
@@ -154,15 +162,16 @@ curl -i -X POST http://localhost:8000/admin/api/orders \
 レスポンスヘッダーを確認:
 
 ```sh
-RateLimit-Limit: 10
-RateLimit-Remaining: 9
-RateLimit-Reset: 52
+RateLimit-Limit: 60
+RateLimit-Remaining: 59
+RateLimit-Reset: 58
 ```
 
 ### 解説ポイント
 
-- グローバルには 60 リクエスト/分、Order Service には追加で 10 リクエスト/分の制限
-- サービスごとに異なるレート制限ポリシーを適用可能
+- curl 向けの `/admin/api/orders` にはグローバル制限（60 リクエスト/分）のみが適用される
+- Order Service 専用の追加 10 リクエスト/分制限は、ブラウザ経由の `/api/orders`（OIDC 認証）にのみ適用され、`/admin/api/orders` には及ばない
+- サービス・ルートごとに異なるレート制限ポリシーを適用可能
 - `RateLimit-*` ヘッダーでクライアントが残りリクエスト数を把握できる
 - バックエンドサービスの過負荷防止に効果的
 
