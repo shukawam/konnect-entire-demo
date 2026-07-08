@@ -10,28 +10,25 @@ disable-model-invocation: true
 
 ## 対象の切り分け
 
-| 変更したファイル        | 反映コマンド                         | 対象                             |
-| ----------------------- | ------------------------------------ | -------------------------------- |
-| `config/kong/kong.yaml` | `mise run gateway:sync`（decK）      | Gateway の service/route/plugin  |
-| `kongctl/*.yaml`        | `cd kongctl && kongctl sync konnect` | API、Portal、Event Gateway、Team |
+| 変更したファイル        | diff タスク             | sync タスク                                          | 対象                             |
+| ----------------------- | ----------------------- | ---------------------------------------------------- | -------------------------------- |
+| `config/kong/kong.yaml` | `mise run gateway:diff` | `mise run gateway:sync`（decK）                      | Gateway の service/route/plugin  |
+| `kongctl/*.yaml`        | `mise run konnect:diff` | `mise run konnect:sync`（kongctl、`--auto-approve`） | API、Portal、Event Gateway、Team |
+
+diff タスクは読み取り専用（適用しない）。sync タスクと同じ認証・env 供給ロジック（`.mise/lib/common.sh` の `setup_konnect_pat` 等）を共有するため、素の `deck` / `kongctl` コマンドを直接叩くより確実。
 
 ## 手順（Gateway 設定: kong.yaml）
 
-1. 変更内容の diff を確認:
-
-   ```bash
-   deck gateway diff config/kong/kong.yaml \
-     --konnect-control-plane-name jungle-store-gateway
-   ```
-
+1. 変更内容の diff を確認: `mise run gateway:diff`
 2. diff をユーザーに提示し、適用の承認を得る。
 3. 承認後: `mise run gateway:sync`
 4. 反映確認: `/verify-stack` の手順 3（Kong 経由のリクエスト）で動作検証。
 
 ## 手順（Konnect リソース: kongctl/）
 
-1. `cd kongctl && kongctl plan konnect` で差分を確認（plan がない場合は sync の dry-run 相当の出力を確認）。
-2. ユーザー承認後: `kongctl sync konnect`
+1. 変更内容の diff を確認: `mise run konnect:diff`
+2. diff をユーザーに提示し、適用の承認を得る。
+3. 承認後: `mise run konnect:sync`（内部で `--auto-approve` を使うため、kongctl 自体の対話確認は出ない。承認は手順 2 で得ておくこと）
 
 ## 注意
 
