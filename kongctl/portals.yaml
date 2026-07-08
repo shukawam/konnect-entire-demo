@@ -37,14 +37,14 @@ portals:
         slug: 'apis'
         title: 'APIs'
         description: 'API Products available in this Developer Portal.'
-        visibility: 'private'
+        visibility: 'public'
         status: 'published'
         content: !file portals/pages/apis.md
       - ref: guides
         slug: 'guides'
         title: 'Guides'
         description: 'Guide for Developer Portal'
-        visibility: 'private'
+        visibility: 'public'
         status: 'published'
         content: !file portals/pages/guides/guides.md
         children:
