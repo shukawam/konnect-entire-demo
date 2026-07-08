@@ -34,7 +34,7 @@ type: "warning"
 
 ```bash
 # .env ファイル
-API_KEY=your_api_key_here
+API_KEY=jungle-store-demo-admin-key
 API_BASE_URL=http://localhost:8000
 ```
 
@@ -47,21 +47,20 @@ const apiKey = process.env.API_KEY;
 
 ```javascript
 // コードに直接記述しない
-const apiKey = "demo-api-key";
+const apiKey = "jungle-store-demo-admin-key";
 ```
 
 ### 認証ヘッダー
 
-Jungle Store APIでは2つのヘッダーが必要です：
+curl などの CLI からは `/admin/api/...` エンドポイントに対して `apikey` ヘッダーのみが必要です（`X-User-Id` は Kong が `curl-admin` として自動注入するため設定不要です）：
 
 ```bash
-# API Key認証（Cart, Order, Shipping API）
-curl http://localhost:8000/api/carts \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+# API Key認証（Cart, Order, Shipping, User の管理API）
+curl http://localhost:8000/admin/api/carts \
+  -H "apikey: jungle-store-demo-admin-key"
 ```
 
-> **注意:** Catalog API と User API は認証不要です。
+> **注意:** Catalog API は認証不要です。Cart/Order/Shipping/User APIは、ブラウザ経由は Keycloak SSO（OIDC）、CLI経由は `/admin/api/...` + API Keyが必要です。
 
 ---
 
@@ -77,11 +76,10 @@ curl http://localhost:8000/api/carts \
 
 ### ヘッダーの設定
 
-**必須ヘッダー（認証が必要なAPI）:**
+**必須ヘッダー（`/admin/api/...` を利用する場合）:**
 
 ```http
-apikey: your_api_key
-X-User-Id: your_user_id
+apikey: jungle-store-demo-admin-key
 Content-Type: application/json
 ```
 
@@ -90,6 +88,7 @@ Content-Type: application/json
 ```http
 X-Request-Id: unique-correlation-id
 X-Cache-Status: Miss|Hit (Catalog APIのみ)
+X-User-Id: curl-admin (/admin/api/... のみ)
 ```
 
 ---
@@ -132,11 +131,11 @@ JavaScriptの例：
 // 並行実行
 const [products, cart, orders] = await Promise.all([
   fetch('/api/products').then(r => r.json()),
-  fetch('/api/carts', {
-    headers: { 'apikey': API_KEY, 'X-User-Id': USER_ID }
+  fetch('/admin/api/carts', {
+    headers: { 'apikey': API_KEY }
   }).then(r => r.json()),
-  fetch('/api/orders', {
-    headers: { 'apikey': API_KEY, 'X-User-Id': USER_ID }
+  fetch('/admin/api/orders', {
+    headers: { 'apikey': API_KEY }
   }).then(r => r.json())
 ]);
 ```
@@ -196,7 +195,7 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
 **4xx Client Error**
 
 - **400 Bad Request**: 不正なリクエスト
-- **401 Unauthorized**: API Key未設定またはX-User-Id未設定
+- **401 Unauthorized**: API Key未設定または無効
 - **404 Not Found**: リソースが存在しない
 - **429 Too Many Requests**: レート制限
 
@@ -214,7 +213,6 @@ async function handleApiRequest(url, options = {}) {
       ...options,
       headers: {
         'apikey': process.env.API_KEY,
-        'X-User-Id': process.env.USER_ID,
         'Content-Type': 'application/json',
         ...options.headers,
       }
@@ -223,7 +221,7 @@ async function handleApiRequest(url, options = {}) {
     if (!response.ok) {
       switch (response.status) {
         case 401:
-          throw new Error('Unauthorized: Check apikey and X-User-Id headers');
+          throw new Error('Unauthorized: Check apikey header');
         case 404:
           throw new Error('Not Found');
         case 429:

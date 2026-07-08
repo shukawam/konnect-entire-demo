@@ -1,31 +1,31 @@
 # Order API
 
-注文の作成・一覧取得・詳細取得を行う API です。API Key 認証と `X-User-Id` ヘッダーが必要です。
+注文の作成・一覧取得・詳細取得を行う API です。curl は `/admin/api/orders` 経路に apikey を付けて呼び出します（X-User-Id は Kong が `curl-admin` として自動注入するため指定不要です）。
 Kong Gateway によるレートリミットが 10 リクエスト/分に設定されています。
 
-Base URL: `http://localhost:8000/api/orders`
+Base URL: `http://localhost:8000/admin/api/orders`
 
 ## 共通ヘッダー
 
-| ヘッダー    | 説明                           |
-| ----------- | ------------------------------ |
-| `apikey`    | API キー（例: `demo-api-key`） |
-| `X-User-Id` | ユーザー ID                    |
+| ヘッダー | 説明                                            |
+| -------- | ----------------------------------------------- |
+| `apikey` | API キー（既定: `jungle-store-demo-admin-key`） |
+
+curl 経由のリクエストは Kong の request-transformer によって `X-User-Id: curl-admin` が自動注入されるため、呼び出し側で指定する必要はありません。
 
 ## エンドポイント一覧
 
-| メソッド | パス               | 概要         |
-| -------- | ------------------ | ------------ |
-| GET      | `/api/orders/`     | 注文一覧取得 |
-| GET      | `/api/orders/{id}` | 注文詳細取得 |
-| POST     | `/api/orders/`     | 注文作成     |
+| メソッド | パス                     | 概要         |
+| -------- | ------------------------ | ------------ |
+| GET      | `/admin/api/orders/`     | 注文一覧取得 |
+| GET      | `/admin/api/orders/{id}` | 注文詳細取得 |
+| POST     | `/admin/api/orders/`     | 注文作成     |
 
 ## 注文一覧取得
 
 ```bash
-curl http://localhost:8000/api/orders/ \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: {userId}"
+curl http://localhost:8000/admin/api/orders/ \
+  -H "apikey: jungle-store-demo-admin-key"
 ```
 
 ### レスポンス例
@@ -54,9 +54,8 @@ curl http://localhost:8000/api/orders/ \
 ## 注文詳細取得
 
 ```bash
-curl http://localhost:8000/api/orders/{id} \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: {userId}"
+curl http://localhost:8000/admin/api/orders/{id} \
+  -H "apikey: jungle-store-demo-admin-key"
 ```
 
 他ユーザーの注文にアクセスすると `403` が返ります。
@@ -66,9 +65,8 @@ curl http://localhost:8000/api/orders/{id} \
 カートの内容から注文を作成します。リクエストボディは不要です。
 
 ```bash
-curl -X POST http://localhost:8000/api/orders/ \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: {userId}"
+curl -X POST http://localhost:8000/admin/api/orders/ \
+  -H "apikey: jungle-store-demo-admin-key"
 ```
 
 ### 処理フロー

@@ -105,33 +105,28 @@ curl http://localhost:8000/api/products
 # カテゴリ絞り込み
 curl "http://localhost:8000/api/products?category=バナナ"
 
-# カートに商品追加（API Key 認証 + X-User-Id 必須）
-curl -X POST http://localhost:8000/api/carts/items \
+# カートに商品追加（curl は /admin/api/... 経由。apikey 認証、X-User-Id は Kong が curl-admin として自動注入）
+curl -X POST http://localhost:8000/admin/api/carts/items \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001" \
+  -H "apikey: jungle-store-demo-admin-key" \
   -d '{"productId":"prod-001","quantity":2,"price":1980}'
 
 # カート確認
-curl http://localhost:8000/api/carts \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+curl http://localhost:8000/admin/api/carts \
+  -H "apikey: jungle-store-demo-admin-key"
 
 # 注文作成（カートの内容で注文 → Kafka → 発送自動作成）
-curl -X POST http://localhost:8000/api/orders \
+curl -X POST http://localhost:8000/admin/api/orders \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+  -H "apikey: jungle-store-demo-admin-key"
 
 # 注文一覧
-curl http://localhost:8000/api/orders \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+curl http://localhost:8000/admin/api/orders \
+  -H "apikey: jungle-store-demo-admin-key"
 
 # 発送情報（注文IDで検索）
-curl http://localhost:8000/api/shipments/order/<orderId> \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+curl http://localhost:8000/admin/api/shipments/order/<orderId> \
+  -H "apikey: jungle-store-demo-admin-key"
 ```
 
 ---
@@ -142,12 +137,11 @@ curl http://localhost:8000/api/shipments/order/<orderId> \
 
 ```bash
 # API Key なし → 401
-curl -i http://localhost:8000/api/carts
+curl -i http://localhost:8000/admin/api/carts
 
 # API Key あり → 200
-curl -i http://localhost:8000/api/carts \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+curl -i http://localhost:8000/admin/api/carts \
+  -H "apikey: jungle-store-demo-admin-key"
 ```
 
 ### Rate Limiting
@@ -157,10 +151,9 @@ curl -i http://localhost:8000/api/carts \
 # 連打して 429 Too Many Requests を確認
 for i in $(seq 1 15); do
   curl -s -o /dev/null -w "%{http_code}\n" \
-    -X POST http://localhost:8000/api/orders \
+    -X POST http://localhost:8000/admin/api/orders \
     -H "Content-Type: application/json" \
-    -H "apikey: demo-api-key" \
-    -H "X-User-Id: user-001"
+    -H "apikey: jungle-store-demo-admin-key"
 done
 ```
 
@@ -290,9 +283,9 @@ Browser (:3000)
                                      │                    ──> [Shipping :3004]
                                      │                    ──> [User     :3005]
                                      │
-                                     └── plugins: cors, rate-limiting, key-auth,
-                                         proxy-cache, correlation-id, opentelemetry,
-                                         file-log
+                                     └── plugins: cors, rate-limiting, openid-connect,
+                                         key-auth, proxy-cache, correlation-id,
+                                         opentelemetry, file-log
 
 [Order Service] ──publish──> [Kafka] ──consume──> [Shipping Service]
 [Shipping Svc]  ──publish──> [Kafka] ──consume──> [Order Service]
