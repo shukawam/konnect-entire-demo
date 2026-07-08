@@ -26,12 +26,6 @@ portals:
           primary: '#CCFF00'
       css: !file portals/theme.css
 
-    customization:
-      theme:
-        mode: dark
-        colors:
-          primary: '#CCFF00'
-
     pages:
       - ref: home
         slug: /
