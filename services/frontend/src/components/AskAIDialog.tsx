@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Markdown from 'react-markdown'
 import { apiFetch } from '@/lib/api'
 import { buildChatCompletionRequest, type ChatMessage } from '@/lib/chat'
+import { useAuthUser } from '@/lib/auth'
 
 type Message = ChatMessage
 
@@ -16,6 +17,7 @@ interface SuggestionsResponse {
 }
 
 export default function AskAIDialog() {
+  const { status } = useAuthUser()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -97,6 +99,10 @@ export default function AskAIDialog() {
       sendMessage()
     }
   }
+
+  // AI チャットはログイン必須。未認証（RefreshTokenError 含む）では FAB を出さない。
+  // バックエンド側も Kong の openid-connect で agent 系ルートを保護している（多層防御）。
+  if (status !== 'authenticated') return null
 
   return (
     <>

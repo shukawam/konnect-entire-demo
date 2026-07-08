@@ -420,6 +420,19 @@ plugins:
     service: user-service
     config: *oidc_config
 
+  # OpenID Connect on Agent（AI チャットはログイン必須。/api/agent/* を保護）
+  - name: openid-connect
+    service: agent-service
+    config: *oidc_config
+
+  # OpenID Connect on Agent chat boundary（/ai/agent-chat/v1 = フロントのチャット completion）
+  # ルート単位で付与する。openid-connect（access フェーズ）が受信 Bearer(Keycloak JWT) を
+  # 先に検証し、その後 ai-proxy-advanced が upstream（agent）向けに Authorization を
+  # OpenAI キーへ差し替える。/ai/v1（curl デモ）と /ai/agent/v1（内部）は無認証のまま。
+  - name: openid-connect
+    route: openai-agent-boundary-route
+    config: *oidc_config
+
   # Stricter Rate Limiting on Order
   - name: rate-limiting
     service: order-service
