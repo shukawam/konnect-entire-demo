@@ -17,6 +17,12 @@ portals:
     assets:
       logo: !file ./assets/logo.jpg
 
+    customization:
+      theme:
+        mode: dark
+        colors:
+          primary: '#CCFF00'
+
     pages:
       - ref: home
         slug: /
