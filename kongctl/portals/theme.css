@@ -1,0 +1,23 @@
+/* customization.theme.colors.primary をライム(#CCFF00)にした際の可読性補正。
+   k-button.primary 等の文字色は既定で白のままのため、明示的に黒系へ上書きする。
+   （buildai.konghq.com も同じ Kongponents を使っており、primary ボタンは黒文字。） */
+.k-button.primary,
+.k-button.primary:hover,
+.k-button.primary:focus,
+.k-button.primary:visited {
+  color: #000f06 !important;
+}
+
+.k-badge.primary,
+.k-pill.primary,
+.k-tag.primary {
+  color: #000f06 !important;
+}
+
+/* Hero のグリッド背景に primary ボタンが埋もれるため、外周に淡いライムの
+   グローを足してボタンを背景から浮き上がらせる。 */
+.page-hero .k-button.primary {
+  box-shadow:
+    0 0 0 1px rgba(0, 15, 6, 0.25),
+    0 6px 20px rgba(204, 255, 0, 0.45);
+}

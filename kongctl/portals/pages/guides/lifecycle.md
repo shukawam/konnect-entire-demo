@@ -23,6 +23,12 @@ message: "すべてのAPI変更は最低でも3ヶ月前に通知されます。
 ---
 ::
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## 📊 ライフサイクルステージ
@@ -81,6 +87,12 @@ title: "🔚 Sunset"
 **期間:** 廃止日まで最低3ヶ月
 ::
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## 🔢 バージョニング戦略
@@ -132,6 +144,12 @@ v{MAJOR}.{MINOR}.{PATCH}
 
 > 💡 **影響:** 透過的な改善のみ
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## 📅 変更通知プロセス
@@ -152,6 +170,12 @@ v{MAJOR}.{MINOR}.{PATCH}
 - **T-1ヶ月**: 最終リマインダーと移行状況の確認
 - **T-Day**: 旧バージョンの廃止
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## 🛠️ 非推奨APIの扱い方
@@ -180,6 +204,12 @@ if (response.headers.get('X-API-Deprecated')) {
 }
 ```
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## 📈 バージョン選択のガイドライン
@@ -192,31 +222,47 @@ if (response.headers.get('X-API-Deprecated')) {
 
 **現在の推奨バージョン:** v1.0.0
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## 💡 よくある質問
 
-::accordion-group
-  ::accordion-panel
-  #header
-  複数のメジャーバージョンを同時に使えますか？
-  #default
-  はい、可能です。アプリケーションの異なる部分で異なるバージョンを使用できます。ただし、移行を完了させることを推奨します。
-  ::
-  ::accordion-panel
-  #header
-  Betaバージョンを本番で使った場合はどうなりますか？
-  #default
-  動作しますが、予告なく変更される可能性があります。本番環境ではStableバージョンのみを使用してください。
-  ::
-  ::accordion-panel
-  #header
-  廃止予定日を過ぎたらどうなりますか？
-  #default
-  APIは引き続き動作する場合がありますが、保証されません。できるだけ早く移行してください。
-  ::
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--kui-space-70); margin-top: var(--kui-space-60);">
+
+::card
+---
+title: "複数のメジャーバージョンを同時に使えますか？"
+---
+はい、可能です。アプリケーションの異なる部分で異なるバージョンを使用できます。ただし、移行を完了させることを推奨します。
 ::
 
+::card
+---
+title: "Betaバージョンを本番で使った場合はどうなりますか？"
+---
+動作しますが、予告なく変更される可能性があります。本番環境ではStableバージョンのみを使用してください。
+::
+
+::card
+---
+title: "廃止予定日を過ぎたらどうなりますか？"
+---
+APIは引き続き動作する場合がありますが、保証されません。できるだけ早く移行してください。
+::
+
+</div>
+
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-60) var(--kui-space-50)"
 ---
 
 ::alert

@@ -16,12 +16,15 @@ portals:
 
     assets:
       logo: !file ./assets/logo.jpg
+      favicon: !file ./assets/favicon.png
 
     customization:
+      ref: jungle-store-dev-portal-customization
       theme:
         mode: dark
         colors:
           primary: '#CCFF00'
+      css: !file portals/theme.css
 
     pages:
       - ref: home
