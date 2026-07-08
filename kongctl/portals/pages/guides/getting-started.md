@@ -34,28 +34,17 @@ message: "所要時間: 約15分でAPIの呼び出しまで完了できます。
 
 ---
 
-## ステップ1: ユーザー登録
+## ステップ1: 認証方式の確認
 
-### 1.1 アカウント作成
+Jungle Store API には2つの認証経路があります。
 
-User API を使ってアカウントを作成します：
+- **ブラウザ経由（Webアプリ）**: Keycloak SSO によるログイン（OIDC）。フロントエンドがセッションからトークンを付与するため、利用者が直接 API Key を扱うことはありません。
+- **curl / CLI 経由**: `/admin/api/...` エンドポイントを使用し、事前に発行済みの固定 API Key で認証します。ユーザー登録は不要です。
 
-```bash
-curl -X POST http://localhost:8000/api/users/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"新しいゴリラ","email":"new@example.com","password":"password123"}'
+本ガイドでは、curl から試せる `/admin/api/...` 経路を使って進めます。
+
 ```
-
-レスポンスにユーザー情報と API Key が含まれます。
-
-### 1.2 デモユーザーでログイン
-
-事前に用意されたデモユーザーも利用できます：
-
-```bash
-curl -X POST http://localhost:8000/api/users/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"jack@example.com","password":"password123"}'
+apikey: jungle-store-demo-admin-key
 ```
 
 ::alert
@@ -102,14 +91,13 @@ curl "http://localhost:8000/api/products?category=バナナ"
 
 ### 2.3 認証が必要なAPIの呼び出し
 
-カート・注文・配送のAPIにはAPI Key認証が必要です：
+カート・注文・配送の管理API（`/admin/api/...`）にはAPI Key認証が必要です：
 
 ```bash
 # カートに商品追加
-curl -X POST http://localhost:8000/api/carts/items \
+curl -X POST http://localhost:8000/admin/api/carts/items \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001" \
+  -H "apikey: jungle-store-demo-admin-key" \
   -d '{"productId":"prod-001","quantity":2,"price":1980}'
 ```
 
@@ -134,22 +122,19 @@ HTTPステータスコードを確認：
 curl http://localhost:8000/api/products
 
 # 2. カートに商品を追加
-curl -X POST http://localhost:8000/api/carts/items \
+curl -X POST http://localhost:8000/admin/api/carts/items \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001" \
+  -H "apikey: jungle-store-demo-admin-key" \
   -d '{"productId":"prod-001","quantity":2,"price":1980}'
 
 # 3. 注文を作成（Kafka経由で配送が自動作成されます）
-curl -X POST http://localhost:8000/api/orders \
+curl -X POST http://localhost:8000/admin/api/orders \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+  -H "apikey: jungle-store-demo-admin-key"
 
 # 4. 注文ステータスを確認（数秒でPENDING→CONFIRMED→SHIPPEDに変化）
-curl http://localhost:8000/api/orders \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+curl http://localhost:8000/admin/api/orders \
+  -H "apikey: jungle-store-demo-admin-key"
 ```
 
 ### 3.2 エラーハンドリング
@@ -204,9 +189,8 @@ try {
   #header
   401 Unauthorized エラーが発生する
   #default
-  - API Keyが正しく設定されているか確認（ヘッダー名: `apikey`）
-  - `X-User-Id` ヘッダーが設定されているか確認
-  - デモユーザーの場合は `demo-api-key` を使用
+  - API Keyが正しく設定されているか確認（ヘッダー名: `apikey`、値: `jungle-store-demo-admin-key`）
+  - パスが `/admin/api/...` になっているか確認（ブラウザ経路の `/api/...` は Keycloak SSO の JWT が必要です）
   ::
   ::accordion-panel
   #header

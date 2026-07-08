@@ -92,18 +92,16 @@ docker compose exec kafka /opt/kafka/bin/kafka-topics.sh \
 ### 2-2. 注文を作成（curl）
 
 ```bash
-# カートに商品を追加
-curl -X POST http://localhost:8000/api/carts/items \
+# カートに商品を追加（curl は /admin/api/... 経由。apikey 認証、X-User-Id は Kong が curl-admin として自動注入）
+curl -X POST http://localhost:8000/admin/api/carts/items \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001" \
+  -H "apikey: jungle-store-demo-admin-key" \
   -d '{"productId":"prod-001","quantity":1,"price":1980}'
 
 # 注文確定
-curl -X POST http://localhost:8000/api/orders \
+curl -X POST http://localhost:8000/admin/api/orders \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+  -H "apikey: jungle-store-demo-admin-key"
 ```
 
 ---
@@ -121,7 +119,7 @@ curl -X POST http://localhost:8000/api/orders \
 ```json
 {
   "orderId": "clx1234...",
-  "userId": "user-001",
+  "userId": "curl-admin",
   "items": [
     {
       "productId": "prod-001",

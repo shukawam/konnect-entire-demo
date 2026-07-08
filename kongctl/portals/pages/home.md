@@ -163,10 +163,10 @@ title: "🚚 Shipping API"
 ---
 title: "👤 User API"
 ---
-ユーザー登録・ログイン機能を提供します。API Keyの自動生成に対応しています。
+ログイン中のユーザー自身の情報を取得します（`GET /api/users/me`）。
 
 **バージョン:** v1.0.0
-**認証:** 不要
+**認証:** OIDC（ブラウザ）/ API Key（`/admin/api/users`）
 
 [詳細を見る →](/apis)
 ::
@@ -199,17 +199,17 @@ padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 appearance: "info"
 show-icon:
-message: "はじめての方へ: APIを使い始めるには、まずユーザー登録を行い、API Keyを取得してください。"
+message: "はじめての方へ: ブラウザ経由は Keycloak SSO でログインします。curl などの CLI から試す場合は、事前に発行済みの API Key を使って /admin/api/... エンドポイントを呼び出してください。"
 ---
 ::
 
 ### 3ステップで始める
 
-1. **ユーザー登録**
-   User API の `/api/users/register` でアカウントを作成します。API Keyが自動発行されます。
+1. **API Keyを確認する**
+   curl などの CLI からは固定の API Key `jungle-store-demo-admin-key` を使用します（ユーザー登録は不要です）。
 
 2. **API Keyをヘッダーに設定**
-   `apikey: your-api-key` と `X-User-Id: your-user-id` をリクエストヘッダーに追加します。
+   `/admin/api/...` エンドポイントに対して `apikey: jungle-store-demo-admin-key` をリクエストヘッダーに追加します（`X-User-Id` は Kong が自動で注入するため設定不要です）。
 
 3. **APIを呼び出す**
    ドキュメントを参照して、最初のAPIリクエストを送信します。

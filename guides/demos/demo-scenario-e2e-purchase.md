@@ -48,8 +48,8 @@
 
 ### 解説ポイント
 
-- Cart Service は `key-auth` プラグインで保護されている
-- フロントエンドが API キーを `apikey` ヘッダーに自動付与している
+- ブラウザ経路（`/api/carts`）は `openid-connect`（OIDC/JWT）で保護されている
+- フロントエンド（`/api/proxy`）がログインセッションのアクセストークンを `Authorization: Bearer` として自動付与している（curl 向けの `apikey` 経路は `/admin/api/*`）
 
 ---
 
@@ -77,7 +77,7 @@
 [フロントエンド]
     │ POST /api/orders
     v
-[Kong Gateway] ── key-auth 認証 + rate-limiting チェック
+[Kong Gateway] ── openid-connect(OIDC/JWT) 認証 + rate-limiting チェック
     │
     v
 [Order Service]
@@ -143,29 +143,25 @@
 # 1. 商品一覧を取得
 curl -s http://localhost:8000/api/products/ | jq '.products[:3]'
 
-# 2. カートに商品を追加
-curl -X POST http://localhost:8000/api/carts/items \
+# 2. カートに商品を追加（curl は /admin/api/... 経由。apikey 認証、X-User-Id は Kong が curl-admin として自動注入）
+curl -X POST http://localhost:8000/admin/api/carts/items \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001" \
+  -H "apikey: jungle-store-demo-admin-key" \
   -d '{"productId":"prod-001","quantity":2,"price":1980}'
 
 # 3. カートの中身を確認
-curl -s http://localhost:8000/api/carts \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001" | jq
+curl -s http://localhost:8000/admin/api/carts \
+  -H "apikey: jungle-store-demo-admin-key" | jq
 
 # 4. 注文を確定
-curl -X POST http://localhost:8000/api/orders \
+curl -X POST http://localhost:8000/admin/api/orders \
   -H "Content-Type: application/json" \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001"
+  -H "apikey: jungle-store-demo-admin-key"
 
 # 5. 注文一覧を確認（数秒待ってからステータス変化を確認）
 sleep 10
-curl -s http://localhost:8000/api/orders \
-  -H "apikey: demo-api-key" \
-  -H "X-User-Id: user-001" | jq '.[0].status'
+curl -s http://localhost:8000/admin/api/orders \
+  -H "apikey: jungle-store-demo-admin-key" | jq '.[0].status'
 ```
 
 ---
