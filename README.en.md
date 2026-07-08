@@ -153,10 +153,10 @@ Each backend service auto-serves OAS 3.1.0 at `/openapi.json` (e.g., [http://loc
 The following demo users are bundled in `config/keycloak/realm-export.json` and auto-imported on
 startup (to rebuild the realm yourself, see [`config/keycloak/README.md`](config/keycloak/README.md)).
 
-| Name          | Email              | Password      |
-| ------------- | ------------------ | ------------- |
-| Jack Driscoll | `jack@example.com` | `password123` |
-| Carl Denham   | `carl@example.com` | `password123` |
+| Name          | Email              | Password   |
+| ------------- | ------------------ | ---------- |
+| Jack Driscoll | `jack@example.com` | `password` |
+| Carl Denham   | `carl@example.com` | `password` |
 
 After login, the `sub` claim of the access token (JWT) is passed to each service as `X-User-Id`.
 

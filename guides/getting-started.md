@@ -57,12 +57,12 @@ docker compose down -v
 
 ## デモユーザー
 
-起動時に以下のユーザーが自動作成されます。
+以下のデモユーザーが `config/keycloak/realm-export.json` に同梱されており、起動時に Keycloak へ自動インポートされます。ブラウザからの SSO ログインに使用します。
 
-| 名前          | メール             | パスワード    | API Key         |
-| ------------- | ------------------ | ------------- | --------------- |
-| Jack Driscoll | `jack@example.com` | `password123` | `demo-api-key`  |
-| Carl Denham   | `carl@example.com` | `password123` | `admin-api-key` |
+| 名前          | メール             | パスワード |
+| ------------- | ------------------ | ---------- |
+| Jack Driscoll | `jack@example.com` | `password` |
+| Carl Denham   | `carl@example.com` | `password` |
 
 ---
 
@@ -86,7 +86,7 @@ docker compose down -v
 ### 1. ブラウザで EC サイトを操作
 
 1. http://localhost:3000 を開く
-2. **ログイン** → `jack@example.com` / `password123`
+2. **ログイン** → `jack@example.com` / `password`
 3. 商品一覧からカテゴリを選んで閲覧
 4. 「カートに追加」で商品をカートに入れる
 5. カートページで数量調整
@@ -104,16 +104,6 @@ curl http://localhost:8000/api/products
 
 # カテゴリ絞り込み
 curl "http://localhost:8000/api/products?category=バナナ"
-
-# ユーザー登録
-curl -X POST http://localhost:8000/api/users/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"新しいゴリラ","email":"new@example.com","password":"password123"}'
-
-# ログイン
-curl -X POST http://localhost:8000/api/users/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"jack@example.com","password":"password123"}'
 
 # カートに商品追加（API Key 認証 + X-User-Id 必須）
 curl -X POST http://localhost:8000/api/carts/items \

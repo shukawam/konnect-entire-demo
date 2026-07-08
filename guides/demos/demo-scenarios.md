@@ -42,11 +42,11 @@ docker compose up -d --build
 docker compose ps
 ```
 
-デモユーザー情報:
+デモユーザー情報（`config/keycloak/realm-export.json` に同梱、SSO ログイン用）:
 
-| 名前          | メール             | パスワード    | API Key         |
-| ------------- | ------------------ | ------------- | --------------- |
-| Jack Driscoll | `jack@example.com` | `password123` | `demo-api-key`  |
-| Carl Denham   | `carl@example.com` | `password123` | `admin-api-key` |
+| 名前          | メール             | パスワード |
+| ------------- | ------------------ | ---------- |
+| Jack Driscoll | `jack@example.com` | `password` |
+| Carl Denham   | `carl@example.com` | `password` |
 
 詳しい起動手順は [はじめに](../getting-started.md) を参照してください。

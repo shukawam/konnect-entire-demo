@@ -172,10 +172,10 @@ docker compose down -v
 以下のデモユーザーが `config/keycloak/realm-export.json` に同梱済みで、起動時に自動インポートされます
 （自分で realm を作り直す場合の手順は [`config/keycloak/README.md`](config/keycloak/README.md) 参照）。
 
-| 名前          | メール             | パスワード    |
-| ------------- | ------------------ | ------------- |
-| Jack Driscoll | `jack@example.com` | `password123` |
-| Carl Denham   | `carl@example.com` | `password123` |
+| 名前          | メール             | パスワード |
+| ------------- | ------------------ | ---------- |
+| Jack Driscoll | `jack@example.com` | `password` |
+| Carl Denham   | `carl@example.com` | `password` |
 
 ログイン後はアクセストークン(JWT)の `sub` クレームが `X-User-Id` として各サービスへ渡ります。
 

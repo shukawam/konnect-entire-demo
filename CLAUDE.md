@@ -201,7 +201,7 @@ services/<名前>/src/
 
 ## デモデータ
 
-- **ユーザー:** Keycloak の realm 側で作成・管理する（`config/keycloak/README.md` 参照。例: `jack@example.com` / `password123`、`carl@example.com` / `password123`）。ログイン後はトークンの `sub` が `X-User-Id` として各サービスへ渡る。
+- **ユーザー:** Keycloak の realm 側で作成・管理する（`config/keycloak/README.md` 参照。例: `jack@example.com` / `password`、`carl@example.com` / `password`）。ログイン後はトークンの `sub` が `X-User-Id` として各サービスへ渡る。
 - **商品:** ゴリラテーマの12商品が自動シード
 
 ## ポート一覧
