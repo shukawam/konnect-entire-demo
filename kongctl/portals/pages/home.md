@@ -7,11 +7,16 @@ page-layout:
 
 ::page-hero
 ---
-title-color: "var(--kui-color-text-inverse)"
-description-color: "rgba(255, 255, 255, 0.9)"
-background: "linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%)"
+title-color: "rgba(255, 255, 255, 0.98)"
+description-color: "rgba(255, 255, 255, 0.85)"
+background: >-
+  repeating-linear-gradient(0deg, rgba(204, 255, 0, 0.035) 0px, rgba(204, 255, 0, 0.035) 1px, transparent 1px, transparent 32px),
+  repeating-linear-gradient(90deg, rgba(204, 255, 0, 0.035) 0px, rgba(204, 255, 0, 0.035) 1px, transparent 1px, transparent 32px),
+  radial-gradient(ellipse 900px 500px at 15% 0%, rgba(204, 255, 0, 0.10) 0%, transparent 65%),
+  radial-gradient(ellipse 500px 260px at 50% 88%, rgba(0, 0, 0, 0.55) 0%, transparent 70%),
+  linear-gradient(135deg, #000000 0%, #000f06 100%)
 border-radius: "24px"
-padding: "clamp(40px, 6vw, 80px) clamp(30px, 5vw, 60px)"
+padding: "clamp(40px, 6vw, 80px) var(--kui-space-50)"
 text-align: "center"
 vertical-align: "center"
 title-tag: "h1"
@@ -24,7 +29,7 @@ description-font-weight: "400"
 margin: "0 0 var(--kui-space-80) 0"
 styles: |
   .page-hero {
-    box-shadow: 0 20px 60px rgba(46, 125, 50, 0.3);
+    box-shadow: 0 20px 60px rgba(204, 255, 0, 0.12), inset 0 0 0 1px rgba(204, 255, 0, 0.18);
   }
 ---
 

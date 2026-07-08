@@ -23,6 +23,12 @@ message: "所要時間: 約15分でAPIの呼び出しまで完了できます。
 ---
 ::
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## 📋 前提条件
@@ -32,6 +38,12 @@ message: "所要時間: 約15分でAPIの呼び出しまで完了できます。
 - **HTTPクライアント** - curl、httpie、Insomnia、または任意のHTTPクライアント
 - **基本的な知識** - REST API、HTTP、JSONの基礎知識
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## ステップ1: 認証方式の確認
@@ -56,6 +68,12 @@ message: "API Keyは安全に保管してください。決してクライアン
 ---
 ::
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## ステップ2: 最初のAPIリクエスト
@@ -109,6 +127,12 @@ HTTPステータスコードを確認：
 - **401 Unauthorized**: API Keyが無効または未設定
 - **429 Too Many Requests**: レート制限に到達
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## ステップ3: 注文フロー
@@ -157,6 +181,12 @@ try {
 }
 ```
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## ステップ4: ベストプラクティス
@@ -178,38 +208,54 @@ try {
 - **X-Request-Id**: すべてのリクエストに自動付与される相関ID
 - **分散トレーシング**: Grafana (http://localhost:3010) でリクエストフローを可視化
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## 🆘 トラブルシューティング
 
 ### よくある問題
 
-::accordion-group
-  ::accordion-panel
-  #header
-  401 Unauthorized エラーが発生する
-  #default
-  - API Keyが正しく設定されているか確認（ヘッダー名: `apikey`、値: `jungle-store-demo-admin-key`）
-  - パスが `/admin/api/...` になっているか確認（ブラウザ経路の `/api/...` は Keycloak SSO の JWT が必要です）
-  ::
-  ::accordion-panel
-  #header
-  429 Too Many Requests エラーが発生する
-  #default
-  - Order API: 10リクエスト/分の制限
-  - グローバル: 60リクエスト/分の制限
-  - `X-RateLimit-Remaining` ヘッダーで残りを確認
-  ::
-  ::accordion-panel
-  #header
-  注文ステータスが変わらない
-  #default
-  - Kafka が正常に起動しているか確認: `docker compose logs kafka`
-  - Shipping Service のログを確認: `docker compose logs shipping-service`
-  - 数秒待ってから再度ステータスを確認
-  ::
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--kui-space-70); margin-top: var(--kui-space-60);">
+
+::card
+---
+title: "401 Unauthorized エラーが発生する"
+---
+- API Keyが正しく設定されているか確認（ヘッダー名: `apikey`、値: `jungle-store-demo-admin-key`）
+- パスが `/admin/api/...` になっているか確認（ブラウザ経路の `/api/...` は Keycloak SSO の JWT が必要です）
 ::
 
+::card
+---
+title: "429 Too Many Requests エラーが発生する"
+---
+- Order API: 10リクエスト/分の制限
+- グローバル: 60リクエスト/分の制限
+- `X-RateLimit-Remaining` ヘッダーで残りを確認
+::
+
+::card
+---
+title: "注文ステータスが変わらない"
+---
+- Kafka が正常に起動しているか確認: `docker compose logs kafka`
+- Shipping Service のログを確認: `docker compose logs shipping-service`
+- 数秒待ってから再度ステータスを確認
+::
+
+</div>
+
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-80) var(--kui-space-50)"
 ---
 
 ## 📚 次のステップ
@@ -247,6 +293,12 @@ title: "📋 利用規約"
 
 </div>
 
+::
+
+::page-section
+---
+full-width: false
+padding: "var(--kui-space-60) var(--kui-space-50)"
 ---
 
 ::snippet
