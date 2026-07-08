@@ -26,6 +26,12 @@ portals:
           primary: '#CCFF00'
       css: !file portals/theme.css
 
+    customization:
+      theme:
+        mode: dark
+        colors:
+          primary: '#CCFF00'
+
     pages:
       - ref: home
         slug: /
@@ -76,6 +82,56 @@ portals:
             visibility: 'public'
             status: 'published'
             content: !file portals/pages/guides/regulation.md
+      - ref: demos
+        slug: 'demos'
+        title: 'デモ実施者ガイド'
+        description: 'Kong Konnect デモシナリオ集'
+        visibility: 'public'
+        status: 'published'
+        content: !file portals/pages/demos/demos.md
+        children:
+          - ref: demos-gateway-basics
+            slug: 'gateway-basics'
+            title: 'API Gateway の基本機能'
+            description: 'プロキシキャッシュ、API キー認証、レート制限、Correlation ID、CORS を curl で体験'
+            visibility: 'public'
+            status: 'published'
+            content: !file portals/pages/demos/gateway-basics.md
+          - ref: demos-e2e-purchase
+            slug: 'e2e-purchase'
+            title: 'EC サイト購買フロー'
+            description: '商品閲覧からカート追加、注文確定、配送ステータス自動更新までのエンドツーエンド体験'
+            visibility: 'public'
+            status: 'published'
+            content: !file portals/pages/demos/e2e-purchase.md
+          - ref: demos-observability
+            slug: 'observability'
+            title: '分散トレーシング & オブザーバビリティ'
+            description: 'Tempo・Loki・Prometheus・Grafana による統合監視を体験'
+            visibility: 'public'
+            status: 'published'
+            content: !file portals/pages/demos/observability.md
+          - ref: demos-ai-gateway
+            slug: 'ai-gateway'
+            title: 'AI Gateway & MCP'
+            description: 'AI Proxy、Prompt Guard、Semantic Cache、Prompt Decorator、MCP を体験'
+            visibility: 'public'
+            status: 'published'
+            content: !file portals/pages/demos/ai-gateway.md
+          - ref: demos-event-driven
+            slug: 'event-driven'
+            title: 'イベント駆動アーキテクチャ'
+            description: 'Kafka と Kong Event Gateway による非同期処理フローと ACL 制御を体験'
+            visibility: 'public'
+            status: 'published'
+            content: !file portals/pages/demos/event-driven.md
+          - ref: demos-security
+            slug: 'security'
+            title: 'セキュリティ多層防御'
+            description: '認証、レート制限、CORS、AI プロンプトガード、Correlation ID を体験'
+            visibility: 'public'
+            status: 'published'
+            content: !file portals/pages/demos/security.md
 
     snippets:
       - ref: page-nav

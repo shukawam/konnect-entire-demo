@@ -1,6 +1,6 @@
 ---
 title: page-nav
-description: "A snippet to display the page navigation starting with the /apis and /guides page."
+description: "A snippet to display the page navigation starting with the /apis, /guides, and /demos page."
 ---
 
 ::page-navigation
@@ -16,6 +16,15 @@ max-depth: 2
 ---
 href: "/guides"
 header: "利用者ガイド"
+max-depth: 2
+---
+::
+
+
+::page-navigation
+---
+href: "/demos"
+header: "デモ実施者ガイド"
 max-depth: 2
 ---
 ::
