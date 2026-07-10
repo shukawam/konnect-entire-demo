@@ -122,7 +122,7 @@ RESOURCE_PREFIX=e2e mise run teardown  # cleanup (delete Konnect resources + com
 To control Konnect resource creation/sync yourself, or to operate an already-running stack, use these commands (for the Konnect / Gateway sync steps, see the "Applying config to Kong / Konnect" section in [CLAUDE.md](CLAUDE.md)).
 
 ```bash
-# Start all services (default pulls the published GHCR image, so it's fast; pass --build to build from source)
+# Start all services (default pulls the published GHCR image, so it's fast; before the first release exists, or during development, pass --build to build from source)
 docker compose up -d
 
 # Check status
@@ -407,7 +407,9 @@ Changes under each service's `src/` are auto-synced to containers. Changes to `p
 
 ### Container Images / Release Process
 
-`docker compose up -d` (without `--build`) pulls the published image from GHCR (`ghcr.io/shukawam/konnect-entire-demo-<service>`) by default. To pin a specific version, set `IMAGE_TAG=vX.Y.Z` in `.env`.
+`docker compose up -d` (without `--build`) pulls the published image from GHCR (`ghcr.io/shukawam/konnect-entire-demo-<service>`) by default. To pin a specific version, set `IMAGE_TAG=vX.Y.Z` in `.env`. If a local image with the same tag already exists, it is not automatically re-pulled — run `docker compose pull` to refresh it.
+
+> **Note:** Until the first release is published, no image exists in GHCR yet, so `docker compose up -d` (without `--build`) will fail to pull. Use `docker compose up -d --build` until then.
 
 To release a new version:
 

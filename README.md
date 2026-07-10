@@ -141,7 +141,7 @@ RESOURCE_PREFIX=e2e mise run teardown  # 後始末（Konnect リソース削除 
 Konnect リソースの作成・同期を自分でコントロールしたい場合、または起動済みのスタックを個別に操作したい場合は次のコマンドを使います（Konnect / Gateway の同期手順は [CLAUDE.md](CLAUDE.md) の「Kong / Konnect への設定反映」節を参照）。
 
 ```bash
-# 全サービス起動（デフォルトは GHCR の公開イメージを pull するだけなので高速。ソースからビルドしたい場合は --build を付ける）
+# 全サービス起動（デフォルトは GHCR の公開イメージを pull するだけなので高速。初回リリース前や開発時など、GHCR にイメージが無い/ソースからビルドしたい場合は --build を付ける）
 docker compose up -d
 
 # ステータス確認
@@ -425,7 +425,9 @@ docker compose watch
 
 ### コンテナイメージ / リリース手順
 
-`docker compose up -d`（`--build` なし）はデフォルトで GHCR（`ghcr.io/shukawam/konnect-entire-demo-<service>`）の公開イメージを pull して起動する。特定バージョンに固定したい場合は `.env` に `IMAGE_TAG=vX.Y.Z` を設定する。
+`docker compose up -d`（`--build` なし）はデフォルトで GHCR（`ghcr.io/shukawam/konnect-entire-demo-<service>`）の公開イメージを pull して起動する。特定バージョンに固定したい場合は `.env` に `IMAGE_TAG=vX.Y.Z` を設定する。同じタグのイメージが既にローカルにある場合は自動では再 pull されないため、更新したい場合は `docker compose pull` を実行する。
+
+> **注意:** 初回リリースが publish されるまでは GHCR にイメージが存在しないため、`docker compose up -d`（`--build` なし）は pull に失敗する。それまでは `docker compose up -d --build` を使うこと。
 
 新しいバージョンをリリースする手順:
 
