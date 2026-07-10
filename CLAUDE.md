@@ -179,6 +179,7 @@ services/<名前>/src/
 - `create-pr` — 実装完了からの PR 作成フロー（検証 → code-reviewer レビュー → セマンティックコミット → gh pr create）
 - `verify-stack` — スタック全体のスモークテスト（ヘルスチェック、Kong プラグイン、Kafka フロー）
 - `sync-konnect` — Konnect への設定反映（ユーザー実行専用。diff → 承認 → sync）
+- `release` — GitHub リリース作成（バージョン確認 → CI 健全性確認 → タグ + Release 作成）
 - `kongctl-declarative` / `kongctl-extension-builder` — kongctl CLI が配布する公式スキル（実体は `.claude/skills/` 配下、`.agents/skills/` からシンボリックリンク。kongctl での再インストール時は配置先に注意）
 
 ### サブエージェント（.claude/agents/）
