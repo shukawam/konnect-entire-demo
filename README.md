@@ -141,8 +141,8 @@ RESOURCE_PREFIX=e2e mise run teardown  # 後始末（Konnect リソース削除 
 Konnect リソースの作成・同期を自分でコントロールしたい場合、または起動済みのスタックを個別に操作したい場合は次のコマンドを使います（Konnect / Gateway の同期手順は [CLAUDE.md](CLAUDE.md) の「Kong / Konnect への設定反映」節を参照）。
 
 ```bash
-# 全サービス起動（初回はビルドに数分かかります）
-docker compose up -d --build
+# 全サービス起動（デフォルトは GHCR の公開イメージを pull するだけなので高速。ソースからビルドしたい場合は --build を付ける）
+docker compose up -d
 
 # ステータス確認
 docker compose ps
@@ -422,6 +422,17 @@ docker compose watch
 ```
 
 各サービスの `src/` 配下の変更はコンテナへ自動同期され、`package.json` や `prisma/schema.prisma` の変更時は自動リビルドされます。
+
+### コンテナイメージ / リリース手順
+
+`docker compose up -d`（`--build` なし）はデフォルトで GHCR（`ghcr.io/shukawam/konnect-entire-demo-<service>`）の公開イメージを pull して起動する。特定バージョンに固定したい場合は `.env` に `IMAGE_TAG=vX.Y.Z` を設定する。
+
+新しいバージョンをリリースする手順:
+
+1. `compose.yaml` の各アプリサービスの `image:` デフォルトタグ（`${IMAGE_TAG:-vX.Y.Z}`）を新しいバージョンにバンプする PR を作成・マージする
+2. マージ後のコミットに対して GitHub Release を作成し、1 でバンプした値と同じ `vX.Y.Z` タグを付けて publish する
+3. `.github/workflows/release.yml` が起動し、7 サービスのイメージをビルドして GHCR に push する
+4. （新しいパッケージが初めて作成された場合のみ）GHCR のパッケージ設定で可視性を Public に切り替える
 
 ## トラブルシューティング
 
