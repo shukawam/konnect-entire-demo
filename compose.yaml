@@ -272,6 +272,7 @@ services:
   catalog-service:
     <<: *default
     container_name: catalog-service
+    image: ghcr.io/shukawam/konnect-entire-demo-catalog-service:${IMAGE_TAG:-v1.0.0}
     build:
       context: .
       dockerfile: services/catalog-service/Dockerfile
@@ -313,6 +314,7 @@ services:
   cart-service:
     <<: *default
     container_name: cart-service
+    image: ghcr.io/shukawam/konnect-entire-demo-cart-service:${IMAGE_TAG:-v1.0.0}
     build:
       context: .
       dockerfile: services/cart-service/Dockerfile
@@ -349,6 +351,7 @@ services:
   order-service:
     <<: *default
     container_name: order-service
+    image: ghcr.io/shukawam/konnect-entire-demo-order-service:${IMAGE_TAG:-v1.0.0}
     build:
       context: .
       dockerfile: services/order-service/Dockerfile
@@ -390,6 +393,7 @@ services:
   shipping-service:
     <<: *default
     container_name: shipping-service
+    image: ghcr.io/shukawam/konnect-entire-demo-shipping-service:${IMAGE_TAG:-v1.0.0}
     build:
       context: .
       dockerfile: services/shipping-service/Dockerfile
@@ -429,6 +433,7 @@ services:
   user-service:
     <<: *default
     container_name: user-service
+    image: ghcr.io/shukawam/konnect-entire-demo-user-service:${IMAGE_TAG:-v1.0.0}
     build:
       context: .
       dockerfile: services/user-service/Dockerfile
@@ -470,6 +475,7 @@ services:
   agent-service:
     <<: *default
     container_name: agent-service
+    image: ghcr.io/shukawam/konnect-entire-demo-agent-service:${IMAGE_TAG:-v1.0.0}
     build:
       context: .
       dockerfile: services/agent-service/Dockerfile
@@ -504,6 +510,7 @@ services:
   frontend:
     <<: *default
     container_name: frontend
+    image: ghcr.io/shukawam/konnect-entire-demo-frontend:${IMAGE_TAG:-v1.0.0}
     build:
       context: .
       dockerfile: services/frontend/Dockerfile
