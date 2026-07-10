@@ -122,8 +122,8 @@ RESOURCE_PREFIX=e2e mise run teardown  # cleanup (delete Konnect resources + com
 To control Konnect resource creation/sync yourself, or to operate an already-running stack, use these commands (for the Konnect / Gateway sync steps, see the "Applying config to Kong / Konnect" section in [CLAUDE.md](CLAUDE.md)).
 
 ```bash
-# Start all services (first build takes a few minutes)
-docker compose up -d --build
+# Start all services (default pulls the published GHCR image, so it's fast; before the first release exists, or during development, pass --build to build from source)
+docker compose up -d
 
 # Check status
 docker compose ps
@@ -404,6 +404,19 @@ docker compose watch
 ```
 
 Changes under each service's `src/` are auto-synced to containers. Changes to `package.json` or `prisma/schema.prisma` trigger an automatic rebuild.
+
+### Container Images / Release Process
+
+`docker compose up -d` (without `--build`) pulls the published image from GHCR (`ghcr.io/shukawam/konnect-entire-demo-<service>`) by default. To pin a specific version, set `IMAGE_TAG=vX.Y.Z` in `.env`. If a local image with the same tag already exists, it is not automatically re-pulled — run `docker compose pull` to refresh it.
+
+> **Note:** Until the first release is published, no image exists in GHCR yet, so `docker compose up -d` (without `--build`) will fail to pull. Use `docker compose up -d --build` until then.
+
+To release a new version:
+
+1. Open and merge a PR that bumps the `image:` default tag (`${IMAGE_TAG:-vX.Y.Z}`) for each app service in `compose.yaml`
+2. Create and publish a GitHub Release on the merged commit, tagged `vX.Y.Z` (matching the value bumped in step 1)
+3. `.github/workflows/release.yml` runs and builds/pushes all 7 service images to GHCR
+4. (Only the first time a new package is created) switch its visibility to Public in the GHCR package settings
 
 ## Troubleshooting
 

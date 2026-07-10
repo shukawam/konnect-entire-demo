@@ -10,6 +10,14 @@ Kong Konnect デモ用 EC サイト。ゴリラをテーマにした e コマー
 
 ### 全サービス起動
 
+デフォルト（`--build` なし）は GHCR の公開イメージ（`ghcr.io/shukawam/konnect-entire-demo-<service>`）を pull して起動する（ローカルビルドを省略するため高速）。バージョンは `.env` の `IMAGE_TAG`（例: `IMAGE_TAG=v1.0.0`）で切り替えられる。同じタグのイメージが既にローカルにある場合は自動では再 pull されないため、更新したい場合は `docker compose pull` を実行する。
+
+```bash
+docker compose up -d
+```
+
+初回リリース（GitHub Release の publish）が行われるまでは GHCR にイメージが存在しないため上記は pull に失敗する。それまで、およびソースの変更をコンテナに反映したい開発時は `--build` を付けてローカルビルドする（従来通りの挙動）。
+
 ```bash
 docker compose up -d --build
 ```
