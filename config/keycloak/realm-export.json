@@ -29,6 +29,7 @@
   "sslRequired": "none",
   "users": [
     {
+      "id": "8486948b-ee5f-47de-b80b-4aab14747f71",
       "username": "jack",
       "email": "jack@example.com",
       "emailVerified": true,
@@ -44,6 +45,7 @@
       ]
     },
     {
+      "id": "164a5904-51e6-48cf-af66-4aaba167ee84",
       "username": "carl",
       "email": "carl@example.com",
       "emailVerified": true,
