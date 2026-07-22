@@ -7,6 +7,7 @@ import { signOut } from 'next-auth/react'
 import { useAuthUser } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
 import GrafanaIcon from '@/components/GrafanaIcon'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function Nav() {
   const pathname = usePathname()
@@ -63,6 +64,18 @@ export default function Nav() {
             <GrafanaIcon />
             Grafana
           </a>
+          {user && (
+            <button
+              type="button"
+              className="nav-icon-btn nav-ask-ai"
+              data-ask-ai-trigger
+              onClick={() => window.dispatchEvent(new Event('ask-ai-toggle'))}
+              aria-label="AI に質問"
+            >
+              ✨ Ask AI
+            </button>
+          )}
+          <ThemeToggle />
           {user ? (
             <>
               <span
