@@ -25,23 +25,33 @@ export default function AskAIDialog() {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
-  const fabRef = useRef<HTMLButtonElement>(null)
+
+  // トリガーは Nav ヘッダー（[data-ask-ai-trigger]）にあり、'ask-ai-toggle' イベントで開閉する。
+  useEffect(() => {
+    const handleToggle = () => setOpen((o) => !o)
+    window.addEventListener('ask-ai-toggle', handleToggle)
+    return () => window.removeEventListener('ask-ai-toggle', handleToggle)
+  }, [])
 
   useEffect(() => {
     if (!open) return
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node
-      if (
-        dialogRef.current &&
-        !dialogRef.current.contains(target) &&
-        fabRef.current &&
-        !fabRef.current.contains(target)
-      ) {
+      // ヘッダーのトリガー押下はトグル側に委ねる（ここで閉じると二重処理になる）。
+      if (target instanceof Element && target.closest('[data-ask-ai-trigger]')) return
+      if (dialogRef.current && !dialogRef.current.contains(target)) {
         setOpen(false)
       }
     }
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
   }, [open])
 
   useEffect(() => {
@@ -100,25 +110,25 @@ export default function AskAIDialog() {
     }
   }
 
-  // AI チャットはログイン必須。未認証（RefreshTokenError 含む）では FAB を出さない。
-  // バックエンド側も Kong の openid-connect で agent 系ルートを保護している（多層防御）。
+  // AI チャットはログイン必須。未認証（RefreshTokenError 含む）ではダイアログを出さない。
+  // トリガー（Nav の Ask AI ボタン）も認証時のみ表示され、バックエンドも Kong の
+  // openid-connect で agent 系ルートを保護している（多層防御）。
   if (status !== 'authenticated') return null
 
   return (
     <>
-      <button
-        ref={fabRef}
-        className="ask-ai-fab"
-        onClick={() => setOpen(!open)}
-        aria-label="AI に質問"
-      >
-        {open ? '✕' : '✨'}
-      </button>
-
       {open && (
         <div ref={dialogRef} className="ask-ai-dialog">
           <div className="ask-ai-header">
             <span className="ask-ai-title">Ask Gorilla</span>
+            <button
+              type="button"
+              className="ask-ai-close"
+              onClick={() => setOpen(false)}
+              aria-label="閉じる"
+            >
+              ✕
+            </button>
           </div>
 
           <div className="ask-ai-messages">
