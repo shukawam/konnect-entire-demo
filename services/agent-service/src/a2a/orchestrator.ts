@@ -57,13 +57,28 @@ export class Orchestrator {
     text: string,
     resume: { taskId?: string; contextId?: string },
   ): Promise<ChatOutput> {
-    const client = await this.registry.getClient(agentKey)
-    const result = (await client.sendMessage({
-      message: userMessage(text, { ...resume, userId: conv.userId }),
-      configuration: undefined,
-      metadata: undefined,
-      tenant: '',
-    })) as Task
+    let result: Task
+    try {
+      const client = await this.registry.getClient(agentKey)
+      result = (await client.sendMessage({
+        message: userMessage(text, { ...resume, userId: conv.userId }),
+        configuration: undefined,
+        metadata: undefined,
+        tenant: '',
+      })) as Task
+    } catch (e) {
+      // 保留タスクの再開が失敗した場合（専門エージェントが再起動して taskId を失った等）は
+      // pending を解除する。そうしないと以降のターンも同じ再開を試み続け会話が詰まる。
+      // 次のユーザー発話では改めて委譲判断が走り、新規タスクとして自然に復帰できる。
+      if (resume.taskId) {
+        log.warn(
+          { err: e, agentKey, taskId: resume.taskId },
+          'failed to resume A2A task; clearing pending so the next turn starts a new task',
+        )
+        this.store.clearPending(conv)
+      }
+      throw e
+    }
 
     const reply = replyTextOf(result) || '応答を取得できませんでした。'
     const state = result.status?.state

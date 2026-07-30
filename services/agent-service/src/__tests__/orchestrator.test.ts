@@ -72,6 +72,40 @@ describe('Orchestrator', () => {
     expect(secondCall.message.contextId).toBe('ctx-1')
   })
 
+  it('保留タスクの再開が例外で失敗したら pending を解除して再スローする', async () => {
+    chooseDelegate.mockResolvedValue({ kind: 'delegate', agent: 'recommendation' })
+    sendMessage.mockResolvedValue(
+      taskResult(TaskState.TASK_STATE_INPUT_REQUIRED, 'どんな用途ですか？'),
+    )
+    const res = await orchestrator.handleChat({ message: 'マグが欲しい', userId: 'u1' })
+    expect(res.state).toBe('input-required')
+
+    // 専門エージェント側がタスクを失った状態（再起動など）を模す
+    sendMessage.mockRejectedValueOnce(new Error('task not found'))
+    await expect(
+      orchestrator.handleChat({
+        conversationId: res.conversationId,
+        message: 'コーヒー用',
+        userId: 'u1',
+      }),
+    ).rejects.toThrow('task not found')
+    expect(chooseDelegate).toHaveBeenCalledTimes(1)
+
+    // pending が解除されているので、次のターンは新規委譲としてやり直せる（会話が詰まらない）
+    sendMessage.mockResolvedValue(
+      taskResult(TaskState.TASK_STATE_COMPLETED, 'おすすめは Gorilla Mug'),
+    )
+    const res2 = await orchestrator.handleChat({
+      conversationId: res.conversationId,
+      message: 'コーヒー用',
+      userId: 'u1',
+    })
+    expect(chooseDelegate).toHaveBeenCalledTimes(2)
+    expect(res2.state).toBe('completed')
+    // 再委譲なので taskId は空（既存タスクの再開ではない）
+    expect(sendMessage.mock.calls[2][0].message.taskId).toBe('')
+  })
+
   it('委譲先が failed を返したら pending を解除しエラーメッセージを中継する', async () => {
     chooseDelegate.mockResolvedValue({ kind: 'delegate', agent: 'order' })
     sendMessage.mockResolvedValue(taskResult(TaskState.TASK_STATE_FAILED, '内部エラー'))
