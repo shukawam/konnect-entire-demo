@@ -26,6 +26,10 @@ jobs:
             dockerfile: services/user-service/Dockerfile
           - name: agent-service
             dockerfile: services/agent-service/Dockerfile
+          - name: recommendation-agent-service
+            dockerfile: services/recommendation-agent-service/Dockerfile
+          - name: order-agent-service
+            dockerfile: services/order-agent-service/Dockerfile
           - name: frontend
             dockerfile: services/frontend/Dockerfile
     steps:

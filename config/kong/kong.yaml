@@ -303,6 +303,55 @@ services:
           - https
         strip_path: true
 
+  # A2A Proxy — Recommendation Agent
+  # ai-a2a-proxy が A2A(v0.3) リクエストを検出し、Agent Card の url を Gateway アドレスへ
+  # 書き換え、タスク単位のメトリクス/トレース(ai.a2a)を記録する。
+  # key-auth + acl で「オーケストレータ(orchestrators グループ)のみ呼び出し可」を強制する。
+  - name: recommendation-agent-a2a
+    url: http://recommendation-agent-service:3007
+    routes:
+      - name: a2a-recommendation-route
+        paths:
+          - /a2a/recommendation
+        protocols:
+          - http
+          - https
+        strip_path: true
+    plugins:
+      - name: ai-a2a-proxy
+        config:
+          logging:
+            log_statistics: true
+            log_payloads: true
+      - name: key-auth
+      - name: acl
+        config:
+          allow:
+            - orchestrators
+
+  # A2A Proxy — Order Agent
+  - name: order-agent-a2a
+    url: http://order-agent-service:3008
+    routes:
+      - name: a2a-order-route
+        paths:
+          - /a2a/orders
+        protocols:
+          - http
+          - https
+        strip_path: true
+    plugins:
+      - name: ai-a2a-proxy
+        config:
+          logging:
+            log_statistics: true
+            log_payloads: true
+      - name: key-auth
+      - name: acl
+        config:
+          allow:
+            - orchestrators
+
 plugins:
   - name: cors
     config:
@@ -739,3 +788,21 @@ consumers:
   - username: curl-admin
     keyauth_credentials:
       - key: jungle-store-demo-admin-key
+
+  # A2A エージェントの識別。shopper-agent（オーケストレータ）だけが orchestrators グループに
+  # 属し /a2a/* を呼べる。専門エージェント同士の直接通信は acl が 403 で拒否する（デモ用）。
+  - username: shopper-agent
+    keyauth_credentials:
+      - key: jungle-store-shopper-agent-key
+    acls:
+      - group: orchestrators
+  - username: recommendation-agent
+    keyauth_credentials:
+      - key: jungle-store-recommendation-agent-key
+    acls:
+      - group: specialist-agents
+  - username: order-agent
+    keyauth_credentials:
+      - key: jungle-store-order-agent-key
+    acls:
+      - group: specialist-agents
