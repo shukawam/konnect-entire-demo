@@ -13,6 +13,7 @@
     "dev:user": "npm run dev -w services/user-service",
     "dev:agent": "npm run dev -w services/agent-service",
     "dev:recommendation-agent": "npm run dev -w services/recommendation-agent-service",
+    "dev:order-agent": "npm run dev -w services/order-agent-service",
     "dev:frontend": "npm run dev -w services/frontend",
     "db:generate": "npm run db:generate -ws --if-present",
     "db:push": "npm run db:push -ws --if-present",
