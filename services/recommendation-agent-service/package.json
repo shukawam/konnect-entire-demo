@@ -1,0 +1,27 @@
+{
+  "name": "@konnect-demo/recommendation-agent-service",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.0",
+    "@konnect-demo/a2a-support": "^1.0.0",
+    "@konnect-demo/shared": "^1.0.0",
+    "@volcano.dev/agent": "^1.2.0",
+    "hono": "^4.7.0",
+    "pino": "^10.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.4"
+  }
+}
