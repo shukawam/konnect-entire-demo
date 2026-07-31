@@ -69,7 +69,7 @@ Kong Gateway の **`ai-a2a-proxy`** プラグインを使って、Agent2Agent pr
 コーヒー用で、保温性重視
 ```
 
-同じタスク（`taskId`）が再開され、条件に合う商品が提案される（`state: completed`）。提案テキストには商品名と商品ページへのリンクが含まれる。
+同じタスク（`taskId`）が再開され、条件に合う商品が提案される（`state: completed`）。提案テキストには商品名・価格・提案理由が含まれる。
 
 ### 1-4. 注文する（Order Agent、input-required → completed）
 
@@ -136,7 +136,7 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 2. `Service Name: kong` などで A2A リクエストのトレースを検索し、`ai.a2a` スパンを開く
 3. スパン属性でタスク状態（`input-required` / `completed` 等）と JSON-RPC メソッド（`message/send` 等）を確認する
 
-> 専門エージェント（recommendation-agent-service / order-agent-service）は他サービスの `NODE_OPTIONS` ゼロコード計装ではなく、agent-service と同じ volcano SDK（`createVolcanoTelemetry`）でトレース/メトリクスを送信する。トレース自体は同じ OTel Collector（otel-lgtm）に集約されるため、Grafana 側の見え方は他サービスと変わらない。
+> 専門エージェント（recommendation-agent-service / order-agent-service）は他サービスの `NODE_OPTIONS` ゼロコード計装ではなく、agent-service と同じ volcano SDK（`createVolcanoTelemetry`）でトレース/メトリクスを送信する。同じ OTel Collector（otel-lgtm）に集約されるが、Grafana で見えるのは volcano SDK が出すエージェント実行のスパン/メトリクスのみで、他サービスにある自動計装の HTTP スパンや Loki のログは含まれない。Gateway 側の `ai.a2a` スパン（Kong 由来）と合わせて追う。
 
 ### 3-2. Konnect アナリティクスでエージェント別トラフィックを確認
 

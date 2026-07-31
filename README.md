@@ -289,6 +289,7 @@ Agent Service（ポート 3006）は、Kong AI Gateway と MCP Proxy を活用�
 3. **AI Semantic Prompt Guard** — Redis ベクトル DB + OpenAI Embeddings で不適切な入力をブロック
 4. **AI Semantic Cache** — 意味的に近い応答を再利用しコスト/レイテンシを削減（`/ai/v1` と Agent の入出力境界 `/ai/agent-chat/v1` に適用。Agent 内部の LLM 呼び出し `/ai/agent/v1` には、マルチターン会話の文脈を壊さないよう掛けない）
 5. **AI MCP Proxy** — 商品検索・カート操作・注文履歴の MCP ツールを LLM に提供
+6. **AI A2A Proxy** — エージェント間通信（A2A）を仲介し、タスク状態を含むメトリクス/トレースを記録
 
 ### MCP ルート
 
@@ -301,6 +302,10 @@ Agent Service（ポート 3006）は、Kong AI Gateway と MCP Proxy を活用�
 ### AI チャットの試し方
 
 フロントエンドの画面右下にある AI チャットダイアログから「ゴリ助」に質問できます。商品の検索、カートの確認、注文履歴の参照などを自然言語で行えます。
+
+### A2A エージェントモード
+
+チャットダイアログの「🤖 Agent モード」を ON にすると、Shopper エージェント（agent-service）が **AI A2A Proxy**（`/a2a/*`）経由で専門エージェント（Recommendation: 3007 / Order: 3008）に委譲し、商品探しから注文確定までをマルチターンで進めます。エージェント間の呼び出しは Kong の `key-auth` + `acl` で制御されます。手順は [A2A ショッピングエージェントのデモシナリオ](guides/demos/demo-scenario-a2a-shopping-agent.md) を参照してください。
 
 ## 非同期イベント処理 (Kafka + Event Gateway)
 
@@ -367,14 +372,17 @@ Kafka UI (http://localhost:8080) でメッセージの流れを確認できま�
 
 ```
 ├── packages/
-│   └── shared/              # 共通型定義（Product, Cart, Order 等）、Kafka 定数
+│   ├── shared/              # 共通型定義（Product, Cart, Order 等）、Kafka 定数
+│   └── a2a-support/         # A2A（Agent2Agent）共通部品（カード / サーバー / クライアント）
 ├── services/
 │   ├── catalog-service/     # 商品 API (port 3001)
 │   ├── cart-service/        # カート API (port 3002)
 │   ├── order-service/       # 注文 API + Kafka プロデューサー/コンシューマー (port 3003)
 │   ├── shipping-service/    # 配送 API + Kafka プロデューサー/コンシューマー (port 3004)
 │   ├── user-service/        # ユーザー API (port 3005)
-│   ├── agent-service/       # AI チャットエージェント (port 3006)
+│   ├── agent-service/       # AI チャットエージェント + Shopper オーケストレータ (port 3006)
+│   ├── recommendation-agent-service/ # 商品提案の専門エージェント (port 3007)
+│   ├── order-agent-service/ # カート操作・注文確定の専門エージェント (port 3008)
 │   └── frontend/            # Next.js フロントエンド (port 3000)
 ├── config/
 │   ├── kong/                # Kong Gateway 宣言型設定
@@ -397,6 +405,8 @@ npm run dev:order      # port 3003
 npm run dev:shipping   # port 3004
 npm run dev:user       # port 3005
 npm run dev:agent      # port 3006
+npm run dev:recommendation-agent # port 3007
+npm run dev:order-agent          # port 3008
 npm run dev:frontend   # port 3000
 
 # データベース操作（全サービス一括）
