@@ -124,6 +124,7 @@ export default function AskAIDialog() {
         setMessages([...newMessages, { role: 'assistant', content }])
       }
     } catch (error) {
+      if (agentMode) setPendingAgent(undefined)
       setMessages([
         ...newMessages,
         {

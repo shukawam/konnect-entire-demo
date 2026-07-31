@@ -263,4 +263,70 @@ describe('AskAIDialog Agent モード', () => {
     })
     document.body.removeChild(container)
   })
+
+  it('pending 表示中に次の送信が失敗すると、エラーメッセージ表示と共に pending 表示が消える', async () => {
+    mockedUseSession.mockReturnValue(authenticatedSession)
+    let chatCallCount = 0
+    mockedApiFetch.mockImplementation(((path: string) => {
+      if (path === '/api/agent/chat') {
+        chatCallCount += 1
+        if (chatCallCount === 1) {
+          return Promise.resolve({
+            conversationId: 'conv-1',
+            reply: 'ご希望のサイズを教えてください',
+            agent: 'order',
+            state: 'input-required',
+          })
+        }
+        return Promise.reject(
+          new Error('サービスが一時的に利用できません。しばらくしてから再度お試しください'),
+        )
+      }
+      if (path === '/api/agent/agents') return Promise.resolve({ agents: [] })
+      return Promise.resolve({ suggestions: [] })
+    }) as never)
+
+    const { container, root } = await renderOpenDialog()
+    const toggleBtn = container.querySelector('.ask-ai-mode-toggle') as HTMLButtonElement
+    await act(async () => {
+      toggleBtn.click()
+    })
+
+    const input = container.querySelector('.ask-ai-input-bar input') as HTMLInputElement
+    const sendBtn = container.querySelector('.ask-ai-send') as HTMLButtonElement
+
+    // 1 通目: input-required → pending 表示が出る
+    await act(async () => {
+      setInputValue(input, 'Tシャツが欲しい')
+    })
+    await act(async () => {
+      sendBtn.click()
+    })
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(container.querySelector('.ask-ai-pending')?.textContent).toContain(
+      'Order Agent が入力を待っています',
+    )
+
+    // 2 通目: apiFetch が reject → エラーメッセージが assistant として追加され、pending 表示は消える
+    await act(async () => {
+      setInputValue(input, 'Mサイズで')
+    })
+    await act(async () => {
+      sendBtn.click()
+    })
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(container.querySelector('.ask-ai-pending')).toBeNull()
+    const lastMsg = container.querySelectorAll('.ask-ai-msg-assistant .ask-ai-msg-content')
+    expect(lastMsg[lastMsg.length - 1]?.textContent).toContain('サービスが一時的に利用できません')
+
+    await act(async () => {
+      root.unmount()
+    })
+    document.body.removeChild(container)
+  })
 })
