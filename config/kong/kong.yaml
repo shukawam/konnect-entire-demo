@@ -651,6 +651,13 @@ plugins:
             read_only_hint: true
 
   # MCP Proxy — Cart tools
+  # カート/注文のツールは操作対象ユーザーを X-User-Id ヘッダーで指定する（バックエンドが必須とする）。
+  # MCP には呼び出し元の JWT が無いため、パラメータとして LLM に明示的に渡させる。
+  #
+  # NOTE: ai-mcp-proxy はツール呼び出しを Kong 自身へループバックさせる（UA: "Kong/... MCP server"）。
+  # /api/carts・/api/orders は openid-connect で保護されているため、この内部呼び出しは 401 になる
+  # （既存の get-cart / list-orders も同様に現状は失敗する）。書き込みツールを機能させるには
+  # OIDC を通らない内部向け経路が別途必要。詳細と対応案は final-fix-report.md 参照。
   - name: ai-mcp-proxy
     route: mcp-cart-route
     config:
@@ -660,9 +667,52 @@ plugins:
           description: 'ユーザーのカート内容を取得します。'
           method: GET
           path: /api/carts
+          parameters: &user_id_param
+            - name: X-User-Id
+              in: header
+              required: true
+              description: '操作対象のユーザーID。'
+              schema:
+                type: string
           annotations:
             title: Get cart
             read_only_hint: true
+        - name: add-to-cart
+          description: 'カートに商品を追加します。既に同じ商品がある場合は数量が加算されます。商品ID・数量・単価が必要なため、事前に商品一覧から対象商品を特定してください。'
+          method: POST
+          path: /api/carts/items
+          parameters: *user_id_param
+          # NOTE: request_body は Kong の `type: json` フィールドで、値はオブジェクトである必要が
+          # ある（文字列/配列は Konnect が 400 で拒否する）。一方 decK は json フィールドの
+          # オブジェクト値を送信時に落としてしまう（v1.64.0 / v1.65.1 で確認。配列・文字列は通る）。
+          # そのため sync してもこのボディ定義は Konnect に反映されず、add-to-cart は引数を
+          # 受け取れない。恒久対応は decK 側の修正待ち、または本文をクエリパラメータで
+          # 受け取れるようにする案がある（詳細は final-fix-report.md）。
+          request_body:
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    productId:
+                      type: string
+                      description: '追加する商品の商品ID（例: prod-007）。'
+                    quantity:
+                      type: integer
+                      minimum: 1
+                      description: '追加する数量。1 以上の整数。'
+                    price:
+                      type: integer
+                      description: '商品の単価（円、税込）。商品一覧の price をそのまま渡します。'
+                  required:
+                    - productId
+                    - quantity
+                    - price
+          annotations:
+            title: Add item to cart
+            read_only_hint: false
+            destructive_hint: false
+            idempotent_hint: false
 
   # MCP Proxy — Order tools
   - name: ai-mcp-proxy
@@ -674,9 +724,20 @@ plugins:
           description: 'ユーザーの注文履歴を取得します。'
           method: GET
           path: /api/orders
+          parameters: *user_id_param
           annotations:
             title: List orders
             read_only_hint: true
+        - name: create-order
+          description: 'カートの内容から注文を確定します。事前に商品をカートへ追加しておく必要があります。実行すると注文が作成され、カートは空になります。ユーザーが金額に同意した後にのみ実行してください。'
+          method: POST
+          path: /api/orders
+          parameters: *user_id_param
+          annotations:
+            title: Create order
+            read_only_hint: false
+            destructive_hint: true
+            idempotent_hint: false
 
   # A2A Proxy — Recommendation Agent
   # ai-a2a-proxy が A2A(v0.3) リクエストを検出し、Agent Card の url を Gateway アドレスへ
