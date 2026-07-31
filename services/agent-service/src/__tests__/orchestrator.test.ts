@@ -8,7 +8,7 @@ vi.mock('@konnect-demo/shared', () => ({
 
 import { Orchestrator } from '../a2a/orchestrator.js'
 import { ConversationStore } from '../a2a/conversations.js'
-import { agentMessage } from '@konnect-demo/a2a-support'
+import { agentMessage, textOf } from '@konnect-demo/a2a-support'
 
 function taskResult(state: TaskState, text: string, id = 'task-1', contextId = 'ctx-1') {
   return {
@@ -119,6 +119,46 @@ describe('Orchestrator', () => {
     // pending が解除されているので改めて委譲判断が走る
     expect(chooseDelegate).toHaveBeenCalledTimes(2)
     expect(res2).toBeDefined()
+  })
+
+  it('新規委譲タスクには委譲前の transcript を前置し、resume 時は前置しない', async () => {
+    // 1ターン目: recommendation に委譲して提案が completed で返る
+    chooseDelegate.mockResolvedValue({ kind: 'delegate', agent: 'recommendation' })
+    sendMessage.mockResolvedValue(
+      taskResult(TaskState.TASK_STATE_COMPLETED, 'Gorilla Mug（ID: p-1、¥2,000）がおすすめです'),
+    )
+    const res = await orchestrator.handleChat({ message: 'マグが欲しい', userId: 'u1' })
+    // 最初のターンは transcript が空なので前置なし（発話そのもの）
+    expect(textOf(sendMessage.mock.calls[0][0].message)).toBe('マグが欲しい')
+
+    // 2ターン目: order への新規委譲。直前の提案が message text に含まれる
+    chooseDelegate.mockResolvedValue({ kind: 'delegate', agent: 'order' })
+    sendMessage.mockResolvedValue(
+      taskResult(TaskState.TASK_STATE_INPUT_REQUIRED, '合計 ¥4,000 で注文しますか？', 'task-2'),
+    )
+    const res2 = await orchestrator.handleChat({
+      conversationId: res.conversationId,
+      message: 'それを2つ注文して',
+      userId: 'u1',
+    })
+    const delegated = textOf(sendMessage.mock.calls[1][0].message)
+    expect(delegated).toContain('これまでの会話:')
+    expect(delegated).toContain('Gorilla Mug（ID: p-1、¥2,000）がおすすめです')
+    expect(delegated).toContain('user: マグが欲しい')
+    expect(delegated).toContain('依頼: それを2つ注文して')
+    // 最新のユーザー発話は「依頼」としてのみ現れ、履歴側には重複しない
+    expect(delegated.match(/それを2つ注文して/g)).toHaveLength(1)
+
+    // 3ターン目: 同一タスクの再開なので前置なし（タスク自身が履歴を持つ）
+    sendMessage.mockResolvedValue(
+      taskResult(TaskState.TASK_STATE_COMPLETED, '注文しました', 'task-2'),
+    )
+    await orchestrator.handleChat({
+      conversationId: res2.conversationId,
+      message: 'はい',
+      userId: 'u1',
+    })
+    expect(textOf(sendMessage.mock.calls[2][0].message)).toBe('はい')
   })
 
   it('userId が A2A メッセージ metadata で伝搬される', async () => {

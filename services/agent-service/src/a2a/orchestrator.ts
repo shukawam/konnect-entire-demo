@@ -7,6 +7,20 @@ import { chooseDelegate as defaultChooseDelegate, type AgentSummary } from './de
 
 const log = createLogger('agent-service')
 
+// 新規委譲時に前置する会話履歴の最大件数（最新のユーザー発話を除く直近分）
+const CONTEXT_TURNS = 8
+
+// 専門エージェントは会話履歴を持たないため、新規タスク開始時のみ直前までの会話を前置する。
+// 例: recommendation がどの商品を提案したかを order が知らないと productId / 金額に到達できない。
+// resume 時はタスク自身が履歴を持つので前置しない（重複を避ける）。
+function withContext(transcript: Conversation['transcript'], message: string): string {
+  // 直前に append 済みの最新ユーザー発話は「依頼」として別に載せるため履歴から除く
+  const history = transcript.slice(0, -1).slice(-CONTEXT_TURNS)
+  if (history.length === 0) return message
+  const lines = history.map((t) => `${t.speaker}: ${t.text}`).join('\n')
+  return `これまでの会話:\n${lines}\n\n依頼: ${message}`
+}
+
 export interface ChatInput {
   conversationId?: string
   message: string
@@ -48,7 +62,7 @@ export class Orchestrator {
       this.store.append(conv, 'shopper', decision.text)
       return { conversationId: conv.id, reply: decision.text, agent: 'shopper', state: 'completed' }
     }
-    return this.sendToAgent(conv, decision.agent, input.message, {})
+    return this.sendToAgent(conv, decision.agent, withContext(conv.transcript, input.message), {})
   }
 
   private async sendToAgent(

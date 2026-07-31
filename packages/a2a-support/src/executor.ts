@@ -34,6 +34,17 @@ export function parseMarkedReply(raw: string): {
   return { state: 'completed', text: trimmed }
 }
 
+// volcano SDK の run() は StepResult の配列を返し、`llmOutput` は任意プロパティ。
+// ツール呼び出しで終わったステップには含まれないため、末尾要素だけを見ると
+// 応答が生成されていても取りこぼす。最後に生成されたテキストを後ろから探す。
+export function lastLlmOutput(steps: { llmOutput?: string }[]): string | undefined {
+  for (let i = steps.length - 1; i >= 0; i--) {
+    const out = steps[i]?.llmOutput
+    if (out !== undefined && out.trim() !== '') return out
+  }
+  return undefined
+}
+
 export function renderTranscript(history: Message[], current: Message): string {
   const lines = [...history, current].map((m) => {
     const role = m.role === Role.ROLE_AGENT ? 'agent' : 'user'

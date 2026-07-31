@@ -5,6 +5,7 @@ import {
   MarkerAgentExecutor,
   parseMarkedReply,
   renderTranscript,
+  lastLlmOutput,
   QUESTION_MARKER,
   DONE_MARKER,
 } from '../executor.js'
@@ -67,6 +68,22 @@ describe('parseMarkedReply', () => {
     expect(parseMarkedReply(`ウホ！${QUESTION_MARKER} 質問 ${DONE_MARKER} 完了`).state).toBe(
       'input-required',
     )
+  })
+})
+
+describe('lastLlmOutput', () => {
+  it('末尾がツール呼び出しステップでも最後の LLM 出力を拾う', () => {
+    expect(
+      lastLlmOutput([{ llmOutput: '提案です' }, { mcp: { tool: 'list-products' } } as never]),
+    ).toBe('提案です')
+  })
+  it('複数の LLM 出力があれば最後のものを返す', () => {
+    expect(lastLlmOutput([{ llmOutput: '途中' }, { llmOutput: '最終' }])).toBe('最終')
+  })
+  it('空文字はスキップし、どこにも出力が無ければ undefined', () => {
+    expect(lastLlmOutput([{ llmOutput: '本文' }, { llmOutput: '  ' }])).toBe('本文')
+    expect(lastLlmOutput([{}, {}])).toBeUndefined()
+    expect(lastLlmOutput([])).toBeUndefined()
   })
 })
 

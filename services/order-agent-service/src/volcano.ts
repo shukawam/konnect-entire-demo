@@ -1,5 +1,5 @@
 import { agent, createVolcanoTelemetry, llmOpenAI, mcp } from '@volcano.dev/agent'
-import { QUESTION_MARKER, DONE_MARKER } from '@konnect-demo/a2a-support'
+import { QUESTION_MARKER, DONE_MARKER, lastLlmOutput } from '@konnect-demo/a2a-support'
 import { createLogger } from '@konnect-demo/shared'
 
 const log = createLogger('order-agent-service')
@@ -21,6 +21,9 @@ const llm = llmOpenAI({
   baseURL: `${gatewayEndpoint}/ai/agent/v1`,
 })
 
+// 会話から渡ってくるのは商品名が中心のため、カート追加に必要な productId と価格は
+// カタログ検索ツールで解決する（catalog MCP が無いと「金額が分からない」で止まる）。
+const catalogMcp = mcp(`${gatewayEndpoint}/mcp/products`)
 const cartMcp = mcp(`${gatewayEndpoint}/mcp/carts`)
 const orderMcp = mcp(`${gatewayEndpoint}/mcp/orders`)
 
@@ -34,6 +37,8 @@ A2A 経由で Shopper エージェントから会話履歴（transcript）を受
   応答の先頭に「${DONE_MARKER}」を付け、続けて注文番号を含む完了報告を書く。
 
 厳守事項:
+- 商品名しか分からない場合は、まずカタログ検索ツールで該当商品の商品ID（productId）と価格を確認してから
+  カート追加・注文操作を行う。transcript に商品IDがあればそれを優先して使う。
 - 注文の確定（order 作成ツールの実行）は、transcript 内でユーザーが合計金額に明示的に同意した後にのみ行う。
   同意がまだなら必ず ${QUESTION_MARKER} で最終確認を返す。
 - カート・注文の操作には X-User-Id ヘッダーが必要です。userId「${userId}」を使ってください。`
@@ -48,11 +53,16 @@ export async function runOrder(transcript: string, userId: string): Promise<stri
   })
     .then({
       prompt: `これまでの会話:\n${transcript}\n\n上記を踏まえて応答してください。`,
-      mcps: [cartMcp, orderMcp],
+      // volcano SDK の既定は 4 回。ツール往復が上限に達すると最終応答（llmOutput）が
+      // 生成されないまま終わるため、カタログ検索〜注文操作を賄えるだけ引き上げる。
+      maxToolIterations: 10,
+      mcps: [catalogMcp, cartMcp, orderMcp],
     })
     .run()
-  return (
-    result[result.length - 1]?.llmOutput ??
-    `${DONE_MARKER} 申し訳ありません。処理を完了できませんでした。`
-  )
+  const output = lastLlmOutput(result)
+  if (output === undefined) {
+    log.error({ userId, steps: result.map((s) => Object.keys(s)) }, 'no llmOutput in agent result')
+    return `${DONE_MARKER} 申し訳ありません。処理を完了できませんでした。`
+  }
+  return output
 }
