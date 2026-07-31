@@ -15,6 +15,7 @@ Kong Konnect デモアプリケーションで実施可能なデモシナリオ�
 | 4   | [AI Gateway & MCP](demo-scenario-ai-gateway.md)                         | AI 活用検討者、LLM Gateway 導入検討者  | 15〜20分 |
 | 5   | [イベント駆動アーキテクチャ](demo-scenario-event-driven.md)             | アーキテクト                           | 15〜20分 |
 | 6   | [セキュリティ多層防御](demo-scenario-security.md)                       | セキュリティ担当                       | 10〜15分 |
+| 7   | [A2A ショッピングエージェント](demo-scenario-a2a-shopping-agent.md)     | AI エージェント連携に関心のある方      | 15〜20分 |
 
 ---
 
