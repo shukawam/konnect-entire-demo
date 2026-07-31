@@ -146,6 +146,79 @@ describe('POST /items', () => {
   })
 })
 
+// ai-mcp-proxy 経由のツール呼び出しはクエリパラメータで引数を渡す（decK が request_body を
+// 送信できないための回避策）。body 経路の挙動は変えず、body が無いときだけクエリを使う。
+describe('POST /items（クエリパラメータ・フォールバック）', () => {
+  function mockNewItem() {
+    const cartWithItem: Cart & { items: CartItem[] } = { ...mockCart, items: [mockItem] }
+    vi.mocked(prisma.cart.findUnique)
+      .mockResolvedValueOnce(mockCartBase)
+      .mockResolvedValueOnce(cartWithItem)
+    vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.cartItem.create).mockResolvedValue(mockItem)
+  }
+
+  it('body が無い場合はクエリパラメータで追加して 201 を返す', async () => {
+    mockNewItem()
+    const res = await app.request('/items?productId=prod-001&quantity=2&price=2980', {
+      method: 'POST',
+      headers: { 'X-User-Id': 'user-001' },
+    })
+    expect(res.status).toBe(201)
+    expect(prisma.cartItem.create).toHaveBeenCalledWith({
+      data: { cartId: 'cart-001', productId: 'prod-001', quantity: 2, price: 2980 },
+    })
+  })
+
+  it('body があればそちらを優先する（クエリは無視）', async () => {
+    mockNewItem()
+    const res = await app.request('/items?productId=prod-999&quantity=99&price=1', {
+      method: 'POST',
+      headers: { 'X-User-Id': 'user-001', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId: 'prod-001', quantity: 2, price: 2980 }),
+    })
+    expect(res.status).toBe(201)
+    expect(prisma.cartItem.create).toHaveBeenCalledWith({
+      data: { cartId: 'cart-001', productId: 'prod-001', quantity: 2, price: 2980 },
+    })
+  })
+
+  it('quantity が 0 以下なら 400 を返す', async () => {
+    const res = await app.request('/items?productId=prod-001&quantity=0&price=2980', {
+      method: 'POST',
+      headers: { 'X-User-Id': 'user-001' },
+    })
+    expect(res.status).toBe(400)
+    expect(prisma.cartItem.create).not.toHaveBeenCalled()
+  })
+
+  it('数値でない quantity は 400 を返す', async () => {
+    const res = await app.request('/items?productId=prod-001&quantity=abc&price=2980', {
+      method: 'POST',
+      headers: { 'X-User-Id': 'user-001' },
+    })
+    expect(res.status).toBe(400)
+    expect(prisma.cartItem.create).not.toHaveBeenCalled()
+  })
+
+  it('必須パラメータが欠けていれば 400 を返す', async () => {
+    const res = await app.request('/items?quantity=2&price=2980', {
+      method: 'POST',
+      headers: { 'X-User-Id': 'user-001' },
+    })
+    expect(res.status).toBe(400)
+    expect(prisma.cartItem.create).not.toHaveBeenCalled()
+  })
+
+  it('X-User-Id が無ければ 400 を返す', async () => {
+    const res = await app.request('/items?productId=prod-001&quantity=2&price=2980', {
+      method: 'POST',
+    })
+    expect(res.status).toBe(400)
+    expect(prisma.cartItem.create).not.toHaveBeenCalled()
+  })
+})
+
 describe('PATCH /items/:id', () => {
   it('アイテムが存在しない場合 404 を返す', async () => {
     vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(null)
