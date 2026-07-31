@@ -17,11 +17,18 @@ export function parseMarkedReply(raw: string): {
   text: string
 } {
   const trimmed = raw.trim()
-  if (trimmed.startsWith(QUESTION_MARKER)) {
-    return { state: 'input-required', text: trimmed.slice(QUESTION_MARKER.length).trim() }
+  // Kong の ai-prompt-decorator（ゴリ助ペルソナ）などがマーカーの前に前置きを足すことがあるため、
+  // 先頭一致ではなく最初に出現したマーカーを採用する。テキストはマーカー以降を返す。
+  const question = trimmed.indexOf(QUESTION_MARKER)
+  const done = trimmed.indexOf(DONE_MARKER)
+  if (question !== -1 && (done === -1 || question < done)) {
+    return {
+      state: 'input-required',
+      text: trimmed.slice(question + QUESTION_MARKER.length).trim(),
+    }
   }
-  if (trimmed.startsWith(DONE_MARKER)) {
-    return { state: 'completed', text: trimmed.slice(DONE_MARKER.length).trim() }
+  if (done !== -1) {
+    return { state: 'completed', text: trimmed.slice(done + DONE_MARKER.length).trim() }
   }
   // マーカーなしはタスクを止めないため completed 扱いにする
   return { state: 'completed', text: trimmed }
@@ -77,7 +84,9 @@ export class MarkerAgentExecutor implements AgentExecutor {
           ? TaskState.TASK_STATE_INPUT_REQUIRED
           : TaskState.TASK_STATE_COMPLETED
       text = parsed.text
-    } catch {
+    } catch (e) {
+      // 原因は握りつぶさずコンテナログへ出す（verify-stack の運用手順が参照する）
+      console.error('[a2a-support] agent run failed:', e)
       state = TaskState.TASK_STATE_FAILED
       text = 'エージェント内部でエラーが発生しました。もう一度お試しください。'
     }

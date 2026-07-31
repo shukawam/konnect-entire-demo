@@ -40,10 +40,23 @@ export class AgentRegistry {
     }
   }
 
+  // 1つのエージェントが落ちていても Agent モード全体を止めないため、到達できた分だけ返す。
+  // 委譲先の enum は返した一覧から作られるため、縮退した状態でも整合する。
   async getSummaries(): Promise<AgentSummary[]> {
-    for (const key of Object.keys(AGENT_URLS) as AgentKey[]) {
-      await this.getClient(key)
+    const keys = Object.keys(AGENT_URLS) as AgentKey[]
+    const summaries: AgentSummary[] = []
+    for (const key of keys) {
+      try {
+        await this.getClient(key)
+        const summary = this.summaries.get(key)
+        if (summary) summaries.push(summary)
+      } catch (e) {
+        log.warn({ err: e, key }, 'A2A agent unavailable; continuing without it')
+      }
     }
-    return [...this.summaries.values()]
+    if (summaries.length === 0) {
+      throw new A2AConnectionError('no A2A agents are available')
+    }
+    return summaries
   }
 }

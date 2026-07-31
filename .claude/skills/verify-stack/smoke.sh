@@ -28,7 +28,7 @@ else
 fi
 
 # 2. サービス直接ヘルスチェック
-for p in 3001 3002 3003 3004 3005 3006; do
+for p in 3001 3002 3003 3004 3005 3006 3007 3008; do
   c=$(code "http://localhost:$p/health")
   [ "$c" = "200" ] && ok "service :$p /health -> 200" || ng "service :$p /health -> $c"
 done

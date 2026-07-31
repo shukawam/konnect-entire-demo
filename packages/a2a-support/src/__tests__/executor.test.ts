@@ -54,6 +54,20 @@ describe('parseMarkedReply', () => {
   it('マーカーなしは completed 扱い（スタックしない）', () => {
     expect(parseMarkedReply('こんにちは').state).toBe('completed')
   })
+  it('マーカー前に前置き（ペルソナ）があっても検出する', () => {
+    expect(parseMarkedReply(`ウホ！ **${QUESTION_MARKER}** どんな用途ですか？`)).toEqual({
+      state: 'input-required',
+      text: '** どんな用途ですか？',
+    })
+  })
+  it('両方のマーカーがある場合は先に出現した方を採用する', () => {
+    expect(parseMarkedReply(`ウホ！${DONE_MARKER} 完了 ${QUESTION_MARKER} 追加質問`).state).toBe(
+      'completed',
+    )
+    expect(parseMarkedReply(`ウホ！${QUESTION_MARKER} 質問 ${DONE_MARKER} 完了`).state).toBe(
+      'input-required',
+    )
+  })
 })
 
 describe('renderTranscript', () => {
@@ -102,11 +116,15 @@ describe('MarkerAgentExecutor', () => {
     expect(events.at(-1).data.status.state).toBe(TaskState.TASK_STATE_COMPLETED)
   })
 
-  it('run が例外を投げたら failed を publish する', async () => {
-    const run = vi.fn().mockRejectedValue(new Error('LLM down'))
+  it('run が例外を投げたら failed を publish し、原因をログに残す', async () => {
+    const err = new Error('LLM down')
+    const run = vi.fn().mockRejectedValue(err)
     const executor = new MarkerAgentExecutor(run)
     const { bus, events } = busSpy()
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     await executor.execute(contextFor('hello', { userId: 'u1' }), bus)
     expect(events.at(-1).data.status.state).toBe(TaskState.TASK_STATE_FAILED)
+    expect(spy).toHaveBeenCalledWith('[a2a-support] agent run failed:', err)
+    spy.mockRestore()
   })
 })
