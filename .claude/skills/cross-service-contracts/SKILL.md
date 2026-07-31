@@ -66,6 +66,12 @@ description: Use when planning or reviewing a change that crosses service bounda
 - **`A2A_RECOMMENDATION_URL` / `A2A_ORDER_URL` ↔ kong.yaml ルートパス**: agent-service の env（`http://kong:8000/a2a/recommendation`, `/a2a/orders`）は kong.yaml の `a2a-recommendation-route` / `a2a-order-route` の `paths`（`/a2a/recommendation`, `/a2a/orders`）と一致させる。ルートパスを変える場合は compose.yaml の env も同時に変更する
 - **マーカープロトコル（`[QUESTION]` / `[DONE]`）↔ `MarkerAgentExecutor` のタスク状態遷移**: 専門エージェントの LLM 応答の先頭マーカーで `parseMarkedReply`（`packages/a2a-support/src/executor.ts`）がタスク状態を決める（`[QUESTION]` → `input-required`、`[DONE]` → `completed`、マーカーなしは `completed` 扱い）。system プロンプト側でこのマーカーを出力させる指示を変更・削除すると、意図せず全応答が `completed` 扱いになり、質問返し（マルチターン）が機能しなくなる
 
+### MCP 境界（ai-mcp-proxy ↔ バックエンド API）
+
+- **ツール定義の `path` ↔ MCP ループバック用ルート ↔ consumer `mcp-tools`**: `ai-mcp-proxy` はツール呼び出しを Kong 自身への新規リクエストとして発行する（UA `Kong/x.y MCP server`）。ブラウザ経路 `/api/*` は `openid-connect` 配下で MCP には JWT が無いため 401 になる。そこで cart / order は `/internal/mcp/carts` `/internal/mcp/orders`（services `mcp-backend-cart` / `mcp-backend-order`。`host=<既存 upstream>` + `path=<ベースパス>` + `strip_path: true` の /admin と同じ形）へ向け、`key-auth` で保護している。連動するのは 3 点で、いずれかを変えたら残りも直す: ①ツールの `path`、②ルートの `paths`、③ツールの静的ヘッダー `headers.apikey` と consumer `mcp-tools` の `keyauth_credentials[].key`（`jungle-store-mcp-tools-key`）。`/admin/api/*` は `request-transformer` が `X-User-Id` を `curl-admin` に固定上書きするため MCP からは使えない（ユーザーごとのカート/注文にならない）
+- **ツールの `X-User-Id` パラメータ ↔ バックエンドの必須ヘッダー**: cart / order の各 API は `x-user-id` ヘッダーを必須とする。MCP 側は `parameters` の `in: header` / `required: true` で宣言し、呼び出しごとに LLM が渡す。この宣言を落とすと `inputSchema` が空になり、ツールは常に失敗する（バリデーションエラー）
+- **`add-to-cart` のクエリパラメータ ↔ cart-service のフォールバック**: 本来は `request_body` で宣言すべきだが、decK が `type: json` フィールドのオブジェクト値を送信時に落とす（v1.64.0 / v1.65.1 で確認）ため Konnect に反映されない。回避として `services/cart-service` の `POST /api/carts/items` が「body が無いときだけ」クエリ `productId` / `quantity` / `price` を受理し、MCP 側は `parameters`(`in: query`) で宣言している。decK が修正されたら両方（kong.yaml のツール定義と cart-service のフォールバック）を戻すか判断すること
+
 ## 検証
 
 連動箇所を直したら: 旧識別子の grep ゼロ確認 → 影響サービスの `tsc --noEmit` + テスト → `docker compose config -q`（compose 変更時）→ スタック起動中なら `/verify-stack`（Kafka フローは `--with-order`）。
