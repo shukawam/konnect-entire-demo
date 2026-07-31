@@ -3,6 +3,7 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 WORKDIR /app
 COPY package.json tsconfig.base.json ./
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/a2a-support/package.json ./packages/a2a-support/
 COPY services/catalog-service/package.json ./services/catalog-service/
 COPY services/cart-service/package.json ./services/cart-service/
 COPY services/order-service/package.json ./services/order-service/
