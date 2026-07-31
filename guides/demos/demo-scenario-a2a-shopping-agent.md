@@ -58,18 +58,20 @@ Kong Gateway の **`ai-a2a-proxy`** プラグインを使って、Agent2Agent pr
 チャットに入力:
 
 ```sh
-アウトドアで使えるマグカップを探してる
+筋トレに使えるおすすめの商品ある？
 ```
 
-**Recommendation Agent** バッジ付きで質問が返る（例:「コーヒー用ですか？保温性は重視しますか？」）。応答の `state` は `input-required` で、「Recommendation Agent が入力を待っています…」と表示される。
+**Recommendation Agent** バッジ付きで質問が返る（例:「どの部位を鍛えたいウホ？」）。応答の `state` は `input-required` で、「Recommendation Agent が入力を待っています…」と表示される。
+
+> 入力はシードされた商品（バナナ / フィットネス / ファッション / 書籍 等のゴリラテーマ 12 商品）に沿った内容にする。カタログに無い商品名（例: マグカップ）を指定すると、エージェントが代替品探しにツール呼び出しを繰り返して冗長になる。
 
 ### 1-3. 商品提案を受け取る（completed）
 
 ```sh
-コーヒー用で、保温性重視
+自宅で使いたい。予算は1万5千円くらい
 ```
 
-同じタスク（`taskId`）が再開され、条件に合う商品が提案される（`state: completed`）。提案テキストには商品名・価格・提案理由が含まれる。
+同じタスク（`taskId`）が再開され、条件に合う商品が提案される（`state: completed`）。提案テキストには商品名・商品ID・価格・提案理由が含まれる（商品IDは後続の Order Agent がカート追加に使う）。
 
 ### 1-4. 注文する（Order Agent、input-required → completed）
 
