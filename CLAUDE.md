@@ -31,6 +31,8 @@ npm run dev:order      # port 3003
 npm run dev:shipping   # port 3004
 npm run dev:user       # port 3005
 npm run dev:agent      # port 3006
+npm run dev:recommendation-agent  # port 3007
+npm run dev:order-agent           # port 3008
 npm run dev:frontend   # port 3000
 ```
 
@@ -113,7 +115,9 @@ mise をインストールしたくない利用者向けに、リポジトリ直
         → /api/orders    → Order Service :3003 (OIDC: JWT 検証、レート制限 10回/分)
         → /api/shipments → Shipping Service :3004 (OIDC: JWT 検証)
         → /api/users     → User Service :3005 (OIDC: JWT 検証)
-        → /api/agent     → Agent Service :3006
+        → /api/agent     → Agent Service :3006 (OIDC: JWT 検証、Shopper Orchestrator)
+        → /a2a/recommendation → Recommendation Agent Service :3007 (ai-a2a-proxy + key-auth + acl: orchestrators のみ許可)
+        → /a2a/orders         → Order Agent Service :3008 (ai-a2a-proxy + key-auth + acl: orchestrators のみ許可)
         → /admin/api/*   → cart/order/shipping/user (key-auth: apikey 認証、curl 向け)
 ```
 
@@ -127,6 +131,16 @@ mise をインストールしたくない利用者向けに、リポジトリ直
 - Keycloak の realm はユーザーが作成・エクスポートし、`config/keycloak/realm-export.json` に配置すると起動時（`--import-realm`）に自動取り込みされる。realm 側 client の `secret` は `.env` の `AUTH_KEYCLOAK_SECRET` と完全一致させること（手順は `config/keycloak/README.md`）。
 - **`keycloak-init` コンテナ**（`kafka-init` と同じ init パターン）が起動のたびに kcadm で `master` realm の `sslRequired=NONE` を適用する。管理コンソール（`http://localhost:8081`）が動く `master` はエクスポート対象外で env でも設定できず、既定の `external` のままだと「HTTPS required」になるため。コンテナを作り直しても自動で再適用される。
 - **curl 向けの API キー経路 `/admin/api/*`**: JWT を取得しない CLI/API クライアント向けに、`key-auth`（`apikey` ヘッダー）で保護した別経路を用意する。各 `*-admin-service`（host=既存 upstream、path=バックエンドのベースパス）に対しルートが `/admin` プレフィックスを `strip_path` し、`request-transformer` が JWT の代わりに `X-User-Id: curl-admin` を固定注入する。consumer `curl-admin` の API キーは `config/kong/kong.yaml` で管理。ブラウザ経路（OIDC）には影響しない純粋な追加。
+
+### A2A ショッピングエージェント
+
+フロントエンドの Agent モード（`AskAIDialog` のトグル）は、既存の MCP 直結チャット（エージェント↔ツール）とは別に、Agent2Agent protocol（エージェント↔エージェント）を体感させるデモ。agent-service の Shopper Orchestrator が Kong 経由で `recommendation-agent-service`（:3007、商品提案）/ `order-agent-service`（:3008、カート・注文確定）へタスクを委譲する。
+
+- ワイヤは **A2A v0.3 の JSON-RPC**（`@a2a-js/sdk` の legacy compat 層）。共通部品は `packages/a2a-support`（Hono アダプタ、`MarkerAgentExecutor`、`createA2AClient`）にまとまっており、Agent Card は `/.well-known/agent-card.json` で公開、Kong の `ai-a2a-proxy` が `url` を Gateway アドレスへ書き換える。
+- **エージェント識別**は consumer + `key-auth` + `acl`。`/a2a/*` は `acl allow: orchestrators` で shopper-agent のみ許可し、専門エージェント自身のキー（specialist-agents グループ）では 403 になる。
+- **ユーザー識別**は Kong OIDC が注入する `X-User-Id` → orchestrator が A2A メッセージの `metadata.userId` として伝搬 → 専門エージェントが MCP 呼び出しの `X-User-Id` に使用する。
+- 専門エージェントの LLM 応答は先頭マーカー（`[QUESTION]` → `input-required`、`[DONE]` → `completed`）でタスク状態を遷移させる（`packages/a2a-support/src/executor.ts`）。
+- Phase 2（未実装）: Keycloak Standard Token Exchange によるユーザー権限委譲（scope ベースのツール制限）を予定。
 
 ### 非同期フロー（Kafka + Event Gateway）
 
@@ -208,7 +222,7 @@ services/<名前>/src/
 ## ドキュメント
 
 - `guides/` — 各サービスの API ガイド、Getting Started、kongctl 手順
-- `guides/demos/` — デモシナリオ（Gateway 基礎 / セキュリティ / AI Gateway / イベント駆動 / オブザーバビリティ / E2E 購入フロー）
+- `guides/demos/` — デモシナリオ（Gateway 基礎 / セキュリティ / AI Gateway / イベント駆動 / オブザーバビリティ / E2E 購入フロー / A2A ショッピングエージェント）
 
 ## デモデータ
 
@@ -217,6 +231,6 @@ services/<名前>/src/
 
 ## ポート一覧
 
-3000 フロントエンド | 3001-3006 各サービス | 3010 Grafana (otel-lgtm) | 4317 OTLP gRPC | 4318 OTLP HTTP | 8000 Kong Proxy | 8080 Kafka UI | 8081 Keycloak | 19092 Event Gateway (Order) | 19093 Event Gateway (Shipping)
+3000 フロントエンド | 3001-3006 各サービス | 3007 Recommendation Agent | 3008 Order Agent | 3010 Grafana (otel-lgtm) | 4317 OTLP gRPC | 4318 OTLP HTTP | 8000 Kong Proxy | 8080 Kafka UI | 8081 Keycloak | 19092 Event Gateway (Order) | 19093 Event Gateway (Shipping)
 
 > Tempo / Prometheus / Loki は otel-lgtm コンテナ内部に集約されており、個別ポートは公開していない（Grafana 3010 から参照する）。

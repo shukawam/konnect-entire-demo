@@ -55,8 +55,16 @@ description: Use when planning or reviewing a change that crosses service bounda
 
 ### compose.yaml
 
-- `x-otel-env` アンカーは Prisma 系 5 サービスのみ継承。**agent-service と frontend は OTel 環境変数を手書きしているため、アンカー変更が波及しない**
+- `x-otel-env` アンカーは Prisma 系 5 サービスのみ継承。**agent-service と frontend は OTel 環境変数を手書きしているため、アンカー変更が波及しない**（recommendation-agent-service / order-agent-service も同様に手書きで、`NODE_OPTIONS` のゼロコード計装は使わず `createVolcanoTelemetry`（`src/volcano.ts`）で送信する）
 - order/shipping の Kafka ブローカーはコードのデフォルト（localhost）ではなく `KAFKA_BROKER` 環境変数（event-gateway のリスナーポート、`kongctl/event-gateways.yaml` と対応）に依存
+
+### A2A 境界（agent-service ↔ recommendation/order-agent-service）
+
+- **Agent Card の skill id ↔ orchestrator の delegate プロンプト**: `recommendation-agent-service/src/card.ts` の `skills[0].id = 'product-recommendation'`、`order-agent-service/src/card.ts` の `skills[0].id = 'cart-and-order'`。agent-service（Shopper Orchestrator）は起動後に Kong 経由で Agent Card を取得し、LLM の function calling（`delegate` ツール）が `skills` の id/description を読んで委譲先を選ぶ。skill の説明文を変えると委譲判断の精度が変わるため、Card 側だけ変更して満足しないこと（挙動は実行して確認する）
+- **`metadata.userId` ↔ 専門エージェントの MCP `X-User-Id`**: orchestrator は Kong OIDC が注入した `X-User-Id` を A2A メッセージの `message.metadata.userId` に詰めて送る。専門エージェント側は `MarkerAgentExecutor`（`packages/a2a-support/src/executor.ts`）が `ctx.userMessage.metadata?.userId` を読み、MCP 呼び出しの `X-User-Id` ヘッダーに使う。キー名 `userId` は両側の文字列リテラルで、型で繋がっていない
+- **Kong consumer キー ↔ `A2A_API_KEY` env ↔ kong.yaml `keyauth_credentials`**: agent-service の `A2A_API_KEY`（compose 直書き、`jungle-store-shopper-agent-key`）は `config/kong/kong.yaml` の consumer `shopper-agent` の `keyauth_credentials[].key` と完全一致が必須。ここがずれると `/a2a/*` 全体が 401 になる。専門エージェント自身の consumer（`recommendation-agent` / `order-agent`）は `specialist-agents` グループのみで `orchestrators` に入れない — 入れてしまうと ACL 403 デモが壊れる
+- **`A2A_RECOMMENDATION_URL` / `A2A_ORDER_URL` ↔ kong.yaml ルートパス**: agent-service の env（`http://kong:8000/a2a/recommendation`, `/a2a/orders`）は kong.yaml の `a2a-recommendation-route` / `a2a-order-route` の `paths`（`/a2a/recommendation`, `/a2a/orders`）と一致させる。ルートパスを変える場合は compose.yaml の env も同時に変更する
+- **マーカープロトコル（`[QUESTION]` / `[DONE]`）↔ `MarkerAgentExecutor` のタスク状態遷移**: 専門エージェントの LLM 応答の先頭マーカーで `parseMarkedReply`（`packages/a2a-support/src/executor.ts`）がタスク状態を決める（`[QUESTION]` → `input-required`、`[DONE]` → `completed`、マーカーなしは `completed` 扱い）。system プロンプト側でこのマーカーを出力させる指示を変更・削除すると、意図せず全応答が `completed` 扱いになり、質問返し（マルチターン）が機能しなくなる
 
 ## 検証
 
