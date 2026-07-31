@@ -735,6 +735,32 @@ a:hover {
   color: var(--text);
 }
 
+/* Agent モード（A2A オーケストレーション）切り替えトグル */
+.ask-ai-mode-toggle {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.ask-ai-mode-toggle:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text);
+}
+.ask-ai-mode-toggle.active {
+  background: rgba(204, 255, 0, 0.12);
+  border-color: var(--accent);
+  color: var(--accent-stronger);
+}
+
 .ask-ai-messages {
   flex: 1;
   overflow-y: auto;
@@ -945,4 +971,63 @@ a:hover {
 .ask-ai-send:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Agent モード — 発見済みエージェント一覧（welcome 直下のチップ） */
+.ask-ai-agents {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0 1rem 0.5rem;
+}
+.ask-ai-agent-chip {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: default;
+}
+
+/* Agent モード — 応答メッセージの担当エージェントバッジ */
+.ask-ai-agent-badge {
+  display: inline-block;
+  align-self: flex-start;
+  margin-bottom: 0.3rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.ask-ai-msg-assistant {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.ask-ai-agent-badge-shopper {
+  background: var(--status-info-bg);
+  color: var(--status-info-text);
+  border: 1px solid var(--status-info-border);
+}
+.ask-ai-agent-badge-recommendation {
+  background: var(--status-success-bg);
+  color: var(--status-success-text);
+  border: 1px solid var(--status-success-border);
+}
+.ask-ai-agent-badge-order {
+  background: var(--status-warning-bg);
+  color: var(--status-warning-text);
+  border: 1px solid var(--status-warning-border);
+}
+
+/* Agent モード — input-required 中の待機表示（入力バー直上） */
+.ask-ai-pending {
+  padding: 0.4rem 1rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  background: var(--bg-alt);
 }
