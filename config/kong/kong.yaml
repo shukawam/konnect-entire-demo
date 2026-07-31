@@ -307,6 +307,7 @@ services:
   # ai-a2a-proxy が A2A(v0.3) リクエストを検出し、Agent Card の url を Gateway アドレスへ
   # 書き換え、タスク単位のメトリクス/トレース(ai.a2a)を記録する。
   # key-auth + acl で「オーケストレータ(orchestrators グループ)のみ呼び出し可」を強制する。
+  # プラグインは他サービスと同様、末尾の plugins セクションに service 参照で定義する。
   - name: recommendation-agent-a2a
     url: http://recommendation-agent-service:3007
     routes:
@@ -317,17 +318,6 @@ services:
           - http
           - https
         strip_path: true
-    plugins:
-      - name: ai-a2a-proxy
-        config:
-          logging:
-            log_statistics: true
-            log_payloads: true
-      - name: key-auth
-      - name: acl
-        config:
-          allow:
-            - orchestrators
 
   # A2A Proxy — Order Agent
   - name: order-agent-a2a
@@ -340,17 +330,6 @@ services:
           - http
           - https
         strip_path: true
-    plugins:
-      - name: ai-a2a-proxy
-        config:
-          logging:
-            log_statistics: true
-            log_payloads: true
-      - name: key-auth
-      - name: acl
-        config:
-          allow:
-            - orchestrators
 
 plugins:
   - name: cors
@@ -698,6 +677,39 @@ plugins:
           annotations:
             title: List orders
             read_only_hint: true
+
+  # A2A Proxy — Recommendation Agent
+  # ai-a2a-proxy が A2A(v0.3) リクエストを検出し、Agent Card の url を Gateway アドレスへ
+  # 書き換え、タスク単位のメトリクス/トレース(ai.a2a)を記録する。
+  # key-auth + acl で「オーケストレータ(orchestrators グループ)のみ呼び出し可」を強制する。
+  - name: ai-a2a-proxy
+    service: recommendation-agent-a2a
+    config:
+      logging:
+        log_statistics: true
+        log_payloads: true
+  - name: key-auth
+    service: recommendation-agent-a2a
+  - name: acl
+    service: recommendation-agent-a2a
+    config:
+      allow:
+        - orchestrators
+
+  # A2A Proxy — Order Agent
+  - name: ai-a2a-proxy
+    service: order-agent-a2a
+    config:
+      logging:
+        log_statistics: true
+        log_payloads: true
+  - name: key-auth
+    service: order-agent-a2a
+  - name: acl
+    service: order-agent-a2a
+    config:
+      allow:
+        - orchestrators
 
   # ============================================================
   # /admin 経路の認証: key-auth(apikey ヘッダー) + X-User-Id 注入
