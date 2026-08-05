@@ -35,6 +35,7 @@ export default function AskAIDialog() {
   const [agents, setAgents] = useState<AgentSummary[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // トリガーは Nav ヘッダー（[data-ask-ai-trigger]）にあり、'ask-ai-toggle' イベントで開閉する。
   useEffect(() => {
@@ -108,6 +109,7 @@ export default function AskAIDialog() {
     const newMessages = [...messages, userMessage]
     setMessages(newMessages)
     setInput('')
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
     setLoading(true)
 
     try {
@@ -141,7 +143,7 @@ export default function AskAIDialog() {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       sendMessage()
     }
@@ -247,13 +249,20 @@ export default function AskAIDialog() {
           )}
 
           <div className="ask-ai-input-bar">
-            <input
-              type="text"
+            <textarea
+              ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value)
+                // rows={1} 固定だと複数行の入力が見えないため、内容に合わせて高さを伸ばす
+                // （上限は CSS の max-height、それ以上はスクロール）。
+                e.target.style.height = 'auto'
+                e.target.style.height = `${e.target.scrollHeight}px`
+              }}
               onKeyDown={handleKeyDown}
               placeholder="メッセージを入力..."
               disabled={loading}
+              rows={1}
             />
             <button
               className="ask-ai-send"

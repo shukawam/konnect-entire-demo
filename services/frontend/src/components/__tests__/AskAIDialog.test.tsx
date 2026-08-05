@@ -48,9 +48,12 @@ beforeEach(() => {
   mockedApiFetch.mockImplementation(defaultApiFetchImpl as never)
 })
 
-// React の value tracker を回避して input の値を変更し、onChange を発火させる。
-function setInputValue(input: HTMLInputElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!
+// React の value tracker を回避して textarea の値を変更し、onChange を発火させる。
+function setInputValue(input: HTMLTextAreaElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(
+    window.HTMLTextAreaElement.prototype,
+    'value',
+  )!.set!
   setter.call(input, value)
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
@@ -233,7 +236,7 @@ describe('AskAIDialog Agent モード', () => {
       toggleBtn.click()
     })
 
-    const input = container.querySelector('.ask-ai-input-bar input') as HTMLInputElement
+    const input = container.querySelector('.ask-ai-input-bar textarea') as HTMLTextAreaElement
     await act(async () => {
       setInputValue(input, 'Tシャツが欲しい')
     })
@@ -292,7 +295,7 @@ describe('AskAIDialog Agent モード', () => {
       toggleBtn.click()
     })
 
-    const input = container.querySelector('.ask-ai-input-bar input') as HTMLInputElement
+    const input = container.querySelector('.ask-ai-input-bar textarea') as HTMLTextAreaElement
     const sendBtn = container.querySelector('.ask-ai-send') as HTMLButtonElement
 
     // 1 通目: input-required → pending 表示が出る
@@ -323,6 +326,71 @@ describe('AskAIDialog Agent モード', () => {
     expect(container.querySelector('.ask-ai-pending')).toBeNull()
     const lastMsg = container.querySelectorAll('.ask-ai-msg-assistant .ask-ai-msg-content')
     expect(lastMsg[lastMsg.length - 1]?.textContent).toContain('サービスが一時的に利用できません')
+
+    await act(async () => {
+      root.unmount()
+    })
+    document.body.removeChild(container)
+  })
+
+  it('IME変換中の Enter では送信されず、変換確定後の Enter で送信される', async () => {
+    mockedUseSession.mockReturnValue(authenticatedSession)
+    mockedApiFetch.mockImplementation(((path: string) => {
+      if (path === '/api/agent/chat') {
+        return Promise.resolve({
+          conversationId: 'conv-1',
+          reply: 'かしこまりました',
+          agent: 'order',
+          state: 'completed',
+        })
+      }
+      if (path === '/api/agent/agents') return Promise.resolve({ agents: [] })
+      return Promise.resolve({ suggestions: [] })
+    }) as never)
+
+    const { container, root } = await renderOpenDialog()
+    const toggleBtn = container.querySelector('.ask-ai-mode-toggle') as HTMLButtonElement
+    await act(async () => {
+      toggleBtn.click()
+    })
+
+    const input = container.querySelector('.ask-ai-input-bar textarea') as HTMLTextAreaElement
+
+    await act(async () => {
+      setInputValue(input, 'ごりら')
+    })
+    await act(async () => {
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Enter',
+          bubbles: true,
+          cancelable: true,
+          isComposing: true,
+        }),
+      )
+    })
+    expect(mockedApiFetch).not.toHaveBeenCalledWith('/api/agent/chat', expect.anything())
+
+    await act(async () => {
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Enter',
+          bubbles: true,
+          cancelable: true,
+          isComposing: false,
+        }),
+      )
+    })
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      '/api/agent/chat',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ conversationId: undefined, message: 'ごりら' }),
+      }),
+    )
 
     await act(async () => {
       root.unmount()
