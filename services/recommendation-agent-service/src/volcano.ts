@@ -59,9 +59,31 @@ export async function runRecommendation(transcript: string, userId: string): Pro
     })
     .run()
   const output = lastLlmOutput(result)
-  if (output === undefined) {
-    log.error({ userId, steps: result.map((s) => Object.keys(s)) }, 'no llmOutput in agent result')
-    return `${DONE_MARKER} 申し訳ありません。提案を生成できませんでした。`
+  if (output !== undefined) return output
+
+  // maxToolIterations に到達するとツール呼び出しの途中で打ち切られ、最終応答（llmOutput）が
+  // 生成されないまま終わることがある。ここまでの tool 呼び出し結果（カタログ検索結果など）を
+  // コンテキストに含んだ単発 LLM 呼び出し（result.ask、ツール呼び出しなし）で、
+  // マーカー付きの最終応答を強制的に1回だけ生成させる。result.ask() 自身は SDK 側の英語メタ
+  // プロンプトと Kong の ai-prompt-decorator に包まれるためマーカー遵守は保証されない。
+  // マーカーが無い応答は parseMarkedReply により無条件に completed 扱いされてしまい
+  // （例: 注文確認待ちの応答をマーカー無しで返すと、確認前に注文タスクが completed になり
+  // ユーザーの同意なしに終了したように見える）、空応答（ask 内部は非ストリーミングでも
+  // トークン0件を例外にしない）と合わせてここで弾く。
+  log.warn({ userId }, 'no llmOutput in agent result; retrying via result.ask()')
+  try {
+    const fallback = (
+      await result.ask(
+        llm,
+        `これまでの会話とツール呼び出し結果だけを根拠に、追加のツール呼び出しはせず、必ず「${QUESTION_MARKER}」または「${DONE_MARKER}」から始まる応答を1つだけ返してください。`,
+      )
+    ).trim()
+    if (fallback.includes(QUESTION_MARKER) || fallback.includes(DONE_MARKER)) {
+      return fallback
+    }
+    log.warn({ userId, fallback }, 'result.ask() output has no marker; treating as failure')
+  } catch (err) {
+    log.error({ userId, err }, 'fallback result.ask() also failed')
   }
-  return output
+  return `${DONE_MARKER} 申し訳ありません。提案を生成できませんでした。`
 }
