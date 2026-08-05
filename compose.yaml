@@ -486,7 +486,11 @@ services:
       PORT: 3006
       OTEL_SERVICE_NAME: agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
       GATEWAY_ENDPOINT: http://kong:8000
+      A2A_RECOMMENDATION_URL: http://kong:8000/a2a/recommendation
+      A2A_ORDER_URL: http://kong:8000/a2a/orders
+      A2A_API_KEY: jungle-store-shopper-agent-key
     healthcheck:
       test:
         [
@@ -506,6 +510,76 @@ services:
           target: /app/services/agent-service/src
         - action: rebuild
           path: ./services/agent-service/package.json
+
+  recommendation-agent-service:
+    <<: *default
+    container_name: recommendation-agent-service
+    image: ghcr.io/shukawam/konnect-entire-demo-recommendation-agent-service:${IMAGE_TAG:-v1.1.0}
+    build:
+      context: .
+      dockerfile: services/recommendation-agent-service/Dockerfile
+    command: ['npx', 'tsx', 'watch', 'src/index.ts']
+    ports:
+      - '3007:3007'
+    environment:
+      PORT: 3007
+      OTEL_SERVICE_NAME: recommendation-agent-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
+      GATEWAY_ENDPOINT: http://kong:8000
+      SELF_URL: http://recommendation-agent-service:3007
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3007/health'').then(r=>{if(!r.ok)throw r})"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      kong:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./services/recommendation-agent-service/src
+          target: /app/services/recommendation-agent-service/src
+
+  order-agent-service:
+    <<: *default
+    container_name: order-agent-service
+    image: ghcr.io/shukawam/konnect-entire-demo-order-agent-service:${IMAGE_TAG:-v1.1.0}
+    build:
+      context: .
+      dockerfile: services/order-agent-service/Dockerfile
+    command: ['npx', 'tsx', 'watch', 'src/index.ts']
+    ports:
+      - '3008:3008'
+    environment:
+      PORT: 3008
+      OTEL_SERVICE_NAME: order-agent-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
+      GATEWAY_ENDPOINT: http://kong:8000
+      SELF_URL: http://order-agent-service:3008
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3008/health'').then(r=>{if(!r.ok)throw r})"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      kong:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./services/order-agent-service/src
+          target: /app/services/order-agent-service/src
 
   frontend:
     <<: *default

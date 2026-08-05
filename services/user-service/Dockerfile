@@ -6,6 +6,7 @@ WORKDIR /app
 # Copy root workspace files
 COPY package.json tsconfig.base.json ./
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/a2a-support/package.json ./packages/a2a-support/
 COPY services/user-service/package.json ./services/user-service/
 
 # Copy all service packages for workspace resolution

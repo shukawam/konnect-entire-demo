@@ -12,7 +12,7 @@ BIN="$PWD/node_modules/.bin"
 
 # lint-staged と同じ対象拡張子（package.json の lint-staged glob が正）を Prettier で整形
 case "$file_path" in
-  *.js | *.jsx | *.ts | *.tsx | *.json | *.css | *.md | *.yaml | *.yml)
+  *.js | *.jsx | *.ts | *.tsx | *.mjs | *.cjs | *.json | *.css | *.md | *.yaml | *.yml)
     [ -x "$BIN/prettier" ] && "$BIN/prettier" --write "$file_path" >/dev/null 2>&1
     ;;
 esac

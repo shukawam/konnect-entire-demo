@@ -3,6 +3,7 @@ WORKDIR /app
 
 COPY package.json ./
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/a2a-support/package.json ./packages/a2a-support/
 COPY services/frontend/package.json ./services/frontend/
 COPY services/catalog-service/package.json ./services/catalog-service/
 COPY services/cart-service/package.json ./services/cart-service/

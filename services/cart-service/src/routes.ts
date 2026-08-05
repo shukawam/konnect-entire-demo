@@ -42,6 +42,18 @@ const AddItemSchema = z
   })
   .openapi('AddItem')
 
+// ai-mcp-proxy 経由のツール呼び出し用フォールバック。JSON body の代わりにクエリで受け取る
+// （decK が ai-mcp-proxy の request_body を Konnect へ送れないため。詳細は config/kong/kong.yaml）。
+// 通常の API 呼び出し（body あり）の挙動は変えないため、全項目 optional にして
+// 「body が無いときだけ」ハンドラ側で必須チェックする。
+const AddItemQuerySchema = z
+  .object({
+    productId: z.string().min(1).optional().openapi({ example: 'prod-001' }),
+    quantity: z.coerce.number().int().positive().optional().openapi({ example: 2 }),
+    price: z.coerce.number().int().optional().openapi({ example: 2980 }),
+  })
+  .openapi('AddItemQuery')
+
 const UpdateQuantitySchema = z
   .object({
     quantity: z.number().int(),
@@ -122,17 +134,24 @@ const addItem = createRoute({
   path: '/items',
   tags: ['Cart'],
   summary: '商品追加',
-  description: 'カートに商品を追加します。既に同じ商品がある場合は数量が加算されます。',
+  description:
+    'カートに商品を追加します。既に同じ商品がある場合は数量が加算されます。' +
+    'JSON body が無い場合は同名のクエリパラメータ（productId / quantity / price）で受け付けます。',
   request: {
     headers: z.object({
       'x-user-id': z.string().openapi({ example: 'user-001' }),
     }),
-    body: { content: { 'application/json': { schema: AddItemSchema } } },
+    query: AddItemQuerySchema,
+    body: { content: { 'application/json': { schema: AddItemSchema } }, required: false },
   },
   responses: {
     201: {
       description: '更新されたカート',
       content: { 'application/json': { schema: CartSchema } },
+    },
+    400: {
+      description: 'パラメータ不正（body / クエリのいずれにも必要な項目が無い）',
+      content: { 'application/json': { schema: ErrorSchema } },
     },
     401: {
       description: '認証エラー',
@@ -151,7 +170,15 @@ app.openapi(addItem, async (c) => {
     return c.json({ error: 'X-User-Id header is required' }, 401)
   }
 
-  const { productId, quantity, price } = c.req.valid('json')
+  // body が無い（MCP ツール経由など）場合のみクエリパラメータを使う
+  // body 未指定時は {} が渡るため、中身の有無で判定する
+  const body = c.req.valid('json') as Partial<z.infer<typeof AddItemSchema>> | undefined
+  const query = c.req.valid('query')
+  const input = body && Object.keys(body).length > 0 ? body : query
+  if (!input?.productId || input.quantity === undefined || input.price === undefined) {
+    return c.json({ error: 'productId, quantity and price are required' }, 400)
+  }
+  const { productId, quantity, price } = input
 
   // Ensure cart exists
   let cart = await prisma.cart.findUnique({ where: { userId } })

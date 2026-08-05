@@ -31,7 +31,7 @@ Kong Gateway からバックエンドサービス、MySQL、Kafka を横断す�
                         Grafana :3010
 ```
 
-- **ゼロコード計装:** `NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register` で全サービスを自動計装
+- **ゼロコード計装:** `NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register` で自動計装（A2A の3サービスのみ `--import @konnect-demo/shared/tracing-register.mjs` でHTTPトレース連携のみ有効化。詳細は[A2Aショッピングエージェントのシナリオ](demo-scenario-a2a-shopping-agent.md)参照）
 - **Kong Gateway:** `opentelemetry` プラグインで W3C Trace Context を伝播
 - **Kafka:** メッセージヘッダーにトレースコンテキストを埋め込み、サービス間でトレースを連結
 
