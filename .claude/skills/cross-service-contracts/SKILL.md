@@ -55,7 +55,7 @@ description: Use when planning or reviewing a change that crosses service bounda
 
 ### compose.yaml
 
-- `x-otel-env` アンカーは Prisma 系 5 サービスのみ継承。**agent-service と frontend は OTel 環境変数を手書きしているため、アンカー変更が波及しない**（recommendation-agent-service / order-agent-service も同様に手書きで、`NODE_OPTIONS` のゼロコード計装は使わず `createVolcanoTelemetry`（`src/volcano.ts`）で送信する）
+- `x-otel-env` アンカーは Prisma 系 5 サービスのみ継承。**agent-service と frontend は OTel 環境変数を手書きしているため、アンカー変更が波及しない**（agent-service / recommendation-agent-service / order-agent-service は LLM/MCP のトレース・メトリクス自体は `createVolcanoTelemetry`（`src/volcano.ts`）で送信するが、HTTP トレース連携用に `NODE_OPTIONS` も手書きしている。詳細は下記「A2A のトレース連携」参照）
 - order/shipping の Kafka ブローカーはコードのデフォルト（localhost）ではなく `KAFKA_BROKER` 環境変数（event-gateway のリスナーポート、`kongctl/event-gateways.yaml` と対応）に依存
 
 ### A2A 境界（agent-service ↔ recommendation/order-agent-service）
@@ -65,6 +65,12 @@ description: Use when planning or reviewing a change that crosses service bounda
 - **Kong consumer キー ↔ `A2A_API_KEY` env ↔ kong.yaml `keyauth_credentials`**: agent-service の `A2A_API_KEY`（compose 直書き、`jungle-store-shopper-agent-key`）は `config/kong/kong.yaml` の consumer `shopper-agent` の `keyauth_credentials[].key` と完全一致が必須。ここがずれると `/a2a/*` 全体が 401 になる。専門エージェント自身の consumer（`recommendation-agent` / `order-agent`）は `specialist-agents` グループのみで `orchestrators` に入れない — 入れてしまうと ACL 403 デモが壊れる
 - **`A2A_RECOMMENDATION_URL` / `A2A_ORDER_URL` ↔ kong.yaml ルートパス**: agent-service の env（`http://kong:8000/a2a/recommendation`, `/a2a/orders`）は kong.yaml の `a2a-recommendation-route` / `a2a-order-route` の `paths`（`/a2a/recommendation`, `/a2a/orders`）と一致させる。ルートパスを変える場合は compose.yaml の env も同時に変更する
 - **マーカープロトコル（`[QUESTION]` / `[DONE]`）↔ `MarkerAgentExecutor` のタスク状態遷移**: 専門エージェントの LLM 応答の先頭マーカーで `parseMarkedReply`（`packages/a2a-support/src/executor.ts`）がタスク状態を決める（`[QUESTION]` → `input-required`、`[DONE]` → `completed`、マーカーなしは `completed` 扱い）。system プロンプト側でこのマーカーを出力させる指示を変更・削除すると、意図せず全応答が `completed` 扱いになり、質問返し（マルチターン）が機能しなくなる
+
+### A2A のトレース連携（NODE_OPTIONS プリロード ↔ packages/shared のファイル配置）
+
+- **`NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs` ↔ `packages/shared/tracing-register.mjs`（パッケージ直下、`src/` 配下ではない）**: agent-service / recommendation-agent-service / order-agent-service は volcano SDK（`createVolcanoTelemetry`）で LLM/MCP のトレース・メトリクスを送信するが、volcano 自身は HTTP/fetch を自動計装しない。そのため、これら3サービスの compose.yaml `environment` に `NODE_OPTIONS` で `HttpInstrumentation`/`UndiciInstrumentation` の登録プリロードを追加し、Kong 経由の A2A 委譲・MCP ツール呼び出しに `traceparent` を伝搬させている。require-in-the-middle ベースの `HttpInstrumentation` はアプリコードが `http` を require した後に有効化しても patch が効かないため、**アプリのモジュールグラフの外（`--import` プリロード）で最初に実行する必要がある** — `index.ts` 内で呼び出す形に戻すと（一見動きそうに見えても）受信リクエストの trace context 抽出が効かず、静かにトレースが分断される。ファイルを移動・リネームする場合は compose.yaml の3箇所（agent-service / recommendation-agent-service / order-agent-service）の `NODE_OPTIONS` を同時に変更すること。他の5サービス（`@opentelemetry/auto-instrumentations-node/register`）とプリロード先が違う点に注意
+- **`x-otel-env` アンカー（`NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register` を含む）↔ この3サービスの独自 `NODE_OPTIONS`**: `x-otel-env` を `environment:` の内側で継承しているのは Prisma 系5サービスのみで、この3サービスはもともと継承していない（見た目の対比のために`<<: *default`ではなくこちらと混同しないこと）。そのため「anchor の値が上書きされる」のではなく、**この3サービスの `NODE_OPTIONS` は各自の手書きが唯一の source**。他サービスに合わせて `NODE_OPTIONS` を削除・`x-otel-env` 参照に変えると、`@opentelemetry/auto-instrumentations-node/register` は `packages/shared` を経由しないため今度は依存関係が無くビルドに含まれず、A2A のトレース連携が壊れる
+- **`tracing-register.mjs` の編集は `docker compose watch` で反映されない**: NODE_OPTIONS プリロードは起動時にしか読まれないため、このファイルを編集したら該当3サービスを `--build` で再ビルドすること。また `packages/shared/package.json` に将来 `exports` フィールドを追加する場合は `./tracing-register.mjs` を明示的に含めること（現状は `exports` 不在の legacy 解決で通っているだけで、`exports` を足すと未記載のサブパスは即座に解決不能になる）
 
 ### MCP 境界（ai-mcp-proxy ↔ バックエンド API）
 

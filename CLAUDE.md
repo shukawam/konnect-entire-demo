@@ -150,7 +150,7 @@ Kong Event Gateway がプロキシとして間に入り、サービスごとの�
 
 ### オブザーバビリティ
 
-全サービス → otel-lgtm :4318（OTel Collector、Tempo（トレース）、Prometheus（メトリクス）、Loki（ログ）、Grafana をオールインワンで提供する `grafana/otel-lgtm` イメージ）→ Grafana :3010。`NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register` によるゼロコード計装。内蔵 Collector の設定は `config/observability/otel-lgtm/otelcol-config.yaml` で上書きし、ノイズ除去用の `filter/traces` と Kong AI メトリクス用の Prometheus スクレイプ（`kong:8100`）を保持している。
+全サービス → otel-lgtm :4318（OTel Collector、Tempo（トレース）、Prometheus（メトリクス）、Loki（ログ）、Grafana をオールインワンで提供する `grafana/otel-lgtm` イメージ）→ Grafana :3010。`NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register` によるゼロコード計装（agent-service / recommendation-agent-service / order-agent-service の3サービスのみ `--import @konnect-demo/shared/tracing-register.mjs` で HTTP/fetch のトレース連携を有効化し、LLM/MCP 自体のトレース・メトリクスは volcano SDK が別途送信する。詳細は `cross-service-contracts` スキル参照）。内蔵 Collector の設定は `config/observability/otel-lgtm/otelcol-config.yaml` で上書きし、ノイズ除去用の `filter/traces` と Kong AI メトリクス用の Prometheus スクレイプ（`kong:8100`）を保持している。
 
 ## 技術スタック
 

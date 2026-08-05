@@ -135,10 +135,11 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 ### 3-1. Grafana（Tempo）で `ai.a2a` スパンを確認
 
 1. Grafana（http://localhost:3010）→ Explore → Tempo
-2. `Service Name: kong` などで A2A リクエストのトレースを検索し、`ai.a2a` スパンを開く
-3. スパン属性でタスク状態（`input-required` / `completed` 等）と JSON-RPC メソッド（`message/send` 等）を確認する
+2. `{resource.service.name="agent-service"}` かつ span 名 `POST` で検索し、durationの長いもの（Agent モードでの一往復に対応）を開く
+3. 1本の trace に agent-service（委譲判断・A2A呼び出し）→ kong-gateway（`ai-a2a-proxy`/`ai-proxy-advanced`等の各プラグイン、`kong.a2a` スパン）→ recommendation-agent-service / order-agent-service（`agent.run`/`mcp.call_tool`）→ カタログ/カート/注文の各バックエンド（Prismaクエリまで）が連結されていることを確認する
+4. スパン属性でタスク状態（`input-required` / `completed` 等）と JSON-RPC メソッド（`message/send` 等）を確認する
 
-> 専門エージェント（recommendation-agent-service / order-agent-service）は他サービスの `NODE_OPTIONS` ゼロコード計装ではなく、agent-service と同じ volcano SDK（`createVolcanoTelemetry`）でトレース/メトリクスを送信する。同じ OTel Collector（otel-lgtm）に集約されるが、Grafana で見えるのは volcano SDK が出すエージェント実行のスパン/メトリクスのみで、他サービスにある自動計装の HTTP スパンや Loki のログは含まれない。Gateway 側の `ai.a2a` スパン（Kong 由来）と合わせて追う。
+> 専門エージェント（recommendation-agent-service / order-agent-service）は agent-service と同じ volcano SDK（`createVolcanoTelemetry`）で LLM/MCP 実行自体のトレース/メトリクスを送信する。加えて、この3サービスは `NODE_OPTIONS`（`@konnect-demo/shared/tracing-register.mjs` プリロード）で HTTP/fetch のコンテキスト伝搬も有効化しているため、他サービスの自動計装 HTTP スパンや Kong の `ai.a2a` スパンと同一トレースに連結される。
 
 ### 3-2. Konnect アナリティクスでエージェント別トラフィックを確認
 

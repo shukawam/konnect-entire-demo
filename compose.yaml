@@ -486,6 +486,7 @@ services:
       PORT: 3006
       OTEL_SERVICE_NAME: agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
       GATEWAY_ENDPOINT: http://kong:8000
       A2A_RECOMMENDATION_URL: http://kong:8000/a2a/recommendation
       A2A_ORDER_URL: http://kong:8000/a2a/orders
@@ -524,6 +525,7 @@ services:
       PORT: 3007
       OTEL_SERVICE_NAME: recommendation-agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
       GATEWAY_ENDPOINT: http://kong:8000
       SELF_URL: http://recommendation-agent-service:3007
     healthcheck:
@@ -558,6 +560,7 @@ services:
       PORT: 3008
       OTEL_SERVICE_NAME: order-agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
       GATEWAY_ENDPOINT: http://kong:8000
       SELF_URL: http://order-agent-service:3008
     healthcheck:
