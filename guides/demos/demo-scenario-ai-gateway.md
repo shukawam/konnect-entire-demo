@@ -18,7 +18,7 @@ Kong の AI Gateway 機能（AI Proxy、Prompt Guard、Semantic Cache、Prompt D
 ## AI Gateway アーキテクチャ
 
 ```sh
-[フロントエンド] ── /ai/agent-chat/v1 ──> [Kong Gateway] /ai/agent-chat/v1（境界・キャッシュあり）
+[フロントエンド] ── /ai/agent-chat/v1 ──> [Kong AI Gateway :8010] /ai/agent-chat/v1（境界・キャッシュあり）
                                               ├── ai-semantic-cache（意味ベースの応答キャッシュ）
                                               └── ai-proxy-advanced（upstream_url → Agent Service :3006 /v1/chat/completions）
                                                         │
@@ -150,7 +150,7 @@ HTTP/1.1 400 Bad Request
 
 ```bash
 # 正常なリクエスト
-curl -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o-mini",
@@ -158,7 +158,7 @@ curl -X POST http://localhost:8000/ai/v1/chat/completions \
   }'
 
 # ブロックされるリクエスト
-curl -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o-mini",
@@ -191,13 +191,13 @@ curl -X POST http://localhost:8000/ai/v1/chat/completions \
 
 ```bash
 # 1回目: キャッシュミス（OpenAI へ到達）— レスポンスヘッダとレイテンシに注目
-curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"どんな商品がありますか？"}]}' \
   | grep -iE "X-Cache-Status|total:"
 
 # 2回目: 言い換えでもキャッシュヒット（OpenAI 未到達・高速）
-curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"取り扱っている商品を教えて"}]}' \
   | grep -iE "X-Cache-Status|total:"

@@ -109,16 +109,20 @@ mise をインストールしたくない利用者向けに、リポジトリ直
 ```sh
 ブラウザ :3000 (Next.js 15)
     → Keycloak :8081 で SSO ログイン（NextAuth/Auth.js）
-    → Kong Gateway :8000 (宣言型設定、DB レスモード)
+    → Kong Gateway（API）:8000 (宣言型設定、DB レスモード。config/kong/kong.yaml)
         → /api/products  → Catalog Service :3001 (プロキシキャッシュ有効)
         → /api/carts     → Cart Service :3002 (OIDC: JWT 検証)
         → /api/orders    → Order Service :3003 (OIDC: JWT 検証、レート制限 10回/分)
         → /api/shipments → Shipping Service :3004 (OIDC: JWT 検証)
         → /api/users     → User Service :3005 (OIDC: JWT 検証)
         → /api/agent     → Agent Service :3006 (OIDC: JWT 検証、Shopper Orchestrator)
+        → /admin/api/*   → cart/order/shipping/user (key-auth: apikey 認証、curl 向け)
+    → Kong Gateway（AI）:8010 (宣言型設定、DB レスモード。config/kong/kong-ai.yaml。
+      Agent Service / Recommendation Agent Service / Order Agent Service が内部から呼び出す)
+        → /ai/v1, /ai/agent/v1, /ai/agent-chat/v1 → LLM Gateway（OpenAI、ai-proxy-advanced）
+        → /mcp/products, /mcp/carts, /mcp/orders   → MCP（ai-mcp-proxy）
         → /a2a/recommendation → Recommendation Agent Service :3007 (ai-a2a-proxy + key-auth + acl: orchestrators のみ許可)
         → /a2a/orders         → Order Agent Service :3008 (ai-a2a-proxy + key-auth + acl: orchestrators のみ許可)
-        → /admin/api/*   → cart/order/shipping/user (key-auth: apikey 認証、curl 向け)
 ```
 
 ### エンドユーザー認証（Keycloak SSO + Kong OIDC）
@@ -231,6 +235,6 @@ services/<名前>/src/
 
 ## ポート一覧
 
-3000 フロントエンド | 3001-3006 各サービス | 3007 Recommendation Agent | 3008 Order Agent | 3010 Grafana (otel-lgtm) | 4317 OTLP gRPC | 4318 OTLP HTTP | 8000 Kong Proxy | 8080 Kafka UI | 8081 Keycloak | 19092 Event Gateway (Order) | 19093 Event Gateway (Shipping)
+3000 フロントエンド | 3001-3006 各サービス | 3007 Recommendation Agent | 3008 Order Agent | 3010 Grafana (otel-lgtm) | 4317 OTLP gRPC | 4318 OTLP HTTP | 8000 Kong Proxy (API) | 8010 Kong Proxy (AI) | 8080 Kafka UI | 8081 Keycloak | 8100 Kong Status (API) | 8110 Kong Status (AI) | 19092 Event Gateway (Order) | 19093 Event Gateway (Shipping)
 
 > Tempo / Prometheus / Loki は otel-lgtm コンテナ内部に集約されており、個別ポートは公開していない（Grafana 3010 から参照する）。

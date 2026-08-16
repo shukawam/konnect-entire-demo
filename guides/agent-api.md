@@ -25,12 +25,12 @@ Base URL: `http://localhost:8000/api/agent`
 
 ## AI チャット
 
-チャットは Kong の OpenAI 互換境界ルート `POST http://localhost:8000/ai/agent-chat/v1/chat/completions` 経由で行います。このルートは Kong の `ai-proxy-advanced`（upstream: agent-service）と `ai-semantic-cache` で保護されており、意味的に類似した質問はキャッシュされます（詳細は `guides/demos/demo-scenario-ai-gateway.md` 参照）。
+チャットは Kong の OpenAI 互換境界ルート `POST http://localhost:8010/ai/agent-chat/v1/chat/completions` 経由で行います。このルートは Kong の `ai-proxy-advanced`（upstream: agent-service）と `ai-semantic-cache` で保護されており、意味的に類似した質問はキャッシュされます（詳細は `guides/demos/demo-scenario-ai-gateway.md` 参照）。
 
 ### リクエスト送信
 
 ```bash
-curl -X POST http://localhost:8000/ai/agent-chat/v1/chat/completions \
+curl -X POST http://localhost:8010/ai/agent-chat/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <access_token>" \
   -d '{
