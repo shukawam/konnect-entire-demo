@@ -1,6 +1,6 @@
 ---
-title: Menu
-description: Sidebar for Jungle Store Dev Portal
+title: Jungle Store Sidebar
+description: Jungle Store Sidebar
 ---
 
 ::snippet

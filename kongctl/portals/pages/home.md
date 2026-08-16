@@ -1,6 +1,6 @@
 ---
-title: "Jungle Store Dev Portal"
-description: "Developer portal for Jungle Store."
+title: "Home"
+description: "Home page for Jungle Store Dev Portal"
 page-layout:
   sidebar-left: sidebar
 ---

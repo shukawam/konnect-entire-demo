@@ -1,6 +1,6 @@
 ---
 title: "APIs"
-description: "APIs available in this Developer Portal."
+description: "API Products available in this Developer Portal."
 ---
 
 ::apis-list
