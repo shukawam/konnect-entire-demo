@@ -20,7 +20,7 @@ const telemetry = createVolcanoTelemetry({
   metrics: true,
 })
 
-const gatewayEndpoint = process.env.GATEWAY_ENDPOINT || 'http://localhost:8000'
+const gatewayEndpoint = process.env.GATEWAY_ENDPOINT || 'http://localhost:8010'
 
 // Agent 専用のキャッシュなしルートを使う。/ai/v1 は ai-semantic-cache 付き（一問一答の curl デモ用）
 // だが、マルチターン会話では話題が関連する連続ターンが意味的に近くキャッシュが文脈を壊すため、

@@ -533,9 +533,9 @@ services:
       OTEL_SERVICE_NAME: agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
-      GATEWAY_ENDPOINT: http://kong:8000
-      A2A_RECOMMENDATION_URL: http://kong:8000/a2a/recommendation
-      A2A_ORDER_URL: http://kong:8000/a2a/orders
+      GATEWAY_ENDPOINT: http://kong-ai:8000
+      A2A_RECOMMENDATION_URL: http://kong-ai:8000/a2a/recommendation
+      A2A_ORDER_URL: http://kong-ai:8000/a2a/orders
       A2A_API_KEY: jungle-store-shopper-agent-key
     healthcheck:
       test:
@@ -547,7 +547,7 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      kong:
+      kong-ai:
         condition: service_healthy
     develop:
       watch:
@@ -572,7 +572,7 @@ services:
       OTEL_SERVICE_NAME: recommendation-agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
-      GATEWAY_ENDPOINT: http://kong:8000
+      GATEWAY_ENDPOINT: http://kong-ai:8000
       SELF_URL: http://recommendation-agent-service:3007
     healthcheck:
       test:
@@ -584,7 +584,7 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      kong:
+      kong-ai:
         condition: service_healthy
     develop:
       watch:
@@ -607,7 +607,7 @@ services:
       OTEL_SERVICE_NAME: order-agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
-      GATEWAY_ENDPOINT: http://kong:8000
+      GATEWAY_ENDPOINT: http://kong-ai:8000
       SELF_URL: http://order-agent-service:3008
     healthcheck:
       test:
@@ -619,7 +619,7 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      kong:
+      kong-ai:
         condition: service_healthy
     develop:
       watch:
@@ -641,6 +641,7 @@ services:
       - '3000:3000'
     environment:
       BACKEND_URL: http://kong:8000
+      AI_GATEWAY_BACKEND_URL: http://kong-ai:8000
       NEXT_PUBLIC_GRAFANA_URL: ${NEXT_PUBLIC_GRAFANA_URL:-http://localhost:3010}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       OTEL_SERVICE_NAME: frontend
@@ -660,6 +661,8 @@ services:
       retries: 5
     depends_on:
       kong:
+        condition: service_healthy
+      kong-ai:
         condition: service_healthy
       keycloak:
         condition: service_started

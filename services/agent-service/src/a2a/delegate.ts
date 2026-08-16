@@ -2,7 +2,7 @@ import { createLogger } from '@konnect-demo/shared'
 import type { AgentKey } from './conversations.js'
 
 const log = createLogger('agent-service')
-const gatewayEndpoint = process.env.GATEWAY_ENDPOINT || 'http://localhost:8000'
+const gatewayEndpoint = process.env.GATEWAY_ENDPOINT || 'http://localhost:8010'
 
 export interface AgentSummary {
   key: AgentKey
