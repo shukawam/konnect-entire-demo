@@ -193,6 +193,52 @@ services:
       keycloak:
         condition: service_started
 
+  kong-ai:
+    <<: *default
+    container_name: kong-ai
+    image: kong/kong-gateway:3.14.0.1
+    environment:
+      KONG_ROLE: data_plane
+      KONG_DATABASE: off
+      KONG_VITALS: off
+      KONG_CLUSTER_MTLS: pki
+      KONG_CLUSTER_CONTROL_PLANE: ${AI_GATEWAY_PREFIX:-}.us.cp.konghq.com:443
+      KONG_CLUSTER_SERVER_NAME: ${AI_GATEWAY_PREFIX:-}.us.cp.konghq.com
+      KONG_CLUSTER_TELEMETRY_ENDPOINT: ${AI_GATEWAY_PREFIX:-}.us.tp.konghq.com:443
+      KONG_CLUSTER_TELEMETRY_SERVER_NAME: ${AI_GATEWAY_PREFIX:-}.us.tp.konghq.com
+      KONG_CLUSTER_CERT: /etc/kong/cluster-certs/cluster.crt
+      KONG_CLUSTER_CERT_KEY: /etc/kong/cluster-certs/cluster.key
+      KONG_LUA_SSL_TRUSTED_CERTIFICATE: system
+      KONG_KONNECT_MODE: on
+      KONG_CLUSTER_DP_LABELS: type:docker-macOsArmOS
+      KONG_ROUTER_FLAVOR: expressions
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
+      KONG_TRACING_INSTRUMENTATIONS: all
+      KONG_TRACING_SAMPLING_RATE: 1.0
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    ports:
+      - '8010:8000' # Proxy
+      - '8110:8100' # Status API
+    volumes:
+      - ./certs/kong-gateway-ai:/etc/kong/cluster-certs
+    healthcheck:
+      test: ['CMD', 'kong', 'health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      catalog-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
   event-gateway:
     <<: *default
     container_name: event-gateway
