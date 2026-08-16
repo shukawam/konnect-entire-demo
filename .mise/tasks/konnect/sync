@@ -11,6 +11,7 @@ log "kongctl source: $SRC"
 mkdir -p "$SRC/.certs"
 cp "$REPO_ROOT/certs/kong-gateway/cluster.crt"  "$SRC/.certs/kong-gateway.crt"
 cp "$REPO_ROOT/certs/event-gateway/cluster.crt" "$SRC/.certs/event-gateway.crt"
+cp "$REPO_ROOT/certs/kong-gateway-ai/cluster.crt" "$SRC/.certs/kong-gateway-ai.crt"
 
 kongctl sync -f "$SRC" --auto-approve
 log "kongctl sync 完了"
