@@ -17,16 +17,30 @@ if [ -n "$prefix" ] && [ ! -f "$REPO_ROOT/.env.pre-$prefix" ]; then
   log ".env を .env.pre-$prefix にバックアップ"
 fi
 
-# --- Gateway CP endpoint → PREFIX ---
-cp_json="$(kongctl get gateway control-planes -o json)"
-endpoint="$(printf '%s' "$cp_json" | jq -r --arg n "$cp_name" '
-  (.data? // .) | (if type=="array" then . else [.] end)
-  | map(select(.name==$n)) | .[0]
-  | (.config.control_plane_endpoint // .config.controlPlaneEndpoint // .control_plane_endpoint // empty)')"
+# --- Gateway CP endpoint → PREFIX（API Gateway / AI Gateway 共通で1回だけ全件取得） ---
+cps_json="$(kongctl get gateway control-planes -o json)"
+
+extract_endpoint() {
+  local name="$1"
+  printf '%s' "$cps_json" | jq -r --arg n "$name" '
+    (.data? // .) | (if type=="array" then . else [.] end)
+    | map(select(.name==$n)) | .[0]
+    | (.config.control_plane_endpoint // .config.controlPlaneEndpoint // .control_plane_endpoint // empty)'
+}
+
+endpoint="$(extract_endpoint "$cp_name")"
 [ -n "$endpoint" ] || die "control-plane endpoint を取得できませんでした（CP: $cp_name / JSON フィールド名を確認）"
 pfx="$(printf '%s' "$endpoint" | sed -E 's#^https?://##; s#\..*$##')"
 env_set PREFIX "$pfx"
 log "PREFIX=$pfx"
+
+# --- AI Gateway CP endpoint → AI_GATEWAY_PREFIX ---
+ai_cp_name="jungle-store-ai-gateway${prefix:+-$prefix}"
+ai_endpoint="$(extract_endpoint "$ai_cp_name")"
+[ -n "$ai_endpoint" ] || die "control-plane endpoint を取得できませんでした（CP: $ai_cp_name）"
+ai_pfx="$(printf '%s' "$ai_endpoint" | sed -E 's#^https?://##; s#\..*$##')"
+env_set AI_GATEWAY_PREFIX "$ai_pfx"
+log "AI_GATEWAY_PREFIX=$ai_pfx"
 
 # --- Event Gateway id ---
 eg_json="$(kongctl get event-gateway -o json)"
@@ -39,6 +53,7 @@ log "EVENT_GATEWAY_CP_ID=$eg_id"
 
 # --- deck ターゲット CP 名 ---
 env_set DECK_KONNECT_CONTROL_PLANE_NAME "$cp_name"
+env_set DECK_KONNECT_AI_CONTROL_PLANE_NAME "$ai_cp_name"
 
 # --- AUTH_SECRET（プレースホルダ/空のみ生成）---
 cur="$(env_get AUTH_SECRET)"
