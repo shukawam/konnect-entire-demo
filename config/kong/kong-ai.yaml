@@ -120,7 +120,20 @@ services:
   # 保護し、host=cart/order-service.upstream + path=ベースパス + strip_path で
   # バックエンドへ直接転送する（API Gateway は経由しない）。
   # X-User-Id は固定せず、ツールの header パラメータとして呼び出しごとに渡す。
+  #
+  # mcp-backend-catalog のみ例外: 商品一覧はもともと無認証の公開エンドポイント
+  # （/api/products と同じ扱い）のため key-auth を付けない。catalog-service へ直接プロキシする。
   # ============================================================
+  - name: mcp-backend-catalog
+    url: http://catalog-service:3001/api/products
+    routes:
+      - name: mcp-backend-catalog-route
+        paths:
+          - /internal/mcp/products
+        protocols:
+          - http
+          - https
+        strip_path: true
   - name: mcp-backend-cart
     host: cart-service.upstream
     path: /api/carts
@@ -447,7 +460,7 @@ plugins:
         - name: list-products
           description: '商品一覧を取得します。全商品の名前・価格・カテゴリ・在庫が返ります。'
           method: GET
-          path: /api/products
+          path: /internal/mcp/products
           annotations:
             title: List products
             read_only_hint: true
