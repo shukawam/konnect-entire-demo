@@ -107,19 +107,19 @@ Kong Gateway の **`ai-a2a-proxy`** プラグインを使って、Agent2Agent pr
 ```bash
 # A2A: Agent Card が Kong 経由で取得でき、url が Gateway アドレスに書き換わっている
 curl -s -H "apikey: jungle-store-shopper-agent-key" \
-  http://localhost:8000/a2a/recommendation/.well-known/agent-card.json | jq -r .url
-# 期待値: kong ホスト（例 http://localhost:8000/a2a/recommendation/ 相当）。
+  http://localhost:8010/a2a/recommendation/.well-known/agent-card.json | jq -r .url
+# 期待値: kong ホスト（例 http://localhost:8010/a2a/recommendation/ 相当）。
 # サービス内部 URL (recommendation-agent-service:3007) のままなら ai-a2a-proxy の書き換えが効いていない
 
 # A2A: 認証なしは 401
 curl -s -o /dev/null -w "%{http_code}\n" \
-  http://localhost:8000/a2a/recommendation/.well-known/agent-card.json
+  http://localhost:8010/a2a/recommendation/.well-known/agent-card.json
 # 期待値: 401
 
 # A2A ACL: 専門エージェントのキーでは 403（orchestrators グループのみ許可）
 curl -s -o /dev/null -w "%{http_code}\n" \
   -H "apikey: jungle-store-recommendation-agent-key" \
-  http://localhost:8000/a2a/orders/.well-known/agent-card.json
+  http://localhost:8010/a2a/orders/.well-known/agent-card.json
 # 期待値: 403
 ```
 

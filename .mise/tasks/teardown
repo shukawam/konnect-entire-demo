@@ -16,6 +16,7 @@ SRC="$(bash "$REPO_ROOT/.mise/lib/render-kongctl.sh")"
 mkdir -p "$SRC/.certs"
 cp "$REPO_ROOT/certs/kong-gateway/cluster.crt"  "$SRC/.certs/kong-gateway.crt"
 cp "$REPO_ROOT/certs/event-gateway/cluster.crt" "$SRC/.certs/event-gateway.crt"
+cp "$REPO_ROOT/certs/kong-gateway-ai/cluster.crt" "$SRC/.certs/kong-gateway-ai.crt"
 kongctl delete -f "$SRC" --auto-approve
 log "Konnect リソース削除: namespace jungle-store-$RESOURCE_PREFIX"
 
@@ -30,5 +31,7 @@ else
   env_set DECK_KONNECT_CONTROL_PLANE_NAME "jungle-store-gateway"
   env_set PREFIX "<your-konnect-endpoint-prefix>"
   env_set EVENT_GATEWAY_CP_ID "<your-event-gateway-cp-id>"
+  env_set DECK_KONNECT_AI_CONTROL_PLANE_NAME "jungle-store-ai-gateway"
+  env_set AI_GATEWAY_PREFIX "<your-konnect-ai-endpoint-prefix>"
 fi
 log "teardown 完了"

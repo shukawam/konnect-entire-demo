@@ -56,23 +56,25 @@ cp .env.example .env
 
 残りの値は `mise run setup`（`env:patch`）が自動で `.env` に反映します（手動で埋める必要はありません）:
 
-| 変数名                            | 自動設定の内容                                                    |
-| --------------------------------- | ----------------------------------------------------------------- |
-| `PREFIX`                          | Konnect の Gateway Control Plane エンドポイントから取得           |
-| `EVENT_GATEWAY_CP_ID`             | Konnect の Event Gateway ID から取得                              |
-| `DECK_KONNECT_CONTROL_PLANE_NAME` | Control Plane 名（`RESOURCE_PREFIX` 指定時は接頭辞付き）          |
-| `AUTH_SECRET`                     | `openssl rand -base64 32` で自動生成（既存値があれば温存）        |
-| `AUTH_KEYCLOAK_SECRET`            | `config/keycloak/realm-export.json` の client secret から自動抽出 |
+| 変数名                               | 自動設定の内容                                                      |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| `PREFIX`                             | Konnect の Gateway Control Plane エンドポイントから取得             |
+| `AI_GATEWAY_PREFIX`                  | Konnect の AI Gateway Control Plane エンドポイントから取得          |
+| `EVENT_GATEWAY_CP_ID`                | Konnect の Event Gateway ID から取得                                |
+| `DECK_KONNECT_CONTROL_PLANE_NAME`    | Control Plane 名（`RESOURCE_PREFIX` 指定時は接頭辞付き）            |
+| `DECK_KONNECT_AI_CONTROL_PLANE_NAME` | AI Gateway Control Plane 名（`RESOURCE_PREFIX` 指定時は接頭辞付き） |
+| `AUTH_SECRET`                        | `openssl rand -base64 32` で自動生成（既存値があれば温存）          |
+| `AUTH_KEYCLOAK_SECRET`               | `config/keycloak/realm-export.json` の client secret から自動抽出   |
 
 その他の変数（MySQL, Kafka, サービス URL, Keycloak の URL/realm, `AUTH_KEYCLOAK_ID` 等）はデフォルト値のままで動作します。
 
-> 手動セットアップ（`mise run setup` を使わない）を行う場合は、上記の自動設定分（`PREFIX` / `EVENT_GATEWAY_CP_ID` / `DECK_KONNECT_CONTROL_PLANE_NAME` / `AUTH_SECRET` / `AUTH_KEYCLOAK_SECRET`）を自分で `.env` に設定してください。`PREFIX` は `<prefix>.us.cp.konghq.com` のプレフィックス、`AUTH_SECRET` は `openssl rand -base64 32`、`AUTH_KEYCLOAK_SECRET` は realm の client secret です。
+> 手動セットアップ（`mise run setup` を使わない）を行う場合は、上記の自動設定分（`PREFIX` / `AI_GATEWAY_PREFIX` / `EVENT_GATEWAY_CP_ID` / `DECK_KONNECT_CONTROL_PLANE_NAME` / `DECK_KONNECT_AI_CONTROL_PLANE_NAME` / `AUTH_SECRET` / `AUTH_KEYCLOAK_SECRET`）を自分で `.env` に設定してください。`PREFIX` は `<prefix>.us.cp.konghq.com` のプレフィックス、`AUTH_SECRET` は `openssl rand -base64 32`、`AUTH_KEYCLOAK_SECRET` は realm の client secret です。
 
 ### Kong Konnect 証明書
 
-自己署名のクラスタ証明書は `mise run certs:gen`（`mise run setup` の一部）が自動生成します。Kong Gateway 用は `certs/kong-gateway/`、Event Gateway 用は `certs/event-gateway/` に `cluster.crt` / `cluster.key` として生成され、kongctl の宣言設定（`data_plane_certificates`）で Konnect 側へ宣言的にピン留めされます。
+自己署名のクラスタ証明書は `mise run certs:gen`（`mise run setup` の一部）が自動生成します。Kong Gateway 用は `certs/kong-gateway/`、AI Gateway 用は `certs/kong-gateway-ai/`、Event Gateway 用は `certs/event-gateway/` に `cluster.crt` / `cluster.key` として生成され、kongctl の宣言設定（`data_plane_certificates`）で Konnect 側へ宣言的にピン留めされます。
 
-既存の証明書（Konnect 発行のものなど）を使い続けたい場合は、`certs:gen` 実行前に `certs/kong-gateway/` `certs/event-gateway/` へ同名ファイルを配置しておけば、それがそのまま流用されます（`certs/` は gitignore 済みでコミットされません）。
+既存の証明書（Konnect 発行のものなど）を使い続けたい場合は、`certs:gen` 実行前に `certs/kong-gateway/` `certs/kong-gateway-ai/` `certs/event-gateway/` へ同名ファイルを配置しておけば、それがそのまま流用されます（`certs/` は gitignore 済みでコミットされません）。
 
 ### Keycloak（エンドユーザー認証）
 
@@ -156,14 +158,15 @@ docker compose down -v
 
 ## アクセス先一覧
 
-| サービス       | URL                                                  | 用途                           |
-| -------------- | ---------------------------------------------------- | ------------------------------ |
-| フロントエンド | [http://localhost:3000](http://localhost:3000)       | EC サイト画面                  |
-| Kong Gateway   | [http://localhost:8000](http://localhost:8000)       | 全 API のエントリーポイント    |
-| Konnect        | [https://cloud.konghq.com](https://cloud.konghq.com) | コントロールプレーン（SaaS）   |
-| Grafana        | [http://localhost:3010](http://localhost:3010)       | ダッシュボード（ログイン不要） |
-| Kafka UI       | [http://localhost:8080](http://localhost:8080)       | Kafka トピック・メッセージ確認 |
-| Keycloak       | [http://localhost:8081](http://localhost:8081)       | 認証 IdP / 管理コンソール      |
+| サービス        | URL                                                  | 用途                                 |
+| --------------- | ---------------------------------------------------- | ------------------------------------ |
+| フロントエンド  | [http://localhost:3000](http://localhost:3000)       | EC サイト画面                        |
+| Kong Gateway    | [http://localhost:8000](http://localhost:8000)       | 全 API のエントリーポイント          |
+| Kong AI Gateway | [http://localhost:8010](http://localhost:8010)       | LLM / MCP / A2A のエントリーポイント |
+| Konnect         | [https://cloud.konghq.com](https://cloud.konghq.com) | コントロールプレーン（SaaS）         |
+| Grafana         | [http://localhost:3010](http://localhost:3010)       | ダッシュボード（ログイン不要）       |
+| Kafka UI        | [http://localhost:8080](http://localhost:8080)       | Kafka トピック・メッセージ確認       |
+| Keycloak        | [http://localhost:8081](http://localhost:8081)       | 認証 IdP / 管理コンソール            |
 
 各バックエンドサービスは `/openapi.json` で OAS 3.1.0 を自動配信しています（例: [http://localhost:3001/openapi.json](http://localhost:3001/openapi.json)）。
 

@@ -168,7 +168,7 @@ HTTP/1.1 400 Bad Request
 
 ```bash
 # 正常なリクエスト
-curl -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o-mini",
@@ -176,7 +176,7 @@ curl -X POST http://localhost:8000/ai/v1/chat/completions \
   }'
 
 # ブロックされるリクエスト
-curl -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o-mini",
@@ -209,13 +209,13 @@ curl -X POST http://localhost:8000/ai/v1/chat/completions \
 
 ```bash
 # 1回目: キャッシュミス（OpenAI へ到達）— レスポンスヘッダとレイテンシに注目
-curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"どんな商品がありますか？"}]}' \
   | grep -iE "X-Cache-Status|total:"
 
 # 2回目: 言い換えでもキャッシュヒット（OpenAI 未到達・高速）
-curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -i -s -w "\n--- total: %{time_total}s ---\n" -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"取り扱っている商品を教えて"}]}' \
   | grep -iE "X-Cache-Status|total:"

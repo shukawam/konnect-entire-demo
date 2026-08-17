@@ -19,11 +19,16 @@ receivers:
           scrape_interval: 1s
           static_configs:
             - targets: ['127.0.0.1:8888']
-        - job_name: kong-gateway # Kong Status API（AI メトリクス取得用）
+        - job_name: kong-gateway # Kong Status API
           scrape_interval: 5s
           static_configs:
             - targets:
                 - kong:8100
+        - job_name: kong-ai-gateway # Kong Status API（AI メトリクス取得用）
+          scrape_interval: 5s
+          static_configs:
+            - targets:
+                - kong-ai:8100
 
 extensions:
   health_check:

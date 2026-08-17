@@ -37,7 +37,7 @@ log "PREFIX=$pfx"
 # --- AI Gateway CP endpoint → AI_GATEWAY_PREFIX ---
 ai_cp_name="jungle-store-ai-gateway${prefix:+-$prefix}"
 ai_endpoint="$(extract_endpoint "$ai_cp_name")"
-[ -n "$ai_endpoint" ] || die "control-plane endpoint を取得できませんでした（CP: $ai_cp_name）"
+[ -n "$ai_endpoint" ] || die "control-plane endpoint を取得できませんでした（CP: ${ai_cp_name}）"
 ai_pfx="$(printf '%s' "$ai_endpoint" | sed -E 's#^https?://##; s#\..*$##')"
 env_set AI_GATEWAY_PREFIX "$ai_pfx"
 log "AI_GATEWAY_PREFIX=$ai_pfx"
