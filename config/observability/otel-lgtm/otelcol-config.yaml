@@ -41,8 +41,6 @@ processors:
     error_mode: ignore
     traces:
       span:
-        - 'name == "ipc.connect"'
-        - 'name == "tcp.connect"'
         - 'name == "prisma:client:load_engine"'
         - 'name == "prisma:client:detect_platform"'
         - 'attributes["url.path"] == "/health"'

@@ -7,6 +7,8 @@ x-otel-env: &otel-env
   OTEL_LOGS_EXPORTER: otlp
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
   OTEL_NODE_RESOURCE_DETECTORS: env,host,os
+  # net (tcp.connect/ipc.connect) と dns の span はデモで見せる情報がなくノイズのため発生源で無効化
+  OTEL_NODE_DISABLED_INSTRUMENTATIONS: net,dns
   NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register
 
 networks:
