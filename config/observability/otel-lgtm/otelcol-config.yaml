@@ -50,7 +50,7 @@ processors:
         - 'IsMatch(name, ".* /api/health$")'
         - 'attributes["next.route"] == "/api/health"'
         - 'IsMatch(name, ".*/api/health/route$")'
-        - 'name == "start response"'
+        - 'name == "start response"' # unscoped: NextNodeServer.startResponse span carries no route attribute to filter on (OTTL filter processor has no cross-span/sibling context to join against the parent request's route); this also drops this one span from any real-user traces that happen to include it (route handlers only — verified absent from full-page SSR `GET /` renders) — accepted since the span itself carries no attributes of debugging value
         - 'attributes["api_kind"] == "heartbeat"'
         - 'attributes["api_kind"] == "list_offsets"'
         - 'attributes["api_kind"] == "offset_fetch"'
