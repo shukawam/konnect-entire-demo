@@ -51,14 +51,23 @@ processors:
         - 'attributes["next.route"] == "/api/health"'
         - 'IsMatch(name, ".*/api/health/route$")'
         - 'name == "start response"' # unscoped: NextNodeServer.startResponse span carries no route attribute to filter on (OTTL filter processor has no cross-span/sibling context to join against the parent request's route); this also drops this one span from any real-user traces that happen to include it (route handlers only — verified absent from full-page SSR `GET /` renders) — accepted since the span itself carries no attributes of debugging value
-        - 'attributes["api_kind"] == "heartbeat"'
-        - 'attributes["api_kind"] == "list_offsets"'
-        - 'attributes["api_kind"] == "offset_fetch"'
-        - 'attributes["api_kind"] == "metadata"'
-        - 'attributes["api_kind"] == "sync_group"'
-        - 'attributes["api_kind"] == "join_group"'
-        - 'attributes["api_kind"] == "find_coordinator"'
-        - 'attributes["api_kind"] == "APIVersion(6)"'
+        # Event Gateway (KEG) の Kafka プロトコルポーリング / 自身のコントロールプレーン
+        # ポーリング span。実測（10分アイドル計測）で確認済みのノイズで、注文→発送の
+        # 連結トレース（kong-gateway/order-service/shipping-service）には一切現れない。
+        # `attributes["api_kind"]` はこの KEG バージョンには存在しないため属性フィルタは
+        # 機能せず（旧8行は死んだフィルタだった）、span 名で family 単位（root + 子span全て）
+        # を丸ごと落とす方式に変更した（子 span だけ orphan で残さないため）。
+        - 'name == "request"' # KEG root span（Kafka fetch/heartbeat ポーリング）
+        - 'name == "backend_request"' # request の子 span
+        - 'name == "transform_request"' # request の子 span
+        - 'name == "transform_response"' # request の子 span
+        - 'name == "write_to_client"' # request の子 span
+        - 'name == "authenticator_handle"' # request の子 span
+        - 'name == "fetch_latest_dataplane_config"' # KEG 自身の Konnect コントロールプレーンポーリング
+        - 'name == "call"' # api_versions/update_metadata の親 span（Kafka クライアントの RPC 呼び出し）
+        - 'name == "client_connection"'
+        - 'name == "api_versions"' # call の子 span（Kafka API バージョンネゴシエーション）
+        - 'name == "update_metadata"' # call の子 span（Kafka ブローカーメタデータの定期更新。kong.keg.metadata_update.refresh_reason=on_interval/forced_refresh で確認済み）
 
 exporters:
   otlp_http/metrics:
