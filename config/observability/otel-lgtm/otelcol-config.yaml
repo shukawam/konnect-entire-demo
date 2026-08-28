@@ -1,6 +1,6 @@
 # otel-lgtm の内蔵 OpenTelemetry Collector 設定を上書きする。
-# デフォルト設定をベースに、既存の filter/traces フィルタと
-# Kong AI メトリクス用の Prometheus スクレイプ (kong:8100) を追加している。
+# デフォルト設定をベースに、span 単位で落とす filter/traces、トレース単位で丸ごと
+# 落とす tail_sampling、Kong AI メトリクス用の Prometheus スクレイプ (kong:8100) を追加している。
 # exporter は otel-lgtm コンテナ内部のバックエンド (localhost) を指す。
 receivers:
   otlp:
@@ -68,6 +68,33 @@ processors:
         - 'name == "client_connection"'
         - 'name == "api_versions"' # call の子 span（Kafka API バージョンネゴシエーション）
         - 'name == "update_metadata"' # call の子 span（Kafka ブローカーメタデータの定期更新。kong.keg.metadata_update.refresh_reason=on_interval/forced_refresh で確認済み）
+  # AI Gateway の MCP エンドポイント (/mcp/products, /mcp/carts, /mcp/orders) への GET ポーリングを
+  # トレース単位で除去する。MCP Streamable HTTP クライアント(SDK)がサーバー push 用の SSE ストリームを
+  # GET で開こうとするが、ai-mcp-proxy 側がストリームを保持せず即クローズするため、SDK が「正常切断」と
+  # みなして 1 秒間隔で無限に再接続を試み続ける（実測: kong-ai-gateway 3ルート合計で idle 時も約3.4
+  # trace/秒。実ツール呼び出しは POST のため対象外）。route/method を持つのは root の "kong" span のみで
+  # 子 span（kong.router / kong.access.plugin.* 等）は全リクエスト共通の汎用名のため span 単位の
+  # filter/traces では絞れず、root だけ落としても子が孤児 span として残り Tempo 上の件数は減らない
+  # （実測確認済み）。そのため tail_sampling でトレース全体を drop する。副作用として全トレースに
+  # decision_wait 分の遅延が入る（LLM チャット系の最長トレース(実測 7s 程度)を切り詰めないよう 10s に設定）。
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 50000
+    policies:
+      - name: drop-ai-gateway-mcp-get-polling
+        type: drop
+        drop:
+          drop_sub_policy:
+            # drop_sub_policy は leaf な shared policy type のみ（and/composite/drop はネスト不可）のため、
+            # method と route の AND 条件は ottl_condition の単一式でまとめる。
+            - name: mcp-get-polling
+              type: ottl_condition
+              ottl_condition:
+                error_mode: ignore
+                span:
+                  - 'attributes["http.method"] == "GET" and IsMatch(attributes["http.route"], "^/mcp/")'
+      - name: keep-everything-else
+        type: always_sample
 
 exporters:
   otlp_http/metrics:
@@ -92,7 +119,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [filter/traces, batch]
+      processors: [tail_sampling, filter/traces, batch]
       exporters: [otlp_http/traces]
     metrics:
       receivers: [otlp, prometheus/collector]
