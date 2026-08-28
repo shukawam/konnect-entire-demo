@@ -154,7 +154,7 @@ Kong Event Gateway がプロキシとして間に入り、サービスごとの�
 
 ### オブザーバビリティ
 
-全サービス → otel-lgtm :4318（OTel Collector、Tempo（トレース）、Prometheus（メトリクス）、Loki（ログ）、Grafana をオールインワンで提供する `grafana/otel-lgtm` イメージ）→ Grafana :3010。`NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register` によるゼロコード計装（agent-service / recommendation-agent-service / order-agent-service の3サービスのみ `--import @konnect-demo/shared/tracing-register.mjs` で HTTP/fetch のトレース連携を有効化し、LLM/MCP 自体のトレース・メトリクスは volcano SDK が別途送信する。詳細は `cross-service-contracts` スキル参照）。内蔵 Collector の設定は `config/observability/otel-lgtm/otelcol-config.yaml` で上書きし、ノイズ除去用の `filter/traces` と Kong AI メトリクス用の Prometheus スクレイプ（`kong:8100`）を保持している。
+全サービス → otel-lgtm :4318（OTel Collector、Tempo（トレース）、Prometheus（メトリクス）、Loki（ログ）、Grafana をオールインワンで提供する `grafana/otel-lgtm` イメージ）→ Grafana :3010。`NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register` によるゼロコード計装（agent-service / recommendation-agent-service / order-agent-service の3サービスのみ `--import @konnect-demo/shared/tracing-register.mjs` で HTTP/fetch のトレース連携を有効化し、LLM/MCP 自体のトレース・メトリクスは volcano SDK が別途送信する。詳細は `cross-service-contracts` スキル参照）。内蔵 Collector の設定は `config/observability/otel-lgtm/otelcol-config.yaml` で上書きし、span 単位でノイズを落とす `filter/traces`、トレース単位で丸ごと落とす `tail_sampling`（AI Gateway の MCP ポーリング等、span 単位では孤児 span が残ってしまうノイズ用）、Kong AI メトリクス用の Prometheus スクレイプ（`kong:8100`）を保持している。`tail_sampling` の `decision_wait`（10s）により、全トレースが Grafana に表示されるまで数秒遅延する点に注意（デモで直後に確認する場合は一呼吸置く）。MCP クライアント（volcano SDK の `mcp()`）の SSE 再接続ポーリング自体は `packages/shared/tracing-register.mjs` の `ignoreRequestHook` で計装・トレースコンテキスト伝搬を止めている（放置すると setTimeout 経由で元の呼び出し元リクエストのトレースに無関係な span が混入し続けるため）。
 
 ## 技術スタック
 

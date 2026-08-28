@@ -45,29 +45,27 @@ processors:
         - 'name == "prisma:client:detect_platform"'
         - 'attributes["url.path"] == "/health"'
         - 'attributes["http.target"] == "/health"'
-        - 'attributes["http.target"] == "/api/health"'
-        - 'attributes["url.path"] == "/api/health"'
-        - 'IsMatch(name, ".* /api/health$")'
-        - 'attributes["next.route"] == "/api/health"'
-        - 'IsMatch(name, ".*/api/health/route$")'
-        - 'name == "start response"' # unscoped: NextNodeServer.startResponse span carries no route attribute to filter on (OTTL filter processor has no cross-span/sibling context to join against the parent request's route); this also drops this one span from any real-user traces that happen to include it (route handlers only — verified absent from full-page SSR `GET /` renders) — accepted since the span itself carries no attributes of debugging value
+        - 'IsMatch(name, ".*/api/health/route$")' # frontend の /api/health。他の候補（http.target/url.path/next.route/末尾一致）は実トレースで一度も発火しないため削除済み（唯一これだけが実際の span 名 "GET .../src/app/api/health/route" にマッチする）
         # Event Gateway (KEG) の Kafka プロトコルポーリング / 自身のコントロールプレーン
         # ポーリング span。実測（10分アイドル計測）で確認済みのノイズで、注文→発送の
         # 連結トレース（kong-gateway/order-service/shipping-service）には一切現れない。
         # `attributes["api_kind"]` はこの KEG バージョンには存在しないため属性フィルタは
         # 機能せず（旧8行は死んだフィルタだった）、span 名で family 単位（root + 子span全て）
-        # を丸ごと落とす方式に変更した（子 span だけ orphan で残さないため）。
-        - 'name == "request"' # KEG root span（Kafka fetch/heartbeat ポーリング）
-        - 'name == "backend_request"' # request の子 span
-        - 'name == "transform_request"' # request の子 span
-        - 'name == "transform_response"' # request の子 span
-        - 'name == "write_to_client"' # request の子 span
-        - 'name == "authenticator_handle"' # request の子 span
-        - 'name == "fetch_latest_dataplane_config"' # KEG 自身の Konnect コントロールプレーンポーリング
-        - 'name == "call"' # api_versions/update_metadata の親 span（Kafka クライアントの RPC 呼び出し）
-        - 'name == "client_connection"'
-        - 'name == "api_versions"' # call の子 span（Kafka API バージョンネゴシエーション）
-        - 'name == "update_metadata"' # call の子 span（Kafka ブローカーメタデータの定期更新。kong.keg.metadata_update.refresh_reason=on_interval/forced_refresh で確認済み）
+        # を丸ごと落とす方式に変更した（子 span だけ orphan で残さないため）。span 名が
+        # "request"/"call" 等の汎用語のため、他サービスが将来同名 span を出しても誤って
+        # 消えないよう resource.attributes["service.name"]（compose.yaml の OTEL_SERVICE_NAME:
+        # event-gateway）を AND 条件でスコープしている。
+        - 'name == "request" and resource.attributes["service.name"] == "event-gateway"' # KEG root span（Kafka fetch/heartbeat ポーリング）
+        - 'name == "backend_request" and resource.attributes["service.name"] == "event-gateway"' # request の子 span
+        - 'name == "transform_request" and resource.attributes["service.name"] == "event-gateway"' # request の子 span
+        - 'name == "transform_response" and resource.attributes["service.name"] == "event-gateway"' # request の子 span
+        - 'name == "write_to_client" and resource.attributes["service.name"] == "event-gateway"' # request の子 span
+        - 'name == "authenticator_handle" and resource.attributes["service.name"] == "event-gateway"' # request の子 span
+        - 'name == "fetch_latest_dataplane_config" and resource.attributes["service.name"] == "event-gateway"' # KEG 自身の Konnect コントロールプレーンポーリング
+        - 'name == "call" and resource.attributes["service.name"] == "event-gateway"' # api_versions/update_metadata の親 span（Kafka クライアントの RPC 呼び出し）
+        - 'name == "client_connection" and resource.attributes["service.name"] == "event-gateway"'
+        - 'name == "api_versions" and resource.attributes["service.name"] == "event-gateway"' # call の子 span（Kafka API バージョンネゴシエーション）
+        - 'name == "update_metadata" and resource.attributes["service.name"] == "event-gateway"' # call の子 span（Kafka ブローカーメタデータの定期更新。kong.keg.metadata_update.refresh_reason=on_interval/forced_refresh で確認済み）
   # AI Gateway の MCP エンドポイント (/mcp/products, /mcp/carts, /mcp/orders) への GET ポーリングを
   # トレース単位で除去する。MCP Streamable HTTP クライアント(SDK)がサーバー push 用の SSE ストリームを
   # GET で開こうとするが、ai-mcp-proxy 側がストリームを保持せず即クローズするため、SDK が「正常切断」と
@@ -75,8 +73,13 @@ processors:
   # trace/秒。実ツール呼び出しは POST のため対象外）。route/method を持つのは root の "kong" span のみで
   # 子 span（kong.router / kong.access.plugin.* 等）は全リクエスト共通の汎用名のため span 単位の
   # filter/traces では絞れず、root だけ落としても子が孤児 span として残り Tempo 上の件数は減らない
-  # （実測確認済み）。そのため tail_sampling でトレース全体を drop する。副作用として全トレースに
-  # decision_wait 分の遅延が入る（LLM チャット系の最長トレース(実測 7s 程度)を切り詰めないよう 10s に設定）。
+  # （実測確認済み）。そのため tail_sampling でトレース全体を drop する。
+  # 注意: この GET は agent-service 側の MCP クライアントが張った接続の setTimeout 経由の再接続
+  # ループのため、素で計装すると当初その接続を開いたリクエストの AsyncLocalStorage コンテキストを
+  # 引き継ぎ続け、無関係な後続チャットの実トレースに孤児 GET span として混入していた（実測確認済み）。
+  # そのため packages/shared/tracing-register.mjs 側で該当 GET の計装・traceparent 注入自体を止め、
+  # ここでの drop は本当に無関係な独立トレースだけを対象にしている。副作用として全トレースに
+  # decision_wait 分の遅延が入る（LLM チャット系の実測トレース時間は 6〜7s 程度のため 10s に設定）。
   tail_sampling:
     decision_wait: 10s
     num_traces: 50000
@@ -119,7 +122,10 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [tail_sampling, filter/traces, batch]
+      # filter/traces を先に置き、span 単位で確実に不要な span（KEG ポーリング等）を落としてから
+      # tail_sampling のトレースバッファに載せる（逆順だと大半を占める素のノイズまで decision_wait
+      # の間バッファし続けることになり無駄）。
+      processors: [filter/traces, tail_sampling, batch]
       exporters: [otlp_http/traces]
     metrics:
       receivers: [otlp, prometheus/collector]
