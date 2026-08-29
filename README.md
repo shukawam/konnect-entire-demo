@@ -446,7 +446,7 @@ docker compose watch
 
 1. `compose.yaml` の各アプリサービスの `image:` デフォルトタグ（`${IMAGE_TAG:-vX.Y.Z}`）を新しいバージョンにバンプする PR を作成・マージする
 2. マージ後のコミットに対して GitHub Release を作成し、1 でバンプした値と同じ `vX.Y.Z` タグを付けて publish する
-3. `.github/workflows/release.yml` が起動し、7 サービスのイメージをビルドして GHCR に push する
+3. `.github/workflows/release.yml` が起動し、9 サービスのイメージをビルドして GHCR に push する
 4. （新しいパッケージが初めて作成された場合のみ）GHCR のパッケージ設定で可視性を Public に切り替える
 
 ## トラブルシューティング
