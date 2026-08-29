@@ -3,11 +3,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000'
+const AI_GATEWAY_BACKEND_URL = process.env.AI_GATEWAY_BACKEND_URL || 'http://localhost:8010'
+
+// AI Gateway（LLM/MCP/A2A）へ分離されたパス。/api/proxy はこのプレフィックスで
+// BACKEND_URL（API Gateway）と AI_GATEWAY_BACKEND_URL（AI Gateway）を振り分ける。
+const AI_GATEWAY_PATH_PREFIXES = ['/ai/', '/mcp/', '/a2a/']
+
+function resolveBackendUrl(path: string): string {
+  return AI_GATEWAY_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))
+    ? AI_GATEWAY_BACKEND_URL
+    : BACKEND_URL
+}
 
 async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname.replace(/^\/api\/proxy/, '')
   const search = req.nextUrl.search
-  const url = `${BACKEND_URL}${path}${search}`
+  const url = `${resolveBackendUrl(path)}${path}${search}`
 
   const tracer = trace.getTracer('frontend-proxy')
   const session = await auth()

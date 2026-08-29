@@ -1,6 +1,6 @@
 ---
-title: "Getting Started"
-description: "Jungle Store Dev Portalの使い方ガイド"
+title: "Getting Started Guide"
+description: "APIの利用開始から実際の統合まで"
 page-layout:
   sidebar-left: sidebar
 ---

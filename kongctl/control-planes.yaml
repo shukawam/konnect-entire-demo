@@ -13,3 +13,13 @@ control_planes:
     data_plane_certificates:
       - ref: jungle-store-gateway-cert
         cert: !file .certs/kong-gateway.crt
+  - ref: jungle-store-ai-gateway
+    name: jungle-store-ai-gateway
+    description: Kong AI Gateway for Jungle Store (LLM / MCP / A2A).
+    auth_type: pki_client_certs
+    cluster_type: CLUSTER_TYPE_CONTROL_PLANE
+    labels:
+      environment: local
+    data_plane_certificates:
+      - ref: jungle-store-ai-gateway-cert
+        cert: !file .certs/kong-gateway-ai.crt

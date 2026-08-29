@@ -193,6 +193,54 @@ services:
       keycloak:
         condition: service_started
 
+  kong-ai:
+    <<: *default
+    container_name: kong-ai
+    image: kong/kong-gateway:3.14.0.1
+    environment:
+      KONG_ROLE: data_plane
+      KONG_DATABASE: off
+      KONG_VITALS: off
+      KONG_CLUSTER_MTLS: pki
+      KONG_CLUSTER_CONTROL_PLANE: ${AI_GATEWAY_PREFIX:-}.us.cp.konghq.com:443
+      KONG_CLUSTER_SERVER_NAME: ${AI_GATEWAY_PREFIX:-}.us.cp.konghq.com
+      KONG_CLUSTER_TELEMETRY_ENDPOINT: ${AI_GATEWAY_PREFIX:-}.us.tp.konghq.com:443
+      KONG_CLUSTER_TELEMETRY_SERVER_NAME: ${AI_GATEWAY_PREFIX:-}.us.tp.konghq.com
+      KONG_CLUSTER_CERT: /etc/kong/cluster-certs/cluster.crt
+      KONG_CLUSTER_CERT_KEY: /etc/kong/cluster-certs/cluster.key
+      KONG_LUA_SSL_TRUSTED_CERTIFICATE: system
+      KONG_KONNECT_MODE: on
+      KONG_CLUSTER_DP_LABELS: type:docker-macOsArmOS
+      KONG_ROUTER_FLAVOR: expressions
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
+      KONG_TRACING_INSTRUMENTATIONS: all
+      KONG_TRACING_SAMPLING_RATE: 1.0
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    ports:
+      - '8010:8000' # Proxy
+      - '8110:8100' # Status API
+    volumes:
+      - ./certs/kong-gateway-ai:/etc/kong/cluster-certs
+    healthcheck:
+      test: ['CMD', 'kong', 'health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      catalog-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
   event-gateway:
     <<: *default
     container_name: event-gateway
@@ -487,9 +535,9 @@ services:
       OTEL_SERVICE_NAME: agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
-      GATEWAY_ENDPOINT: http://kong:8000
-      A2A_RECOMMENDATION_URL: http://kong:8000/a2a/recommendation
-      A2A_ORDER_URL: http://kong:8000/a2a/orders
+      GATEWAY_ENDPOINT: http://kong-ai:8000
+      A2A_RECOMMENDATION_URL: http://kong-ai:8000/a2a/recommendation
+      A2A_ORDER_URL: http://kong-ai:8000/a2a/orders
       A2A_API_KEY: jungle-store-shopper-agent-key
     healthcheck:
       test:
@@ -501,7 +549,7 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      kong:
+      kong-ai:
         condition: service_healthy
     develop:
       watch:
@@ -526,7 +574,7 @@ services:
       OTEL_SERVICE_NAME: recommendation-agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
-      GATEWAY_ENDPOINT: http://kong:8000
+      GATEWAY_ENDPOINT: http://kong-ai:8000
       SELF_URL: http://recommendation-agent-service:3007
     healthcheck:
       test:
@@ -538,7 +586,7 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      kong:
+      kong-ai:
         condition: service_healthy
     develop:
       watch:
@@ -561,7 +609,7 @@ services:
       OTEL_SERVICE_NAME: order-agent-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       NODE_OPTIONS: --import @konnect-demo/shared/tracing-register.mjs
-      GATEWAY_ENDPOINT: http://kong:8000
+      GATEWAY_ENDPOINT: http://kong-ai:8000
       SELF_URL: http://order-agent-service:3008
     healthcheck:
       test:
@@ -573,7 +621,7 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      kong:
+      kong-ai:
         condition: service_healthy
     develop:
       watch:
@@ -595,6 +643,7 @@ services:
       - '3000:3000'
     environment:
       BACKEND_URL: http://kong:8000
+      AI_GATEWAY_BACKEND_URL: http://kong-ai:8000
       NEXT_PUBLIC_GRAFANA_URL: ${NEXT_PUBLIC_GRAFANA_URL:-http://localhost:3010}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       OTEL_SERVICE_NAME: frontend
@@ -614,6 +663,8 @@ services:
       retries: 5
     depends_on:
       kong:
+        condition: service_healthy
+      kong-ai:
         condition: service_healthy
       keycloak:
         condition: service_started

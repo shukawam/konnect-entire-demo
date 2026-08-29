@@ -17,4 +17,5 @@ gen_cert() {
 
 gen_cert "$REPO_ROOT/certs/kong-gateway"  "jungle-store-gateway"
 gen_cert "$REPO_ROOT/certs/event-gateway" "jungle-store-event-gateway"
+gen_cert "$REPO_ROOT/certs/kong-gateway-ai" "jungle-store-ai-gateway"
 log "証明書 OK"

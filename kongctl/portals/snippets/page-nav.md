@@ -1,6 +1,6 @@
 ---
-title: page-nav
-description: "A snippet to display the page navigation starting with the /apis, /guides, and /demos page."
+title: Page Nav
+description: "Page navigation for sidebar"
 ---
 
 ::page-navigation

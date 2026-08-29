@@ -7,8 +7,8 @@ import type { AgentSummary } from './delegate.js'
 const log = createLogger('agent-service')
 
 const AGENT_URLS: Record<AgentKey, string> = {
-  recommendation: process.env.A2A_RECOMMENDATION_URL || 'http://localhost:8000/a2a/recommendation',
-  order: process.env.A2A_ORDER_URL || 'http://localhost:8000/a2a/orders',
+  recommendation: process.env.A2A_RECOMMENDATION_URL || 'http://localhost:8010/a2a/recommendation',
+  order: process.env.A2A_ORDER_URL || 'http://localhost:8010/a2a/orders',
 }
 const apiKey = process.env.A2A_API_KEY || ''
 

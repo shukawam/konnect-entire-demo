@@ -201,7 +201,7 @@ AI API に対する不正な入力をセマンティック類似度でブロッ�
 ### 4-1. 正常な AI リクエスト
 
 ```bash
-curl -s -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -s -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o-mini",
@@ -215,7 +215,7 @@ curl -s -X POST http://localhost:8000/ai/v1/chat/completions \
 
 ```bash
 # システムプロンプト抽出の試み
-curl -i -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -i -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o-mini",
@@ -228,7 +228,7 @@ curl -i -X POST http://localhost:8000/ai/v1/chat/completions \
 ### 4-3. SQL インジェクション
 
 ```bash
-curl -i -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -i -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o-mini",
@@ -241,7 +241,7 @@ curl -i -X POST http://localhost:8000/ai/v1/chat/completions \
 ### 4-4. 業務範囲外の質問
 
 ```bash
-curl -i -X POST http://localhost:8000/ai/v1/chat/completions \
+curl -i -X POST http://localhost:8010/ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o-mini",

@@ -1,0 +1,634 @@
+_format_version: '3.0'
+
+# API Gateway 側の cart-service.upstream / order-service.upstream と同名・同ターゲットの
+# upstream をこのファイル内に独自定義する（decK は CP ごとに独立した状態を持つため、
+# YAML アンカーはファイルをまたげずここで再定義が必要）。mcp-backend-cart/order が使用する。
+upstreams:
+  - name: cart-service.upstream
+    targets:
+      - target: cart-service:3002
+        weight: 100
+    sticky_sessions_cookie_path: /
+    healthchecks: &upstream_healthchecks
+      active:
+        type: http
+        http_path: /health
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+      passive:
+        type: http
+        healthy:
+          successes: 2
+        unhealthy:
+          http_failures: 3
+          tcp_failures: 1
+
+  - name: order-service.upstream
+    targets:
+      - target: order-service:3003
+        weight: 100
+    sticky_sessions_cookie_path: /
+    healthchecks: *upstream_healthchecks
+
+services:
+  # AI Proxy (LLM Gateway)
+  # openai-route  : /ai/v1     — 一問一答向け（curl デモ）。ai-semantic-cache をルート単位で付与。
+  # openai-agent-route: /ai/agent/v1 — Agent Service 専用。マルチターン会話の文脈を壊さないよう
+  #   キャッシュを掛けない。共有プラグイン（prompt-guard / prompt-decorator / proxy-advanced）は
+  #   サービス単位で両ルートに適用し、キャッシュだけを openai-route に限定する。
+  - name: openai-service
+    url: https://example.com
+    routes:
+      - name: openai-route
+        paths:
+          - /ai/v1
+        protocols:
+          - http
+          - https
+        strip_path: true
+      - name: openai-agent-route
+        paths:
+          - /ai/agent/v1
+        protocols:
+          - http
+          - https
+        strip_path: true
+
+  # openai-agent-boundary — エージェント I/O 境界の意味キャッシュ用。
+  # エージェントを OpenAI 互換 upstream に見立て、この route に ai-proxy-advanced(upstream_url=agent)
+  # と ai-semantic-cache を載せる。Kong はここで「ユーザー質問 in → 最終応答 out」だけを見るため、
+  # ツール定義や system プロンプトがキャッシュキーに混入せず、内部 LLM 呼び出しの誤ヒットが起きない。
+  # url はプレースホルダ（実 upstream は ai-proxy-advanced の upstream_url が上書きする）。
+  - name: openai-agent-boundary
+    url: https://example.com
+    routes:
+      - name: openai-agent-boundary-route
+        paths:
+          - /ai/agent-chat/v1
+        protocols:
+          - http
+          - https
+        strip_path: true
+
+  # MCP Proxy — Catalog API
+  # MCP プロキシは ai-mcp-proxy プラグインの特殊ルーティング（strip_path + path 書き換え）を
+  # 使用するため、upstream 経由ではなく直接 URL を指定する。
+  # ヘルスチェック・リトライはバックエンドサービス側の upstream で担保される。
+  - name: mcp-catalog
+    url: http://catalog-service:3001
+    routes:
+      - name: mcp-catalog-route
+        paths:
+          - /mcp/products
+        protocols:
+          - http
+          - https
+        strip_path: true
+
+  # MCP Proxy — Cart API
+  - name: mcp-cart
+    url: http://cart-service:3002
+    routes:
+      - name: mcp-cart-route
+        paths:
+          - /mcp/carts
+        protocols:
+          - http
+          - https
+        strip_path: true
+
+  # MCP Proxy — Order API
+  - name: mcp-order
+    url: http://order-service:3003
+    routes:
+      - name: mcp-order-route
+        paths:
+          - /mcp/orders
+        protocols:
+          - http
+          - https
+        strip_path: true
+
+  # ============================================================
+  # /internal/mcp — ai-mcp-proxy のツール呼び出し（ループバック）専用の内部経路
+  # ai-mcp-proxy はツールの path を Kong 自身への新規リクエストとして発行する
+  # （UA: "Kong/x.y MCP server"）。/internal/mcp/* は key-auth（consumer mcp-tools）で
+  # 保護し、host=cart/order-service.upstream + path=ベースパス + strip_path で
+  # バックエンドへ直接転送する（API Gateway は経由しない）。
+  # X-User-Id は固定せず、ツールの header パラメータとして呼び出しごとに渡す。
+  #
+  # mcp-backend-catalog のみ例外: 商品一覧はもともと無認証の公開エンドポイント
+  # （/api/products と同じ扱い）のため key-auth を付けない。catalog-service へ直接プロキシする。
+  # ============================================================
+  - name: mcp-backend-catalog
+    url: http://catalog-service:3001/api/products
+    routes:
+      - name: mcp-backend-catalog-route
+        paths:
+          - /internal/mcp/products
+        protocols:
+          - http
+          - https
+        strip_path: true
+  - name: mcp-backend-cart
+    host: cart-service.upstream
+    path: /api/carts
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
+    routes:
+      - name: mcp-backend-cart-route
+        paths:
+          - /internal/mcp/carts
+        protocols:
+          - http
+          - https
+        strip_path: true
+  - name: mcp-backend-order
+    host: order-service.upstream
+    path: /api/orders
+    protocol: http
+    retries: 0
+    connect_timeout: 5000
+    read_timeout: 15000
+    write_timeout: 10000
+    routes:
+      - name: mcp-backend-order-route
+        paths:
+          - /internal/mcp/orders
+        protocols:
+          - http
+          - https
+        strip_path: true
+
+  # A2A Proxy — Recommendation Agent
+  # ai-a2a-proxy が A2A(v0.3) リクエストを検出し、Agent Card の url を Gateway アドレスへ
+  # 書き換え、タスク単位のメトリクス/トレース(ai.a2a)を記録する。
+  # key-auth + acl で「オーケストレータ(orchestrators グループ)のみ呼び出し可」を強制する。
+  - name: recommendation-agent-a2a
+    url: http://recommendation-agent-service:3007
+    routes:
+      - name: a2a-recommendation-route
+        paths:
+          - /a2a/recommendation
+        protocols:
+          - http
+          - https
+        strip_path: true
+
+  # A2A Proxy — Order Agent
+  - name: order-agent-a2a
+    url: http://order-agent-service:3008
+    routes:
+      - name: a2a-order-route
+        paths:
+          - /a2a/orders
+        protocols:
+          - http
+          - https
+        strip_path: true
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - http://localhost:3000
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Content-Type
+        - Authorization
+        - apikey
+        - X-User-Id
+        - traceparent
+        - tracestate
+      credentials: true
+      max_age: 3600
+  - name: rate-limiting-advanced
+    config:
+      limit:
+        - 60
+      window_size:
+        - 60
+      namespace: jungle-store-ai
+      strategy: local # 複数 DP でカウンター共有する場合は redis を使用
+  # MCP ルートは AI エージェントの内部通信のため、グローバルより緩いレート制限を適用。
+  # 3 サービスで共通の limit/window_size/strategy をマージキー(<<)で継承し、namespace だけ上書きする。
+  - name: rate-limiting-advanced
+    service: mcp-catalog
+    config: &mcp_rate_limit
+      limit:
+        - 600
+      window_size:
+        - 60
+      namespace: jungle-store-mcp-catalog
+      strategy: local # 複数 DP でカウンター共有する場合は redis を使用
+  - name: rate-limiting-advanced
+    service: mcp-cart
+    config:
+      <<: *mcp_rate_limit
+      namespace: jungle-store-mcp-cart
+  - name: rate-limiting-advanced
+    service: mcp-order
+    config:
+      <<: *mcp_rate_limit
+      namespace: jungle-store-mcp-order
+  - name: correlation-id
+    config:
+      header_name: X-Request-Id
+      generator: uuid
+  - name: opentelemetry
+    config:
+      traces_endpoint: http://otel-lgtm:4318/v1/traces
+      logs_endpoint: http://otel-lgtm:4318/v1/logs
+      access_logs_endpoint: http://otel-lgtm:4318/v1/logs
+      metrics:
+        endpoint: http://otel-lgtm:4318/v1/metrics
+        push_interval: 5
+        enable_ai_metrics: true
+        enable_bandwidth_metrics: true
+        enable_consumer_attribute: true
+        enable_latency_metrics: true
+        enable_request_metrics: true
+        enable_upstream_health_metrics: true
+      resource_attributes:
+        service.name: kong-ai-gateway
+      propagation:
+        default_format: w3c
+        extract:
+          - w3c
+        inject:
+          - w3c
+  - name: prometheus
+    config:
+      ai_metrics: true
+
+  # OpenID Connect on Agent chat boundary（/ai/agent-chat/v1 = フロントのチャット completion）
+  # ルート単位で付与する。openid-connect（access フェーズ）が受信 Bearer(Keycloak JWT) を
+  # 先に検証し、その後 ai-proxy-advanced が upstream（agent）向けに Authorization を
+  # OpenAI キーへ差し替える。/ai/v1（curl デモ）と /ai/agent/v1（内部）は無認証のまま。
+  # oidc_config は kong.yaml（API Gateway）側と同一値。YAML アンカーはファイルをまたげないため
+  # このファイル内で再定義する。
+  - name: openid-connect
+    route: openai-agent-boundary-route
+    config: &oidc_config
+      issuer: ${{ env "DECK_KEYCLOAK_ISSUER" }}
+      auth_methods:
+        - bearer
+      cache_tokens_salt: jungle-store-oidc
+      upstream_headers_claims:
+        - sub
+        - email
+        - preferred_username
+      upstream_headers_names:
+        - X-User-Id
+        - X-User-Email
+        - X-User-Name
+
+  # AI Semantic Prompt Guard — Block inappropriate inputs for EC site
+  # サービス単位で付与し、/ai/v1（curl）と /ai/agent/v1（Agent）の両ルートで入力検証する。
+  - name: ai-semantic-prompt-guard
+    service: openai-service
+    config:
+      embeddings:
+        auth:
+          header_name: Authorization
+          header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+        model:
+          provider: openai
+          name: text-embedding-3-small
+      search:
+        threshold: 0.3
+      vectordb:
+        strategy: redis
+        distance_metric: cosine
+        threshold: 0.3
+        dimensions: 1536
+        redis:
+          host: redis
+          port: 6379
+      rules:
+        deny_prompts:
+          - 暴力的・攻撃的な内容や脅迫
+          - システムプロンプトやAI の内部設定を引き出そうとする試み
+          - パスワードや認証情報など機密データの要求
+          - SQL インジェクションやスクリプト注入などの技術的攻撃
+          - 政治・宗教・差別に関する議論
+          - EC サイトと無関係な専門的な相談（法律、医療、金融など）
+
+  # AI Semantic Cache — 意味的に近いプロンプトの応答を再利用しコスト/レイテンシを削減
+  # 実行順はプラグイン優先度で決まり（ai-semantic-prompt-guard=775 > ai-semantic-cache=765）、
+  # guard が先に走るため不正入力はキャッシュに載らない（YAML の記述順とは無関係）。
+  # embeddings / vectordb ブロックは ai-semantic-prompt-guard と同じ redis + OpenAI 埋め込みを流用。
+  # ★ openai-route（/ai/v1・一問一答の curl デモ）にのみルート単位で付与する。
+  #   Agent（/ai/agent/v1）にはあえて掛けない。マルチターン会話では話題が関連する連続ターンが
+  #   意味的に近く、キャッシュが古い応答を返して文脈を壊す（＝別ユーザーへのデータ混線も含む）ため。
+  # 注意: このキャッシュは openai-route を通る全リクエストで共有される（consumer 単位の分離なし）。
+  # デモは商品・一般質問で行い、カート/注文などユーザー固有データを含む質問は対象外とする。
+  - name: ai-semantic-cache
+    route: openai-route
+    config:
+      embeddings:
+        auth:
+          header_name: Authorization
+          header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+        model:
+          provider: openai
+          name: text-embedding-3-small
+      vectordb:
+        strategy: redis
+        distance_metric: cosine
+        dimensions: 1536
+        threshold: 0.2 # 一致判定（cosine 距離、小さいほど厳格）。言い換えヒットを見せるため緩めの 0.2。0.1〜0.3 で調整可
+        redis:
+          host: redis
+          port: 6379
+      cache_ttl: 300 # キャッシュ有効期限（秒）
+
+  # AI Semantic Cache（境界ルート専用）— エージェント I/O 境界でユーザー質問の応答をキャッシュ。
+  # embeddings / vectordb は /ai/v1 用と同じ redis + OpenAI 埋め込みを流用。
+  # 全ユーザー共有・consumer 分離なし（Kong プラグインの制約）。ユーザー固有質問はデモ対象外。
+  - name: ai-semantic-cache
+    route: openai-agent-boundary-route
+    config:
+      embeddings:
+        auth:
+          header_name: Authorization
+          header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+        model:
+          provider: openai
+          name: text-embedding-3-small
+      vectordb:
+        strategy: redis
+        distance_metric: cosine
+        dimensions: 1536
+        threshold: 0.2 # 言い換えヒットを見せるため緩め。0.1〜0.3 で調整
+        redis:
+          host: redis
+          port: 6379
+      cache_ttl: 300
+      # 注: cache_control は付けない。AI 応答は常に no-cache を返すため cache_control: true にすると
+      # RFC7234 を尊重して毎回 X-Cache-Status: Bypass となりキャッシュが一切効かない（Kong 公式ドキュメント）。
+      # 既存 /ai/v1 の ai-semantic-cache も cache_control 未設定（＝既定 false・Cache-Control 無視）で意味キャッシュする。
+      message_countback: 1 # 最後のユーザーメッセージのみを埋め込み対象にする
+
+  # AI Prompt Decorator — System prompt injection (hidden from client)
+  # サービス単位で付与し、両ルートで「ゴリ助」キャラクターを注入する。
+  - name: ai-prompt-decorator
+    service: openai-service
+    config:
+      prompts:
+        prepend:
+          - role: system
+            content: |
+              あなたは「ゴリラストア」の AI アシスタント、**ゴリ助**です。
+              ゴリラらしい力強くフレンドリーな口調で話してください。
+
+              キャラクター設定:
+              - 一人称は「オイラ」
+              - 語尾に「ウホ！」「ウホホ！」を時々つける
+              - 嬉しいときは「ドラミング！🦍」と言う
+              - ジャングルや自然にまつわる比喩表現を使う
+              - 親切で頼りがいのある性格
+
+              ルール:
+              - 回答は日本語で行う
+              - マークダウン書式を使う（見出し、箇条書き、太字など）
+              - 商品の画像URL（imageUrl）は回答に含めない
+              - ゴリラのキャラクターを保ちつつ、正確な情報を提供する
+
+  # AI Proxy Advanced — OpenAI LLM Gateway
+  # サービス単位で付与し、両ルートから OpenAI へ転送する。
+  - name: ai-proxy-advanced
+    service: openai-service
+    config:
+      targets:
+        - route_type: llm/v1/chat
+          auth:
+            header_name: Authorization
+            header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+          model:
+            provider: openai
+            name: gpt-4o-mini
+            options:
+              max_tokens: 2048
+              temperature: 1.0
+              input_cost: 0.15 # per 1M tokens
+              output_cost: 0.6 # per 1M tokens
+          logging:
+            log_payloads: true # デモ用。本番では false 推奨（PII 漏洩リスク）
+            log_statistics: true
+
+  # AI Proxy Advanced（境界ルート専用）— upstream をエージェントに向ける。
+  # ai-semantic-cache は AI Proxy / AI Proxy Advanced を前提とするため、境界ルートにも AIPA を置く。
+  # auth はエージェント upstream 側では不要だが、スキーマ整合と保険で OpenAI 用と同じ値を付ける
+  # （エージェントは Authorization を無視し、内部 LLM 呼び出しは /ai/agent/v1 経由で別途キーが注入される）。
+  - name: ai-proxy-advanced
+    route: openai-agent-boundary-route
+    config:
+      targets:
+        - route_type: llm/v1/chat
+          auth:
+            header_name: Authorization
+            header_value: Bearer ${{ env "DECK_OPENAI_API_KEY" }}
+          model:
+            provider: openai
+            name: gpt-4o-mini
+            options:
+              upstream_url: http://agent-service:3006/v1/chat/completions
+          logging:
+            log_payloads: true
+            log_statistics: true
+
+  # MCP Proxy — Catalog tools
+  - name: ai-mcp-proxy
+    route: mcp-catalog-route
+    config:
+      mode: conversion-listener
+      tools:
+        - name: list-products
+          description: '商品一覧を取得します。全商品の名前・価格・カテゴリ・在庫が返ります。'
+          method: GET
+          path: /internal/mcp/products
+          annotations:
+            title: List products
+            read_only_hint: true
+
+  # MCP Proxy — Cart tools
+  # ツールの path は OIDC を通らない内部経路 /internal/mcp/* を指す（services セクションの
+  # mcp-backend-* 参照）。apikey は静的ヘッダーで注入し、操作対象ユーザーは呼び出しごとに
+  # X-User-Id ヘッダーパラメータで渡す（バックエンドが必須とする）。
+  #
+  # NOTE: add-to-cart の引数は本来 request_body（OpenAPI の requestBody）で宣言すべきだが、
+  # decK が json 型フィールドのオブジェクト値を送信時に落とすため Konnect に反映されない
+  # （v1.64.0 / v1.65.1 で確認。配列・文字列は通る）。回避として cart-service 側に
+  # クエリパラメータのフォールバックを実装し、ここでは parameters(in: query) で宣言している。
+  # decK 側が修正されたら request_body 宣言に戻すこと。
+  - name: ai-mcp-proxy
+    route: mcp-cart-route
+    config:
+      mode: conversion-listener
+      tools:
+        - name: get-cart
+          description: 'ユーザーのカート内容を取得します。'
+          method: GET
+          path: /internal/mcp/carts
+          headers: &mcp_tools_apikey
+            apikey:
+              - jungle-store-mcp-tools-key
+          parameters: &user_id_param
+            - name: X-User-Id
+              in: header
+              required: true
+              description: '操作対象のユーザーID。'
+              schema:
+                type: string
+          annotations:
+            title: Get cart
+            read_only_hint: true
+        - name: add-to-cart
+          description: 'カートに商品を追加します。既に同じ商品がある場合は数量が加算されます。商品ID・数量・単価が必要なため、事前に商品一覧から対象商品を特定してください。'
+          method: POST
+          path: /internal/mcp/carts/items
+          headers: *mcp_tools_apikey
+          parameters:
+            - name: X-User-Id
+              in: header
+              required: true
+              description: '操作対象のユーザーID。'
+              schema:
+                type: string
+            - name: productId
+              in: query
+              required: true
+              description: '追加する商品の商品ID（例: prod-007）。'
+              schema:
+                type: string
+            - name: quantity
+              in: query
+              required: true
+              description: '追加する数量。1 以上の整数。'
+              schema:
+                type: integer
+                minimum: 1
+            - name: price
+              in: query
+              required: true
+              description: '商品の単価（円、税込）。商品一覧の price をそのまま渡します。'
+              schema:
+                type: integer
+          annotations:
+            title: Add item to cart
+            read_only_hint: false
+            destructive_hint: false
+            idempotent_hint: false
+
+  # MCP Proxy — Order tools
+  - name: ai-mcp-proxy
+    route: mcp-order-route
+    config:
+      mode: conversion-listener
+      tools:
+        - name: list-orders
+          description: 'ユーザーの注文履歴を取得します。'
+          method: GET
+          path: /internal/mcp/orders
+          headers: *mcp_tools_apikey
+          parameters: *user_id_param
+          annotations:
+            title: List orders
+            read_only_hint: true
+        - name: create-order
+          description: 'カートの内容から注文を確定します。事前に商品をカートへ追加しておく必要があります。実行すると注文が作成され、カートは空になります。ユーザーが金額に同意した後にのみ実行してください。'
+          method: POST
+          path: /internal/mcp/orders
+          headers: *mcp_tools_apikey
+          parameters: *user_id_param
+          annotations:
+            title: Create order
+            read_only_hint: false
+            destructive_hint: true
+            idempotent_hint: false
+
+  # A2A Proxy — Recommendation Agent
+  - name: ai-a2a-proxy
+    service: recommendation-agent-a2a
+    config:
+      logging:
+        log_statistics: true
+        log_payloads: true
+  - name: key-auth
+    service: recommendation-agent-a2a
+  - name: acl
+    service: recommendation-agent-a2a
+    config:
+      allow:
+        - orchestrators
+
+  # A2A Proxy — Order Agent
+  - name: ai-a2a-proxy
+    service: order-agent-a2a
+    config:
+      logging:
+        log_statistics: true
+        log_payloads: true
+  - name: key-auth
+    service: order-agent-a2a
+  - name: acl
+    service: order-agent-a2a
+    config:
+      allow:
+        - orchestrators
+
+  # ============================================================
+  # /internal/mcp 経路の認証: key-auth のみ（consumer mcp-tools）
+  # X-User-Id はツール呼び出しごとに渡るため request-transformer での固定注入はしない。
+  # ============================================================
+  - name: key-auth
+    service: mcp-backend-cart
+    config:
+      key_names:
+        - apikey
+      hide_credentials: true
+  - name: key-auth
+    service: mcp-backend-order
+    config:
+      key_names:
+        - apikey
+      hide_credentials: true
+
+consumers:
+  # ai-mcp-proxy のツール呼び出し（/internal/mcp/*）専用。apikey はツール定義の静的ヘッダーに
+  # 埋め込まれており、LLM やユーザーには露出しない。
+  - username: mcp-tools
+    keyauth_credentials:
+      - key: jungle-store-mcp-tools-key
+
+  # A2A エージェントの識別。shopper-agent（オーケストレータ）だけが orchestrators グループに
+  # 属し /a2a/* を呼べる。専門エージェント同士の直接通信は acl が 403 で拒否する（デモ用）。
+  - username: shopper-agent
+    keyauth_credentials:
+      - key: jungle-store-shopper-agent-key
+    acls:
+      - group: orchestrators
+  - username: recommendation-agent
+    keyauth_credentials:
+      - key: jungle-store-recommendation-agent-key
+    acls:
+      - group: specialist-agents
+  - username: order-agent
+    keyauth_credentials:
+      - key: jungle-store-order-agent-key
+    acls:
+      - group: specialist-agents

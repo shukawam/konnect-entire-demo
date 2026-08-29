@@ -6,7 +6,7 @@ const log = createLogger('recommendation-agent-service')
 
 const serviceName = process.env.OTEL_SERVICE_NAME || 'recommendation-agent-service'
 const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318'
-const gatewayEndpoint = process.env.GATEWAY_ENDPOINT || 'http://localhost:8000'
+const gatewayEndpoint = process.env.GATEWAY_ENDPOINT || 'http://localhost:8010'
 
 const telemetry = createVolcanoTelemetry({
   serviceName,

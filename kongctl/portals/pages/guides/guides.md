@@ -1,6 +1,6 @@
 ---
 title: "Guides"
-description: "開発者向けガイド集"
+description: "Guide for Developer Portal"
 page-layout:
   sidebar-left: sidebar
 ---

@@ -80,4 +80,26 @@ describe('proxy route', () => {
     expect(res.headers.get('content-length')).toBeNull()
     expect(res.headers.get('content-type')).toBe('application/json')
   })
+
+  it('/ai, /mcp, /a2a で始まるパスは AI_GATEWAY_BACKEND_URL へ転送する', async () => {
+    mockedAuth.mockResolvedValue(null as never)
+
+    await GET(
+      new NextRequest('http://localhost:3000/api/proxy/ai/agent-chat/v1/chat/completions', {
+        method: 'GET',
+      }),
+    )
+
+    const [url] = mockFetch.mock.calls[0]
+    expect(url).toMatch(/^http:\/\/localhost:8010\/ai\/agent-chat\/v1/)
+  })
+
+  it('/api で始まるパスは従来どおり BACKEND_URL へ転送する', async () => {
+    mockedAuth.mockResolvedValue(null as never)
+
+    await GET(makeRequest())
+
+    const [url] = mockFetch.mock.calls[0]
+    expect(url).toMatch(/^http:\/\/localhost:8000\/api\/carts/)
+  })
 })
