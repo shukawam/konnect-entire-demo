@@ -7,6 +7,8 @@ x-otel-env: &otel-env
   OTEL_LOGS_EXPORTER: otlp
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
   OTEL_NODE_RESOURCE_DETECTORS: env,host,os
+  # net (tcp.connect/ipc.connect) と dns の span はデモで見せる情報がなくノイズのため発生源で無効化
+  OTEL_NODE_DISABLED_INSTRUMENTATIONS: net,dns
   NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register
 
 networks:
@@ -647,7 +649,6 @@ services:
       NEXT_PUBLIC_GRAFANA_URL: ${NEXT_PUBLIC_GRAFANA_URL:-http://localhost:3010}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       OTEL_SERVICE_NAME: frontend
-      NEXT_OTEL_VERBOSE: 1
       AUTH_SECRET: ${AUTH_SECRET:-}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: 'true'
@@ -657,7 +658,11 @@ services:
       KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}
       KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8081}
     healthcheck:
-      test: ['CMD-SHELL', 'node -e "fetch(''http://localhost:3000'').then(r=>{if(!r.ok)throw r})"']
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3000/api/health'').then(r=>{if(!r.ok)throw r})"',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -12,5 +12,17 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici'
 
 registerInstrumentations({
-  instrumentations: [new HttpInstrumentation(), new UndiciInstrumentation()],
+  instrumentations: [
+    new HttpInstrumentation(),
+    new UndiciInstrumentation({
+      // MCP Streamable HTTP クライアント（volcano SDK の mcp()）が SSE 受信用に GET /mcp/* へ
+      // 定期再接続する（ai-mcp-proxy がストリームを保持せず即クローズするため、SDK が「正常切断」と
+      // みなして再試行し続ける）。この GET は pool 済みコネクションの元になった呼び出し時点の
+      // AsyncLocalStorage コンテキストを setTimeout 経由でそのまま引き継ぐため、計装したまま放置すると
+      // 何十秒も経った後続の別リクエストのトレースにまで無関係な span として混入し続ける。
+      // ここで span 化・traceparent 注入自体を止めて発生源で断つ（Kong 側の受信もコンテキスト無しの
+      // 独立トレースに戻り、Collector の tail_sampling で無害に除去できる）。
+      ignoreRequestHook: (request) => request.method === 'GET' && request.path.startsWith('/mcp/'),
+    }),
+  ],
 })
