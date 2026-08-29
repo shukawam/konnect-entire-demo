@@ -415,7 +415,7 @@ To release a new version:
 
 1. Open and merge a PR that bumps the `image:` default tag (`${IMAGE_TAG:-vX.Y.Z}`) for each app service in `compose.yaml`
 2. Create and publish a GitHub Release on the merged commit, tagged `vX.Y.Z` (matching the value bumped in step 1)
-3. `.github/workflows/release.yml` runs and builds/pushes all 7 service images to GHCR
+3. `.github/workflows/release.yml` runs and builds/pushes all 9 service images to GHCR
 4. (Only the first time a new package is created) switch its visibility to Public in the GHCR package settings
 
 ## Troubleshooting
